@@ -5,6 +5,11 @@
 
     RewriteEngine On
 
+    # Corrige problemas de permissão em hospedagem compartilhada
+    <IfModule mod_dir.c>
+        DirectoryIndex index.php
+    </IfModule>
+
     # Redirect Trailing Slashes...
     RewriteRule ^(.*)/$ /$1 [L,R=301]
 
