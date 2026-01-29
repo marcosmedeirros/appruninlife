@@ -51,12 +51,20 @@ const apiRequest = async (action, payload) => {
     },
     body: JSON.stringify(payload ?? {}),
   });
-  return response.json();
+  try {
+    return await response.json();
+  } catch (err) {
+    return { ok: false, message: "Resposta inválida do servidor." };
+  }
 };
 
 const fetchData = async () => {
   const response = await fetch("api.php?action=get");
-  return response.json();
+  try {
+    return await response.json();
+  } catch (err) {
+    return { ok: false, message: "Resposta inválida do servidor." };
+  }
 };
 
 const addLog = (data, { title, points, type }) => {
@@ -907,6 +915,7 @@ const initNavigation = () => {
   sidebar.addEventListener("click", (event) => {
     const btn = event.target.closest(".nav-link");
     if (!btn) return;
+    event.preventDefault();
     showView(btn.dataset.view);
   });
 };
@@ -917,7 +926,10 @@ const openApp = async () => {
   showView("dashboard");
   const response = await fetchData();
   if (!response.ok) {
-    window.location.href = "index.php";
+    const dashboard = document.getElementById("dashboard");
+    if (dashboard) {
+      dashboard.innerHTML = `<div class="card"><h3>Erro ao carregar</h3><p class="muted">${response.message || "Falha ao conectar com o servidor."}</p></div>`;
+    }
     return;
   }
   state.user = response.user;

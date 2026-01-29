@@ -35,18 +35,18 @@ requireAuth();
 
       <div class="layout">
         <aside class="sidebar">
-          <button class="nav-link active" data-view="dashboard">Painel</button>
-          <button class="nav-link" data-view="tasks">Agenda</button>
-          <button class="nav-link" data-view="goals">Metas</button>
-          <button class="nav-link" data-view="habits">Hábitos</button>
-          <button class="nav-link" data-view="workouts">Treinos</button>
-          <button class="nav-link" data-view="categories">Categorias</button>
-          <button class="nav-link" data-view="missions">Missões</button>
-          <button class="nav-link" data-view="achievements">Conquistas</button>
-          <button class="nav-link" data-view="ranking">Ranking</button>
-          <button class="nav-link" data-view="profile">Perfil</button>
-          <button class="nav-link" data-view="admin">Admin</button>
-          <button class="nav-link" data-view="history">Histórico</button>
+          <button class="nav-link active" type="button" data-view="dashboard">Painel</button>
+          <button class="nav-link" type="button" data-view="tasks">Agenda</button>
+          <button class="nav-link" type="button" data-view="goals">Metas</button>
+          <button class="nav-link" type="button" data-view="habits">Hábitos</button>
+          <button class="nav-link" type="button" data-view="workouts">Treinos</button>
+          <button class="nav-link" type="button" data-view="categories">Categorias</button>
+          <button class="nav-link" type="button" data-view="missions">Missões</button>
+          <button class="nav-link" type="button" data-view="achievements">Conquistas</button>
+          <button class="nav-link" type="button" data-view="ranking">Ranking</button>
+          <button class="nav-link" type="button" data-view="profile">Perfil</button>
+          <button class="nav-link" type="button" data-view="admin">Admin</button>
+          <button class="nav-link" type="button" data-view="history">Histórico</button>
         </aside>
 
         <section class="content">
