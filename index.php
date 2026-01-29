@@ -29,8 +29,14 @@ if (!empty($_SESSION['user_id'])) {
       </header>
 
       <div class="auth-grid">
-        <div class="auth-card">
+        <div class="auth-card" style="max-width:480px;margin:auto;">
           <h2>Entrar</h2>
+          <?php if (isset($_GET['registered'])): ?>
+            <div style="color:var(--accent);margin-bottom:8px;">Cadastro realizado com sucesso. Faça login.</div>
+          <?php endif; ?>
+          <?php if (isset($_GET['reset'])): ?>
+            <div style="color:var(--accent);margin-bottom:8px;">Senha redefinida com sucesso. Faça login.</div>
+          <?php endif; ?>
           <form id="login-form" class="form">
             <input type="hidden" name="action" value="login" />
             <label>
@@ -44,27 +50,9 @@ if (!empty($_SESSION['user_id'])) {
             <button type="submit" class="btn primary">Entrar</button>
             <p class="form-message" data-message="login"></p>
           </form>
-        </div>
-
-        <div class="auth-card">
-          <h2>Criar conta</h2>
-          <form id="register-form" class="form">
-            <input type="hidden" name="action" value="register" />
-            <label>
-              Nome
-              <input type="text" name="name" required />
-            </label>
-            <label>
-              Email
-              <input type="email" name="email" required />
-            </label>
-            <label>
-              Senha
-              <input type="password" name="password" minlength="4" required />
-            </label>
-            <button type="submit" class="btn ghost">Cadastrar</button>
-            <p class="form-message" data-message="register"></p>
-          </form>
+          <p class="muted" style="margin-top:12px;">
+            <a href="register.php">Criar conta</a> · <a href="forgot.php">Esqueci a senha</a>
+          </p>
         </div>
       </div>
     </section>

@@ -650,7 +650,13 @@ if (loginForm) {
       method: "POST",
       body: formData,
     });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      showMessage("login", "Erro de comunicação com o servidor.");
+      return;
+    }
     if (!result.ok) {
       showMessage("login", result.message || "Erro ao entrar.");
       return;
@@ -668,12 +674,67 @@ if (registerForm) {
       method: "POST",
       body: formData,
     });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      showMessage("register", "Erro de comunicação com o servidor.");
+      return;
+    }
     if (!result.ok) {
       showMessage("register", result.message || "Erro ao cadastrar.");
       return;
     }
-    window.location.href = "app.php";
+    // redirect to login page so user can authenticate
+    window.location.href = "index.php?registered=1";
+  });
+}
+
+// forgot password form
+const forgotForm = document.getElementById("forgot-form");
+if (forgotForm) {
+  forgotForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    resetMessages();
+    const formData = new FormData(event.target);
+    const response = await fetch("auth.php", { method: "POST", body: formData });
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      showMessage("forgot", "Erro de comunicação com o servidor.");
+      return;
+    }
+    showMessage("forgot", result.message || "Verifique seu email.");
+    if (result.link && !result.sent) {
+      // show link for manual copy (mail likely not configured)
+      const el = document.querySelector(`[data-message="forgot"]`);
+      if (el) el.innerHTML += `<br><a href="${result.link}">Abrir link de recuperação</a>`;
+    }
+  });
+}
+
+// reset form
+const resetForm = document.getElementById("reset-form");
+if (resetForm) {
+  resetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    resetMessages();
+    const formData = new FormData(event.target);
+    const response = await fetch("auth.php", { method: "POST", body: formData });
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      showMessage("reset", "Erro de comunicação com o servidor.");
+      return;
+    }
+    if (!result.ok) {
+      showMessage("reset", result.message || "Erro ao redefinir senha.");
+      return;
+    }
+    // success -> redirect to login with message
+    window.location.href = "index.php?reset=1";
   });
 }
 
