@@ -50,9 +50,12 @@ if (!empty($_SESSION['user_id'])) {
             <button type="submit" class="btn primary">Entrar</button>
             <p class="form-message" data-message="login"></p>
           </form>
-          <p class="muted" style="margin-top:12px;">
-            <a href="register.php">Criar conta</a> · <a href="forgot.php">Esqueci a senha</a>
-          </p>
+          <div style="margin-top:16px; display:flex; justify-content:center;">
+            <a href="register.php" class="btn white">Criar conta</a>
+          </div>
+          <div class="link-center">
+            <a href="forgot.php">Esqueci a senha</a>
+          </div>
         </div>
       </div>
     </section>

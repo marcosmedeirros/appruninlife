@@ -33,8 +33,18 @@ try {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $data = json_encode(defaultUserData(), JSON_UNESCAPED_UNICODE);
 
-        $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, data_json, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())');
-        $stmt->execute([$name, $email, $hash, $data]);
+        $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, points, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())');
+        $stmt->execute([$name, $email, $hash, 0, 'user']);
+
+        $userId = $pdo->lastInsertId();
+        $data = defaultUserData();
+        $categoryStmt = $pdo->prepare('INSERT INTO categories (user_id, name) VALUES (?, ?)');
+        foreach ($data['categories'] as $category) {
+            $categoryStmt->execute([$userId, $category['name']]);
+        }
+
+        $profileStmt = $pdo->prepare('INSERT INTO profiles (user_id, display_name, avatar_url, bio, focus_area, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())');
+        $profileStmt->execute([$userId, $name, null, null, null]);
 
         // Do NOT auto-login. Return success so frontend redirects to login.
         echo json_encode(['ok' => true, 'message' => 'Cadastro realizado. Faça login.']);

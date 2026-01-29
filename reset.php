@@ -28,7 +28,9 @@ $token = $_GET['token'] ?? '';
           <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>" />
           <label>Nova senha <input type="password" name="password" minlength="4" required /></label>
           <button class="btn" type="submit">Redefinir</button>
-          <p class="muted"><a href="index.php">Voltar ao login</a></p>
+          <div style="margin-top:12px; display:flex; justify-content:center;">
+            <a href="index.php" class="btn white">Voltar</a>
+          </div>
           <p class="form-message" data-message="reset"></p>
         </form>
       </div>

@@ -13,11 +13,25 @@ const welcome = document.getElementById("welcome");
 const pointsEl = document.getElementById("points");
 const levelEl = document.getElementById("level");
 
-const views = ["dashboard", "tasks", "goals", "habits", "workouts", "categories", "history"];
+const views = [
+  "dashboard",
+  "tasks",
+  "goals",
+  "habits",
+  "workouts",
+  "categories",
+  "missions",
+  "achievements",
+  "ranking",
+  "profile",
+  "admin",
+  "history",
+];
 
 const state = {
   user: null,
   data: null,
+  admin: null,
 };
 
 const formatDate = (value) =>
@@ -99,21 +113,32 @@ const renderDashboard = () => {
   const nextLevel = progressToNextLevel(data.points).toFixed(0);
 
   el.innerHTML = `
-    <div class="card-grid">
-      <div class="card">
-        <h3>Pontuação total</h3>
-        <p class="muted">Continue completando tarefas para subir de nível.</p>
-  <strong style="font-size:2rem;">${data.points}</strong>
+    <div class="dashboard-hero">
+      <div class="hero-card">
+        <h3>Seu progresso</h3>
+        <p class="muted">Transforme sua rotina em conquistas diárias.</p>
+        <strong style="font-size:2.4rem;">${data.points}</strong>
         <div class="progress"><span style="width:${nextLevel}%"></span></div>
         <p class="muted">${nextLevel}% para o próximo nível</p>
       </div>
       <div class="card">
+        <h3>Checklist de hoje</h3>
+        <p class="muted">${data.tasks.filter((task) => !task.completed).length} tarefas pendentes</p>
+        <p class="muted">${data.habits.length} hábitos em foco</p>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="card">
         <h3>Agenda de hoje</h3>
-  <p class="muted">${data.tasks.filter((task) => !task.completed).length} tarefas ativas</p>
+        <p class="muted">${data.tasks.filter((task) => !task.completed).length} tarefas ativas</p>
       </div>
       <div class="card">
         <h3>Metas em andamento</h3>
   <p class="muted">${data.goals.filter((goal) => !goal.completed).length} metas abertas</p>
+      </div>
+      <div class="card">
+        <h3>Treinos programados</h3>
+  <p class="muted">${data.workouts.filter((workout) => !workout.completed).length} treinos pendentes</p>
       </div>
       <div class="card">
         <h3>Hábitos</h3>
@@ -525,6 +550,246 @@ const renderHistory = () => {
   `;
 };
 
+const renderMissions = () => {
+  const el = document.getElementById("missions");
+  const data = state.data;
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>Missões diárias</h3>
+      <p class="muted">Complete para ganhar pontos extras.</p>
+      <div class="list">
+        ${
+          data.missions?.length
+            ? data.missions
+                .map(
+                  (mission) => `
+            <div class="list-item">
+              <div class="list-row">
+                <strong>${mission.title}</strong>
+                <span class="tag">+${mission.points}</span>
+              </div>
+              <p class="muted">${mission.description || "Missão diária"}</p>
+              <div class="list-row">
+                <span class="muted">${mission.completed ? "Concluída" : "Pendente"}</span>
+                <button class="btn ghost" data-action="complete-mission" data-id="${mission.id}" ${
+                  mission.completed ? "disabled" : ""
+                }>Concluir</button>
+              </div>
+            </div>
+          `
+                )
+                .join("")
+            : `<p class="muted">Nenhuma missão disponível hoje.</p>`
+        }
+      </div>
+    </div>
+  `;
+
+  wireActions(el);
+};
+
+const renderAchievements = () => {
+  const el = document.getElementById("achievements");
+  const data = state.data;
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>Conquistas & Badges</h3>
+      <p class="muted">Desbloqueie conquistas para ganhar pontos.</p>
+      <div class="list">
+        ${
+          data.achievements?.length
+            ? data.achievements
+                .map(
+                  (achievement) => `
+            <div class="list-item">
+              <div class="list-row">
+                <strong>${achievement.title}</strong>
+                <span class="tag">+${achievement.points}</span>
+              </div>
+              <p class="muted">${achievement.description || "Conquista"}</p>
+              <div class="list-row">
+                <span class="muted">${achievement.unlocked ? "Desbloqueada" : "Bloqueada"}</span>
+                <button class="btn ghost" data-action="unlock-achievement" data-id="${achievement.id}" ${
+                  achievement.unlocked ? "disabled" : ""
+                }>Desbloquear</button>
+              </div>
+            </div>
+          `
+                )
+                .join("")
+            : `<p class="muted">Nenhuma conquista cadastrada.</p>`
+        }
+      </div>
+    </div>
+  `;
+
+  wireActions(el);
+};
+
+const renderRanking = () => {
+  const el = document.getElementById("ranking");
+  const data = state.data;
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>Ranking global</h3>
+      <div class="list">
+        ${
+          data.ranking?.length
+            ? data.ranking
+                .map(
+                  (player, index) => `
+            <div class="list-item">
+              <div class="list-row">
+                <strong>#${index + 1} ${player.name}</strong>
+                <span class="tag">${player.points} pts</span>
+              </div>
+            </div>
+          `
+                )
+                .join("")
+            : `<p class="muted">Ranking vazio.</p>`
+        }
+      </div>
+    </div>
+  `;
+};
+
+const renderProfile = () => {
+  const el = document.getElementById("profile");
+  const data = state.data;
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="split">
+      <div class="card">
+        <h3>Perfil</h3>
+        <form id="profile-form" class="form">
+          <label>
+            Nome exibido
+            <input type="text" name="displayName" value="${data.profile?.displayName || ""}" />
+          </label>
+          <label>
+            URL do avatar
+            <input type="text" name="avatarUrl" value="${data.profile?.avatarUrl || ""}" />
+          </label>
+          <label>
+            Bio
+            <textarea name="bio">${data.profile?.bio || ""}</textarea>
+          </label>
+          <label>
+            Foco principal
+            <input type="text" name="focusArea" value="${data.profile?.focusArea || ""}" />
+          </label>
+          <button class="btn" type="submit">Salvar perfil</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Preview</h3>
+        <div class="list-item">
+          <div class="list-row">
+            <strong>${data.profile?.displayName || state.user?.name || "Usuário"}</strong>
+            <span class="tag">${data.points} pts</span>
+          </div>
+          <p class="muted">${data.profile?.bio || "Sem bio ainda."}</p>
+          <p class="muted">Foco: ${data.profile?.focusArea || "Defina seu foco"}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const form = document.getElementById("profile-form");
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    data.profile = {
+      displayName: formData.get("displayName"),
+      avatarUrl: formData.get("avatarUrl"),
+      bio: formData.get("bio"),
+      focusArea: formData.get("focusArea"),
+    };
+    saveData();
+    renderProfile();
+  });
+};
+
+const renderAdmin = () => {
+  const el = document.getElementById("admin");
+  if (!el) return;
+
+  if (state.user?.role !== "admin") {
+    el.innerHTML = `
+      <div class="card">
+        <h3>Admin</h3>
+        <p class="muted">Acesso restrito.</p>
+      </div>
+    `;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="split">
+      <div class="card">
+        <h3>Missão diária</h3>
+        <form id="admin-mission-form" class="form">
+          <label>Título <input type="text" name="title" required /></label>
+          <label>Descrição <input type="text" name="description" /></label>
+          <label>Pontos <input type="number" name="points" min="0" value="20" /></label>
+          <label>Data <input type="date" name="date" value="${new Date().toISOString().slice(0, 10)}" /></label>
+          <button class="btn" type="submit">Salvar missão</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Conquista</h3>
+        <form id="admin-achievement-form" class="form">
+          <label>Título <input type="text" name="title" required /></label>
+          <label>Descrição <input type="text" name="description" /></label>
+          <label>Pontos <input type="number" name="points" min="0" value="50" /></label>
+          <button class="btn" type="submit">Salvar conquista</button>
+        </form>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px;">
+      <h3>Resumo</h3>
+      <p class="muted">Usuários totais: ${state.admin?.totalUsers ?? 0}</p>
+    </div>
+  `;
+
+  const missionForm = document.getElementById("admin-mission-form");
+  missionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(missionForm);
+    await apiRequest("admin_save", {
+      mission: {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        points: formData.get("points"),
+        date: formData.get("date"),
+      },
+    });
+    openApp();
+  });
+
+  const achievementForm = document.getElementById("admin-achievement-form");
+  achievementForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(achievementForm);
+    await apiRequest("admin_save", {
+      achievement: {
+        title: formData.get("title"),
+        description: formData.get("description"),
+        points: formData.get("points"),
+      },
+    });
+    openApp();
+  });
+};
+
 const renderAll = () => {
   renderHeader();
   renderDashboard();
@@ -533,6 +798,11 @@ const renderAll = () => {
   renderHabits();
   renderWorkouts();
   renderCategories();
+  renderMissions();
+  renderAchievements();
+  renderRanking();
+  renderProfile();
+  renderAdmin();
   renderHistory();
 };
 
@@ -608,6 +878,22 @@ const wireActions = (container) => {
         data.categories = data.categories.filter((item) => item.id !== id);
       }
 
+      if (action === "complete-mission") {
+        const mission = data.missions?.find((item) => item.id === id);
+        if (mission && !mission.completed) {
+          mission.completed = true;
+          addPoints(data, mission.points || 0, `Missão concluída: ${mission.title}`, "Missões");
+        }
+      }
+
+      if (action === "unlock-achievement") {
+        const achievement = data.achievements?.find((item) => item.id === id);
+        if (achievement && !achievement.unlocked) {
+          achievement.unlocked = true;
+          addPoints(data, achievement.points || 0, `Conquista desbloqueada: ${achievement.title}`, "Conquistas");
+        }
+      }
+
       saveData();
       renderAll();
     });
@@ -633,6 +919,11 @@ const openApp = async () => {
   }
   state.user = response.user;
   state.data = response.data;
+  state.admin = response.admin || null;
+  const adminBtn = document.querySelector('.nav-link[data-view="admin"]');
+  if (adminBtn && state.user?.role !== "admin") {
+    adminBtn.classList.add("hidden");
+  }
   renderAll();
 };
 

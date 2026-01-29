@@ -32,7 +32,9 @@ if (!empty($_SESSION['user_id'])) {
           <label>Email <input type="email" name="email" required /></label>
           <label>Senha <input type="password" name="password" minlength="4" required /></label>
           <button class="btn" type="submit">Cadastrar</button>
-          <p class="muted"><a href="index.php">Voltar ao login</a></p>
+          <div style="margin-top:12px; display:flex; justify-content:center;">
+            <a href="index.php" class="btn white">Voltar</a>
+          </div>
           <p class="form-message" data-message="register"></p>
         </form>
       </div>

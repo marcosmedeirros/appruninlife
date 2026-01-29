@@ -72,11 +72,21 @@ function defaultUserData(): array
         'categories' => [
             ['id' => uniqid('cat_', true), 'name' => 'Saúde'],
             ['id' => uniqid('cat_', true), 'name' => 'Trabalho'],
+            ['id' => uniqid('cat_', true), 'name' => 'Foco'],
         ],
         'tasks' => [],
         'goals' => [],
         'habits' => [],
         'workouts' => [],
         'logs' => [],
+        'missions' => [],
+        'achievements' => [],
+        'ranking' => [],
+        'profile' => [
+            'displayName' => '',
+            'avatarUrl' => '',
+            'bio' => '',
+            'focusArea' => '',
+        ],
     ];
 }

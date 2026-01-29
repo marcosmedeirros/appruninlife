@@ -41,6 +41,11 @@ requireAuth();
           <button class="nav-link" data-view="habits">Hábitos</button>
           <button class="nav-link" data-view="workouts">Treinos</button>
           <button class="nav-link" data-view="categories">Categorias</button>
+          <button class="nav-link" data-view="missions">Missões</button>
+          <button class="nav-link" data-view="achievements">Conquistas</button>
+          <button class="nav-link" data-view="ranking">Ranking</button>
+          <button class="nav-link" data-view="profile">Perfil</button>
+          <button class="nav-link" data-view="admin">Admin</button>
           <button class="nav-link" data-view="history">Histórico</button>
         </aside>
 
@@ -51,6 +56,11 @@ requireAuth();
           <div id="habits" class="view hidden"></div>
           <div id="workouts" class="view hidden"></div>
           <div id="categories" class="view hidden"></div>
+          <div id="missions" class="view hidden"></div>
+          <div id="achievements" class="view hidden"></div>
+          <div id="ranking" class="view hidden"></div>
+          <div id="profile" class="view hidden"></div>
+          <div id="admin" class="view hidden"></div>
           <div id="history" class="view hidden"></div>
         </section>
       </div>

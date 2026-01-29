@@ -23,7 +23,9 @@ Sistema híbrido (mobile/desktop) de controle de vida em formato gamificado. Tud
 - Categorias personalizadas
 - Pontos por ação com níveis
 - Histórico de conquistas
-- Dados separados por usuário (LocalStorage)
+- Ranking global, missões diárias, conquistas e perfil com avatar
+- Painel admin (criação de missões e conquistas)
+- Dados separados por usuário (MySQL)
 
 ## Banco de dados
 1. Crie um banco MySQL.
