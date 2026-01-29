@@ -19,18 +19,9 @@ if (!empty($_SESSION['user_id'])) {
 
   <main class="container">
     <section id="auth" class="panel">
-      <header class="panel-header">
-        <div>
-          <p class="eyebrow">RunInLife</p>
-          <h1>Controle sua vida como um jogo.</h1>
-          <p class="muted">Metas, agenda, treinos e hábitos com pontuação pessoal.</p>
-        </div>
-        <div class="badge">Mobile + Desktop</div>
-      </header>
-
       <div class="auth-grid">
         <div class="auth-card" style="max-width:480px;margin:auto;">
-          <h2>Entrar</h2>
+          <h2>Login</h2>
           <?php if (isset($_GET['registered'])): ?>
             <div style="color:var(--accent);margin-bottom:8px;">Cadastro realizado com sucesso. Faça login.</div>
           <?php endif; ?>

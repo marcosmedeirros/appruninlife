@@ -901,10 +901,13 @@ const wireActions = (container) => {
 };
 
 const initNavigation = () => {
-  document.querySelectorAll(".nav-link").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      showView(btn.dataset.view);
-    });
+  const sidebar = document.querySelector(".sidebar");
+  if (!sidebar || sidebar.dataset.bound === "true") return;
+  sidebar.dataset.bound = "true";
+  sidebar.addEventListener("click", (event) => {
+    const btn = event.target.closest(".nav-link");
+    if (!btn) return;
+    showView(btn.dataset.view);
   });
 };
 
