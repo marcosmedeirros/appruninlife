@@ -785,21 +785,14 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <div class="grid grid-2 section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Rotina do dia</h3>
-                <button class="btn" data-modal="modalRoutine">Cadastrar</button>
-            </div>
-            <div class="list" id="routineList"></div>
+    <div class="card section">
+        <div class="card-header">
+            <h3>Rotina do dia</h3>
+            <button class="btn" data-modal="modalRoutine">Cadastrar</button>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>Corridas</h3>
-                <button class="btn" data-modal="modalRun">Cadastrar</button>
-            </div>
-            <div class="list" id="runList"></div>
+        <div class="grid grid-2" id="routineGrid">
+            <div class="list" id="routineListLeft"></div>
+            <div class="list" id="routineListRight"></div>
         </div>
     </div>
 
@@ -884,7 +877,15 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <div class="grid grid-2 section">
+    <div class="grid grid-3 section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Corridas</h3>
+                <button class="btn" data-modal="modalRun">Cadastrar</button>
+            </div>
+            <div class="list" id="runList"></div>
+        </div>
+
         <div class="card">
             <div class="card-header">
                 <h3>Foto do dia</h3>
@@ -1408,26 +1409,34 @@ include __DIR__ . '/includes/header.php';
 
     const loadRoutine = async () => {
         const list = await api('get_routine_items', {}, 'GET');
-        const container = document.getElementById('routineList');
-        container.innerHTML = '';
+        const left = document.getElementById('routineListLeft');
+        const right = document.getElementById('routineListRight');
+        left.innerHTML = '';
+        right.innerHTML = '';
         if (!list.length) {
-            container.innerHTML = '<div class="muted">Cadastre sua rotina do dia.</div>';
+            left.innerHTML = '<div class="muted">Cadastre sua rotina do dia.</div>';
             return;
         }
-        list.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'list-item';
-            row.innerHTML = `
-                <div>
-                    <strong>${item.activity}</strong><br>
-                    <span class="tag weekday-tag">${getTodayWeekdayLabel()}</span>
-                </div>
-                <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-routine" aria-label="Apagar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            `;
-            container.appendChild(row);
-        });
+        const leftItems = list.slice(0, 5);
+        const rightItems = list.slice(5, 10);
+        const renderList = (items, container) => {
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'list-item';
+                row.innerHTML = `
+                    <div>
+                        <strong>${item.activity}</strong><br>
+                        <span class="tag weekday-tag">${getTodayWeekdayLabel()}</span>
+                    </div>
+                    <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-routine" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        };
+        renderList(leftItems, left);
+        renderList(rightItems, right);
     };
 
     const loadGoals = async () => {
