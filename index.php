@@ -914,7 +914,7 @@ include __DIR__ . '/includes/header.php';
                     <button class="btn" data-modal="modalGoalsView">Ver metas</button>
                 </div>
             </div>
-            <p class="muted" id="goalsWeekDone">Sem metas concluídas nesta semana.</p>
+            <p class="muted" id="goalsWeekDone">Sem metas concluídas ainda.</p>
         </div>
 
         <div class="card">
@@ -1603,8 +1603,9 @@ include __DIR__ . '/includes/header.php';
             await api('delete_run', { id: btn.dataset.id });
             loadRuns();
         }
-        if (e.target.matches('[data-action="toggle-goal"]')) {
-            await api('toggle_goal', { id: e.target.dataset.id });
+        if (e.target.closest('[data-action="toggle-goal"]')) {
+            const btn = e.target.closest('[data-action="toggle-goal"]');
+            await api('toggle_goal', { id: btn.dataset.id });
             loadGoals();
             loadGoalsDone();
         }
