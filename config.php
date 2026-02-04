@@ -6,8 +6,8 @@ require_once __DIR__ . '/includes/paths.php';
 
 
 $db_host = 'localhost';
-$db_name = 'u289267434_bancolifestyle';
-$db_user = 'u289267434_marcosmedeiros';
+$db_name = 'u289267434_runlife';
+$db_user = 'u289267434_runlife';
 $db_pass = 'Zonete@13';
 
 
