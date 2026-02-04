@@ -162,8 +162,27 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'save_daily_photo') {
-            $date = $data['date'] ?? date('Y-m-d');
-            $imagePath = $data['image_path'] ?? '';
+            $date = $_POST['date'] ?? date('Y-m-d');
+            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+                json_response(['error' => 'Arquivo de foto inválido']);
+            }
+
+            $uploadDir = __DIR__ . '/board';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
+            }
+
+            $originalName = $_FILES['photo']['name'] ?? 'photo';
+            $ext = pathinfo($originalName, PATHINFO_EXTENSION) ?: 'jpg';
+            $safeExt = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+            $fileName = 'photo_' . $user_id . '_' . str_replace('-', '', $date) . '_' . time() . '.' . $safeExt;
+            $targetPath = $uploadDir . '/' . $fileName;
+
+            if (!move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
+                json_response(['error' => 'Falha ao salvar a foto']);
+            }
+
+            $imagePath = 'board/' . $fileName;
             $check = $pdo->prepare("SELECT id FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
             $check->execute([$user_id, $date]);
             $existingId = $check->fetchColumn();
@@ -173,6 +192,21 @@ if (isset($_GET['api'])) {
             } else {
                 $stmt = $pdo->prepare("INSERT INTO board_photos (user_id, photo_date, image_path, created_at) VALUES (?, ?, ?, NOW())");
                 $stmt->execute([$user_id, $date, $imagePath]);
+            }
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'delete_daily_photo') {
+            $date = $data['date'] ?? date('Y-m-d');
+            $stmt = $pdo->prepare("SELECT id, image_path FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
+            $stmt->execute([$user_id, $date]);
+            $row = $stmt->fetch();
+            if ($row) {
+                $pdo->prepare("DELETE FROM board_photos WHERE id = ? AND user_id = ?")->execute([$row['id'], $user_id]);
+                $filePath = __DIR__ . '/' . $row['image_path'];
+                if (is_file($filePath)) {
+                    @unlink($filePath);
+                }
             }
             json_response(['success' => true]);
         }
@@ -901,6 +935,7 @@ include __DIR__ . '/includes/header.php';
                 <div style="display:flex; gap:8px;">
                     <button class="btn" data-modal="modalPhoto">Cadastrar</button>
                     <button class="btn" data-modal="modalPhotoGallery">Ver fotos</button>
+                    <button class="btn" id="deletePhoto">Apagar</button>
                 </div>
             </div>
             <div class="photo-box" id="photoBox">Sem foto hoje</div>
@@ -1320,7 +1355,7 @@ include __DIR__ . '/includes/header.php';
         const data = await api('get_daily_photo', {}, 'GET');
         const box = document.getElementById('photoBox');
         if (data && data.image_path) {
-            box.innerHTML = `<img src="${data.image_path}" alt="Foto do dia">`;
+            box.innerHTML = `<img src="${BASE_PATH}/${data.image_path}" alt="Foto do dia">`;
         } else {
             box.innerHTML = 'Sem foto hoje';
         }
@@ -1339,7 +1374,7 @@ include __DIR__ . '/includes/header.php';
             return;
         }
         const item = photoGallery[photoIndex];
-        frame.innerHTML = `<img src="${item.image_path}" alt="Foto do dia">`;
+        frame.innerHTML = `<img src="${BASE_PATH}/${item.image_path}" alt="Foto do dia">`;
         dateEl.textContent = formatShortDate(item.photo_date);
     };
 
@@ -1573,10 +1608,21 @@ include __DIR__ . '/includes/header.php';
         if (!photoFile.files[0]) {
             return;
         }
-        const photo = await readFileAsDataUrl(photoFile.files[0]);
-        await api('save_daily_photo', { date: photoDate.value, image_path: photo });
+        const formData = new FormData();
+        formData.append('photo', photoFile.files[0]);
+        formData.append('date', photoDate.value);
+        await fetch(`?api=save_daily_photo`, {
+            method: 'POST',
+            body: formData
+        }).then(r => r.json());
         closeModals();
         photoFile.value = '';
+        loadPhoto();
+    });
+
+    document.getElementById('deletePhoto')?.addEventListener('click', async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        await api('delete_daily_photo', { date: today });
         loadPhoto();
     });
 
