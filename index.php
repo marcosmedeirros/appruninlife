@@ -337,8 +337,8 @@ include __DIR__ . '/includes/header.php';
     :root {
         color-scheme: dark;
         --bg: #000000;
-        --surface: #0f172a;
-        --surface-2: #111827;
+        --surface: #000000;
+        --surface-2: #000000;
         --text: #e9eef5;
         --muted: #9aa4b2;
         --accent: #7c3aed;
@@ -370,7 +370,7 @@ include __DIR__ . '/includes/header.php';
         margin-bottom: 26px;
         padding: 22px 24px;
         border-radius: calc(var(--radius) + 4px);
-        background: linear-gradient(120deg, rgba(124, 58, 237, 0.2), rgba(34, 211, 238, 0.08));
+        background: #000000;
         border: var(--border);
         box-shadow: var(--shadow);
     }
@@ -408,17 +408,17 @@ include __DIR__ . '/includes/header.php';
     .week-pill {
         padding: 8px 14px;
         border-radius: 999px;
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         color: var(--text);
         font-size: 0.85rem;
     }
     .tag {
         padding: 6px 12px;
         border-radius: 999px;
-        background: rgba(148, 163, 184, 0.12);
+        background: rgba(255, 255, 255, 0.08);
         font-size: 0.8rem;
-        color: var(--muted);
+        color: #ffffff;
     }
     .section {
         margin-top: 26px;
@@ -446,8 +446,8 @@ include __DIR__ . '/includes/header.php';
     .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     .grid-3 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
     .card {
-        background: linear-gradient(155deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.95));
-        border: var(--border);
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: var(--radius);
         padding: 18px;
         box-shadow: var(--shadow);
@@ -467,8 +467,8 @@ include __DIR__ . '/includes/header.php';
     }
     .btn {
         background: transparent;
-        border: 1px solid rgba(124, 58, 237, 0.65);
-        color: #e9d5ff;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: #ffffff;
         padding: 8px 14px;
         border-radius: 12px;
         font-weight: 600;
@@ -476,16 +476,16 @@ include __DIR__ . '/includes/header.php';
         transition: all .2s ease;
         cursor: pointer;
     }
-    .btn:hover { background: rgba(124, 58, 237, 0.2); }
-    .btn-solid { background: linear-gradient(120deg, #7c3aed, #22d3ee); color: #0b0f14; border: none; }
+    .btn:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
+    .btn-solid { background: #ffffff; color: #000000; border: none; }
     .list {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
     .list-item {
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
         padding: 10px 12px;
         display: flex;
@@ -495,7 +495,7 @@ include __DIR__ . '/includes/header.php';
     }
     .list-item small { color: var(--muted); }
     .muted { color: var(--muted); }
-    .divider { height: 1px; background: rgba(148, 163, 184, 0.2); margin: 12px 0; }
+    .divider { height: 1px; background: rgba(255, 255, 255, 0.12); margin: 12px 0; }
     .modal {
         position: fixed;
         inset: 0;
@@ -510,8 +510,8 @@ include __DIR__ . '/includes/header.php';
     .modal.active { display: flex; }
     .modal-content {
         width: min(520px, 95vw);
-        background: #0f172a;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: var(--radius);
         padding: 20px;
         box-shadow: var(--shadow);
@@ -526,9 +526,9 @@ include __DIR__ . '/includes/header.php';
     .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.2rem; }
     .input {
         width: 100%;
-        background: rgba(15, 23, 42, 0.9);
-        color: var(--text);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #000000;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         padding: 10px 12px;
         border-radius: 12px;
         margin-bottom: 10px;
@@ -536,7 +536,7 @@ include __DIR__ . '/includes/header.php';
     .habit-grid { overflow: visible; padding-bottom: 6px; }
     .habit-table { width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed; }
     .habit-table th, .habit-table td {
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         padding: 8px;
         text-align: center;
         font-size: 0.75rem;
@@ -550,7 +550,7 @@ include __DIR__ . '/includes/header.php';
         width: 26px;
         height: 26px;
         border-radius: 8px;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -561,13 +561,13 @@ include __DIR__ . '/includes/header.php';
         width: 100%;
         height: 210px;
         border-radius: 16px;
-        background: rgba(15, 23, 42, 0.8);
+        background: #000000;
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--muted);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.12);
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
     .card-compact { min-height: 120px; }
@@ -581,7 +581,7 @@ include __DIR__ . '/includes/header.php';
         width: 20px;
         height: 20px;
         border-radius: 6px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.35);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -605,11 +605,11 @@ include __DIR__ . '/includes/header.php';
         width: 30px;
         height: 30px;
         border-radius: 8px;
-        background: rgba(148, 163, 184, 0.1);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
     }
-    .icon-btn.subtle:hover { color: var(--text); border-color: rgba(34, 211, 238, 0.4); }
+    .icon-btn.subtle:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.4); }
     .calendar {
         display: flex;
         flex-direction: column;
@@ -630,8 +630,8 @@ include __DIR__ . '/includes/header.php';
         gap: 6px;
     }
     .calendar-cell {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: #000000;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 12px;
         min-height: 48px;
         display: flex;
@@ -640,13 +640,13 @@ include __DIR__ . '/includes/header.php';
         justify-content: center;
         gap: 2px;
         cursor: pointer;
-        color: var(--text);
+        color: #ffffff;
         transition: all 0.2s ease;
     }
-    .calendar-cell:hover { transform: translateY(-2px); border-color: rgba(34, 211, 238, 0.4); }
+    .calendar-cell:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }
     .calendar-cell.is-empty {
         background: transparent;
-        border: 1px dashed rgba(148, 163, 184, 0.2);
+        border: 1px dashed rgba(255, 255, 255, 0.12);
         cursor: default;
         box-shadow: none;
     }
@@ -656,7 +656,7 @@ include __DIR__ . '/includes/header.php';
         color: #dcfce7;
     }
     .calendar-cell.is-today {
-        outline: 2px solid rgba(34, 211, 238, 0.4);
+        outline: 2px solid rgba(255, 255, 255, 0.35);
     }
     .calendar-cell .day { font-size: 0.9rem; font-weight: 600; }
     .calendar-cell .mark { font-size: 0.85rem; color: var(--success); }
@@ -669,9 +669,9 @@ include __DIR__ . '/includes/header.php';
         width: 32px;
         height: 32px;
         border-radius: 10px;
-        background: rgba(148, 163, 184, 0.12);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        color: var(--text);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #ffffff;
         cursor: pointer;
     }
     .month-label { font-weight: 600; font-size: 0.9rem; text-transform: capitalize; }
