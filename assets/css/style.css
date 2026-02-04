@@ -5,15 +5,15 @@ body {
     min-height: 100vh;
 }
 
-/* Desktop: sidebar visible with body padding */
+/* Sidebar removida: sem padding lateral */
 @media (min-width: 768px) {
-    body { padding-left: 18rem; }
+    body { padding-left: 0; }
 }
 
 /* Mobile: no body padding, sidebar slides from left */
 @media (max-width: 767px) {
     body { padding-left: 0 !important; }
-    main { padding-top: 60px !important; } /* Space for hamburger button */
+    main { padding-top: 0 !important; }
 }
 
 .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
