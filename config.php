@@ -13,10 +13,14 @@ $db_pass = 'Zonete@13';
 
 try {
     // Conectar sem o banco para criá-lo se não existir
-    $pdo_temp = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user, $db_pass);
-    $pdo_temp->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo_temp->exec("CREATE DATABASE IF NOT EXISTS $db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    unset($pdo_temp);
+    try {
+        $pdo_temp = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user, $db_pass);
+        $pdo_temp->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo_temp->exec("CREATE DATABASE IF NOT EXISTS $db_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        unset($pdo_temp);
+    } catch (Exception $e) {
+        // Em alguns hosts a criação do banco não é permitida. Segue para conexão normal.
+    }
     
     // Agora conectar ao banco
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);

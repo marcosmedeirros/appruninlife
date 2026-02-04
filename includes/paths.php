@@ -5,8 +5,8 @@
 if (!defined('BASE_PATH')) {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-    // Produção: qualquer host que termine com marcosmedeiros.io (com ou sem www)
-    $isProd = (bool)preg_match('/(^|\.)marcosmedeiros\.io$/', $host);
+    // Produção: qualquer host que termine com marcosmedeiros.io ou marcosmedeiros.page
+    $isProd = (bool)preg_match('/(^|\.)marcosmedeiros\.(io|page)$/', $host);
 
     if ($isProd) {
         define('BASE_PATH', '');
