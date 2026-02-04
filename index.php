@@ -377,13 +377,13 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'toggle_goal') {
-            $stmt = $pdo->prepare("UPDATE goals SET status = 1 - status, completed_at = CASE WHEN status = 0 THEN NOW() ELSE NULL END WHERE id = ? AND user_id = ?");
+            $stmt = $pdo->prepare("UPDATE goals SET status = 1 - status WHERE id = ? AND user_id = ?");
             $stmt->execute([$data['id'], $user_id]);
             json_response(['success' => true]);
         }
 
         if ($action === 'get_goals_done') {
-            $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 ORDER BY completed_at DESC");
+            $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 ORDER BY id DESC");
             $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
