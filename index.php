@@ -341,7 +341,7 @@ include __DIR__ . '/includes/header.php';
         --surface-2: #000000;
         --text: #e9eef5;
         --muted: #9aa4b2;
-        --accent: #7c3aed;
+        --accent: #ff2d2d;
         --accent-2: #22d3ee;
         --success: #22c55e;
         --danger: #ef4444;
@@ -464,6 +464,7 @@ include __DIR__ . '/includes/header.php';
         font-size: 1.05rem;
         margin: 0;
         font-weight: 600;
+        color: var(--accent);
     }
     .btn {
         background: transparent;
@@ -571,7 +572,7 @@ include __DIR__ . '/includes/header.php';
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
     .card-compact { min-height: 120px; }
-    .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; }
+    .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; color: var(--accent); }
     .input-sm { padding: 8px 10px; font-size: 0.85rem; }
     .activity-item { align-items: center; }
     .activity-done .activity-title { text-decoration: line-through; color: var(--muted); }
