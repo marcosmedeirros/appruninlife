@@ -1,5 +1,5 @@
 body { 
-    background: #0b0f14;
+    background: #000000;
     color: #e9eef5; 
     font-family: 'Montserrat', sans-serif; 
     min-height: 100vh;
@@ -128,7 +128,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-track { background: #000000; }
 ::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
 
 /* ===== PWA & MOBILE RESPONSIVENESS ===== */

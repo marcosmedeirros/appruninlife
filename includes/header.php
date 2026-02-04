@@ -21,7 +21,7 @@
     <script>const BASE_PATH = '<?php echo BASE_PATH; ?>';</script>
     <style>
         html, body {
-            background: #0b0f14;
+            background: #000000;
             color: #e9eef5;
             min-height: 100vh;
         }

@@ -50,6 +50,12 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'delete_activity') {
+            $stmt = $pdo->prepare("DELETE FROM activities WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['id'], $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_habits') {
             $month = $_GET['month'] ?? date('Y-m');
             $monthStart = $month . '-01';
@@ -330,7 +336,7 @@ include __DIR__ . '/includes/header.php';
 <style>
     :root {
         color-scheme: dark;
-        --bg: #0b0f14;
+        --bg: #000000;
         --surface: #0f172a;
         --surface-2: #111827;
         --text: #e9eef5;
@@ -345,7 +351,7 @@ include __DIR__ . '/includes/header.php';
     }
     * { box-sizing: border-box; }
     body {
-        background: radial-gradient(circle at top, rgba(124, 58, 237, 0.18), transparent 45%), var(--bg);
+        background: radial-gradient(circle at top, rgba(124, 58, 237, 0.12), transparent 45%), var(--bg);
         color: var(--text);
         font-family: 'Montserrat', sans-serif;
         margin: 0;
@@ -527,8 +533,8 @@ include __DIR__ . '/includes/header.php';
         border-radius: 12px;
         margin-bottom: 10px;
     }
-    .habit-grid { overflow-x: auto; padding-bottom: 6px; }
-    .habit-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    .habit-grid { overflow: visible; padding-bottom: 6px; }
+    .habit-table { width: 100%; border-collapse: collapse; min-width: 0; table-layout: fixed; }
     .habit-table th, .habit-table td {
         border-bottom: 1px solid rgba(148, 163, 184, 0.2);
         padding: 8px;
@@ -566,7 +572,6 @@ include __DIR__ . '/includes/header.php';
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
     .card-compact { min-height: 120px; }
     .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; }
-    .field-row { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
     .input-sm { padding: 8px 10px; font-size: 0.85rem; }
     .activity-item { align-items: center; }
     .activity-done .activity-title { text-decoration: line-through; color: var(--muted); }
@@ -755,12 +760,9 @@ include __DIR__ . '/includes/header.php';
         <div class="card card-compact">
             <div class="card-header">
                 <h3>Total no banco</h3>
+                <button class="btn" data-modal="modalFinanceBase">Definir base</button>
             </div>
             <div class="metric">R$ <span id="financeTotal">0</span></div>
-            <div class="field-row">
-                <label class="muted" for="financeBase">Meu dinheiro base</label>
-                <input class="input input-sm" id="financeBase" type="number" step="0.01" placeholder="0,00">
-            </div>
         </div>
     </div>
 
@@ -943,6 +945,17 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<div class="modal" id="modalFinanceBase">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Definir dinheiro base</h4>
+            <button class="modal-close" data-close>×</button>
+        </div>
+        <input class="input" id="financeBaseModal" type="number" step="0.01" placeholder="0,00">
+        <button class="btn btn-solid" id="saveFinanceBase">Salvar</button>
+    </div>
+</div>
+
 <div class="modal" id="modalRoutine">
     <div class="modal-content">
         <div class="modal-header">
@@ -1010,6 +1023,13 @@ include __DIR__ . '/includes/header.php';
                 if (eventTitle) eventTitle.value = '';
                 if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
             }
+            if (e.target.dataset.modal === 'modalFinanceBase') {
+                const baseModal = document.getElementById('financeBaseModal');
+                if (baseModal) {
+                    const baseValue = parseFloat(localStorage.getItem('financeBase') || '0') || 0;
+                    baseModal.value = baseValue.toFixed(2);
+                }
+            }
             openModal(e.target.dataset.modal);
         }
         if (e.target.matches('[data-close]')) {
@@ -1076,10 +1096,15 @@ include __DIR__ . '/includes/header.php';
                     <strong class="activity-title">${item.title}</strong><br>
                     <small class="activity-date">${formatDate(item.day_date)}</small>
                 </div>
-                <label class="activity-check">
-                    <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${item.status == 1 ? 'checked' : ''}>
-                    <span></span>
-                </label>
+                <div class="list-actions">
+                    <label class="activity-check">
+                        <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${item.status == 1 ? 'checked' : ''}>
+                        <span></span>
+                    </label>
+                    <button class="icon-btn subtle" data-action="delete-activity" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -1208,10 +1233,10 @@ include __DIR__ . '/includes/header.php';
         const data = await api('get_finance_week', {}, 'GET');
         document.getElementById('financeIncome').textContent = data.income.toFixed(2);
         document.getElementById('financeExpense').textContent = data.expense.toFixed(2);
-        const baseInput = document.getElementById('financeBase');
         const baseValue = parseFloat(localStorage.getItem('financeBase') || '0') || 0;
-        if (baseInput && document.activeElement !== baseInput) {
-            baseInput.value = baseValue.toFixed(2);
+        const baseModal = document.getElementById('financeBaseModal');
+        if (baseModal && document.activeElement !== baseModal) {
+            baseModal.value = baseValue.toFixed(2);
         }
         const total = baseValue + data.income - data.expense;
         document.getElementById('financeTotal').textContent = total.toFixed(2);
@@ -1347,6 +1372,11 @@ include __DIR__ . '/includes/header.php';
             await api('delete_routine_item', { id: e.target.dataset.id });
             loadRoutine();
         }
+        if (e.target.closest('[data-action="delete-activity"]')) {
+            const btn = e.target.closest('[data-action="delete-activity"]');
+            await api('delete_activity', { id: btn.dataset.id });
+            loadActivities();
+        }
         if (e.target.matches('[data-action="toggle-goal"]')) {
             await api('toggle_goal', { id: e.target.dataset.id });
             loadGoals();
@@ -1436,17 +1466,16 @@ include __DIR__ . '/includes/header.php';
         loadFinance();
     });
 
-    const financeBaseInput = document.getElementById('financeBase');
-    if (financeBaseInput) {
-        financeBaseInput.addEventListener('input', () => {
-            const value = parseFloat(financeBaseInput.value || '0') || 0;
-            localStorage.setItem('financeBase', value.toString());
-            const income = parseFloat(document.getElementById('financeIncome').textContent || '0') || 0;
-            const expense = parseFloat(document.getElementById('financeExpense').textContent || '0') || 0;
-            const total = value + income - expense;
-            document.getElementById('financeTotal').textContent = total.toFixed(2);
-        });
-    }
+    document.getElementById('saveFinanceBase').addEventListener('click', () => {
+        const input = document.getElementById('financeBaseModal');
+        const value = parseFloat(input.value || '0') || 0;
+        localStorage.setItem('financeBase', value.toString());
+        const income = parseFloat(document.getElementById('financeIncome').textContent || '0') || 0;
+        const expense = parseFloat(document.getElementById('financeExpense').textContent || '0') || 0;
+        const total = value + income - expense;
+        document.getElementById('financeTotal').textContent = total.toFixed(2);
+        closeModals();
+    });
 
     document.getElementById('saveRoutine').addEventListener('click', async () => {
         await api('save_routine_item', { time: routineTime.value, activity: routineActivity.value });
