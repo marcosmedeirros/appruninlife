@@ -150,21 +150,30 @@ if (isset($_GET['api'])) {
 
         if ($action === 'get_daily_photo') {
             $date = $_GET['date'] ?? date('Y-m-d');
-            $stmt = $pdo->prepare("SELECT * FROM daily_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
+            $stmt = $pdo->prepare("SELECT id, user_id, photo_date, image_path, created_at FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
             $stmt->execute([$user_id, $date]);
             json_response($stmt->fetch() ?: null);
         }
 
         if ($action === 'get_photos') {
-            $stmt = $pdo->prepare("SELECT photo_date, photo_url FROM daily_photos WHERE user_id = ? ORDER BY photo_date DESC");
+            $stmt = $pdo->prepare("SELECT photo_date, image_path FROM board_photos WHERE user_id = ? ORDER BY photo_date DESC");
             $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
 
         if ($action === 'save_daily_photo') {
             $date = $data['date'] ?? date('Y-m-d');
-            $stmt = $pdo->prepare("INSERT INTO daily_photos (user_id, photo_date, photo_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE photo_url = VALUES(photo_url)");
-            $stmt->execute([$user_id, $date, $data['photo_url'] ?? '']);
+            $imagePath = $data['image_path'] ?? '';
+            $check = $pdo->prepare("SELECT id FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
+            $check->execute([$user_id, $date]);
+            $existingId = $check->fetchColumn();
+            if ($existingId) {
+                $stmt = $pdo->prepare("UPDATE board_photos SET image_path = ? WHERE id = ? AND user_id = ?");
+                $stmt->execute([$imagePath, $existingId, $user_id]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO board_photos (user_id, photo_date, image_path, created_at) VALUES (?, ?, ?, NOW())");
+                $stmt->execute([$user_id, $date, $imagePath]);
+            }
             json_response(['success' => true]);
         }
 
@@ -1310,8 +1319,8 @@ include __DIR__ . '/includes/header.php';
     const loadPhoto = async () => {
         const data = await api('get_daily_photo', {}, 'GET');
         const box = document.getElementById('photoBox');
-        if (data && data.photo_url) {
-            box.innerHTML = `<img src="${data.photo_url}" alt="Foto do dia">`;
+        if (data && data.image_path) {
+            box.innerHTML = `<img src="${data.image_path}" alt="Foto do dia">`;
         } else {
             box.innerHTML = 'Sem foto hoje';
         }
@@ -1330,7 +1339,7 @@ include __DIR__ . '/includes/header.php';
             return;
         }
         const item = photoGallery[photoIndex];
-        frame.innerHTML = `<img src="${item.photo_url}" alt="Foto do dia">`;
+        frame.innerHTML = `<img src="${item.image_path}" alt="Foto do dia">`;
         dateEl.textContent = formatShortDate(item.photo_date);
     };
 
@@ -1565,7 +1574,7 @@ include __DIR__ . '/includes/header.php';
             return;
         }
         const photo = await readFileAsDataUrl(photoFile.files[0]);
-        await api('save_daily_photo', { date: photoDate.value, photo_url: photo });
+        await api('save_daily_photo', { date: photoDate.value, image_path: photo });
         closeModals();
         photoFile.value = '';
         loadPhoto();
