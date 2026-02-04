@@ -382,6 +382,12 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'delete_goal') {
+            $stmt = $pdo->prepare("DELETE FROM goals WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_goals_done') {
             $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 ORDER BY id DESC");
             $stmt->execute([$user_id]);
@@ -516,15 +522,15 @@ include __DIR__ . '/includes/header.php';
         display: grid;
         gap: 18px;
     }
-    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .card {
         background: #000000;
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: var(--radius);
         padding: 18px;
         box-shadow: var(--shadow);
-        min-height: 170px;
+        min-height: 0;
     }
     .card-header {
         display: flex;
@@ -717,6 +723,31 @@ include __DIR__ . '/includes/header.php';
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
+    }
+    @media (max-width: 1024px) {
+        .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+        .app { padding: 20px 14px 60px; }
+        .app-header { padding: 18px; }
+        .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .goals-grid { grid-template-columns: 1fr; }
+        .week-pill { width: 100%; text-align: center; }
+        .app-actions { width: 100%; align-items: stretch; }
+        .app-actions-row { width: 100%; justify-content: flex-start; }
+        .card-header { flex-wrap: wrap; }
+        .photo-carousel-frame { height: 240px; }
+        .habit-table th, .habit-table td { padding: 6px; font-size: 0.7rem; }
+        .habit-table th:first-child, .habit-table td:first-child { width: 140px; min-width: 140px; }
+        #routineGrid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .app-title h1 { font-size: 1.5rem; }
+        .chip { font-size: 0.65rem; }
+        .btn { width: 100%; justify-content: center; }
+        .card-header > div, .card-header > button, .card-header > span { width: 100%; }
+        .list-item { flex-direction: column; align-items: flex-start; }
+        .list-actions { width: 100%; justify-content: flex-end; }
     }
     .icon-btn.subtle {
         width: 30px;
@@ -915,6 +946,7 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </div>
             <p class="muted" id="goalsWeekDone">Sem metas concluídas ainda.</p>
+            <div class="list" id="goalsDoneList"></div>
         </div>
 
         <div class="card">
@@ -1539,7 +1571,12 @@ include __DIR__ . '/includes/header.php';
             row.className = 'list-item';
             row.innerHTML = `
                 <div>${item.title}</div>
-                <button class="btn" data-id="${item.id}" data-action="toggle-goal">${item.status == 1 ? 'Feita' : 'Concluir'}</button>
+                <div class="list-actions">
+                    <button class="btn" data-id="${item.id}" data-action="toggle-goal">${item.status == 1 ? 'Feita' : 'Concluir'}</button>
+                    <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-goal" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -1548,11 +1585,19 @@ include __DIR__ . '/includes/header.php';
     const loadGoalsDone = async () => {
         const list = await api('get_goals_done', {}, 'GET');
         const el = document.getElementById('goalsWeekDone');
+        const listEl = document.getElementById('goalsDoneList');
+        listEl.innerHTML = '';
         if (!list.length) {
             el.textContent = 'Sem metas concluídas ainda.';
             return;
         }
         el.textContent = `Metas concluídas: ${list.length}`;
+        list.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'list-item';
+            row.innerHTML = `<div>${item.title}</div>`;
+            listEl.appendChild(row);
+        });
     };
 
     document.addEventListener('click', async (e) => {
@@ -1602,6 +1647,12 @@ include __DIR__ . '/includes/header.php';
             const btn = e.target.closest('[data-action="delete-run"]');
             await api('delete_run', { id: btn.dataset.id });
             loadRuns();
+        }
+        if (e.target.closest('[data-action="delete-goal"]')) {
+            const btn = e.target.closest('[data-action="delete-goal"]');
+            await api('delete_goal', { id: btn.dataset.id });
+            loadGoals();
+            loadGoalsDone();
         }
         if (e.target.closest('[data-action="toggle-goal"]')) {
             const btn = e.target.closest('[data-action="toggle-goal"]');
