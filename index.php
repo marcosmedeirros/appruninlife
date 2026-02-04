@@ -282,38 +282,50 @@ include __DIR__ . '/includes/header.php';
 <style>
     :root {
         color-scheme: dark;
-        --bg: #000000;
-        --card: #0f0f0f;
-        --card-2: #151515;
+        --bg: #070707;
+        --panel: #0e0e0f;
+        --panel-2: #151515;
         --text: #ffffff;
-        --muted: #c9c9c9;
+        --muted: #b9b9b9;
         --red: #ff2d2d;
         --red-soft: rgba(255, 45, 45, 0.18);
-        --shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        --shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
         --border: 1px solid rgba(255, 255, 255, 0.08);
+        --radius: 18px;
     }
+    * { box-sizing: border-box; }
     body {
-        background: var(--bg);
+        background: radial-gradient(circle at top, rgba(255,45,45,0.08), transparent 45%), var(--bg);
         color: var(--text);
         font-family: 'Outfit', sans-serif;
+        margin: 0;
     }
-    .life-container {
-        max-width: 1400px;
+    .app {
+        max-width: 1300px;
         margin: 0 auto;
-        padding: 32px 20px 60px;
+        padding: 28px 20px 70px;
     }
-    .life-title {
+    .app-header {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         gap: 16px;
         margin-bottom: 24px;
+        padding: 18px 20px;
+        border-radius: var(--radius);
+        background: linear-gradient(120deg, rgba(255,45,45,0.15), rgba(255,255,255,0.02));
+        border: var(--border);
+        box-shadow: var(--shadow);
     }
-    .life-title h1 {
-        font-size: 2.2rem;
-        font-weight: 700;
-        letter-spacing: 1px;
+    .app-title h1 {
+        margin: 0;
+        font-size: 2.1rem;
+        letter-spacing: 0.5px;
+    }
+    .app-title p {
+        margin: 6px 0 0;
+        color: var(--muted);
     }
     .chip {
         padding: 6px 12px;
@@ -321,26 +333,54 @@ include __DIR__ . '/includes/header.php';
         background: var(--red-soft);
         color: var(--red);
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.15em;
+    }
+    .app-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+    .tag {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+    .section {
+        margin-top: 22px;
+    }
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .section-header h2 {
+        font-size: 1.2rem;
+        margin: 0;
+        font-weight: 600;
+    }
+    .section-header span {
+        color: var(--muted);
+        font-size: 0.85rem;
     }
     .grid {
         display: grid;
         gap: 16px;
     }
-    .grid-2 {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-    .grid-3 {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     .card {
-        background: linear-gradient(140deg, var(--card), var(--card-2));
+        background: linear-gradient(155deg, var(--panel), var(--panel-2));
         border: var(--border);
-        border-radius: 18px;
+        border-radius: var(--radius);
         padding: 18px;
         box-shadow: var(--shadow);
+        min-height: 160px;
     }
     .card-header {
         display: flex;
@@ -350,27 +390,22 @@ include __DIR__ . '/includes/header.php';
         margin-bottom: 12px;
     }
     .card-header h3 {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
+        margin: 0;
         font-weight: 600;
     }
     .btn {
         background: transparent;
         border: 1px solid var(--red);
         color: var(--red);
-        padding: 6px 12px;
+        padding: 8px 14px;
         border-radius: 10px;
         font-weight: 600;
         font-size: 0.85rem;
+        transition: all .2s ease;
     }
-    .btn:hover {
-        background: var(--red);
-        color: #000;
-    }
-    .btn-solid {
-        background: var(--red);
-        color: #000;
-        border: none;
-    }
+    .btn:hover { background: var(--red); color: #000; }
+    .btn-solid { background: var(--red); color: #000; border: none; }
     .list {
         display: flex;
         flex-direction: column;
@@ -386,35 +421,26 @@ include __DIR__ . '/includes/header.php';
         align-items: center;
         gap: 12px;
     }
-    .list-item small {
-        color: var(--muted);
-    }
-    .tag {
-        padding: 4px 10px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.08);
-        font-size: 0.75rem;
-        color: var(--muted);
-    }
-    .muted {
-        color: var(--muted);
-    }
+    .list-item small { color: var(--muted); }
+    .muted { color: var(--muted); }
+    .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0; }
     .modal {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.75);
         display: none;
         align-items: center;
         justify-content: center;
         z-index: 50;
         padding: 20px;
+        backdrop-filter: blur(6px);
     }
     .modal.active { display: flex; }
     .modal-content {
         width: min(520px, 95vw);
         background: #0c0c0c;
         border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 18px;
+        border-radius: var(--radius);
         padding: 20px;
         box-shadow: var(--shadow);
     }
@@ -424,7 +450,7 @@ include __DIR__ . '/includes/header.php';
         align-items: center;
         margin-bottom: 12px;
     }
-    .modal-header h4 { font-weight: 600; }
+    .modal-header h4 { font-weight: 600; margin: 0; }
     .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.2rem; }
     .input {
         width: 100%;
@@ -435,15 +461,8 @@ include __DIR__ . '/includes/header.php';
         border-radius: 10px;
         margin-bottom: 10px;
     }
-    .habit-grid {
-        overflow-x: auto;
-        padding-bottom: 6px;
-    }
-    .habit-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 700px;
-    }
+    .habit-grid { overflow-x: auto; padding-bottom: 6px; }
+    .habit-table { width: 100%; border-collapse: collapse; min-width: 700px; }
     .habit-table th, .habit-table td {
         border-bottom: 1px solid rgba(255,255,255,0.08);
         padding: 8px;
@@ -465,14 +484,10 @@ include __DIR__ . '/includes/header.php';
         justify-content: center;
         cursor: pointer;
     }
-    .check.active {
-        background: var(--red);
-        color: #000;
-        border-color: var(--red);
-    }
+    .check.active { background: var(--red); color: #000; border-color: var(--red); }
     .photo-box {
         width: 100%;
-        height: 200px;
+        height: 210px;
         border-radius: 16px;
         background: #111;
         overflow: hidden;
@@ -483,23 +498,32 @@ include __DIR__ . '/includes/header.php';
         border: 1px solid rgba(255,255,255,0.1);
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-    .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0; }
     @media (max-width: 768px) {
-        .life-title h1 { font-size: 1.6rem; }
+        .app-header { align-items: flex-start; }
+        .app-title h1 { font-size: 1.6rem; }
+        .app-actions { align-items: flex-start; }
     }
 </style>
 
-<main class="life-container">
-    <div class="life-title">
-        <div>
+<main class="app">
+    <header class="app-header">
+        <div class="app-title">
             <span class="chip">Caderno Lifestyle</span>
             <h1>Controle semanal da vida</h1>
-            <p class="muted">Tudo em uma página, foco total no que importa.</p>
+            <p>Um painel completo para hábitos, treinos, finanças e rotinas.</p>
         </div>
-        <div class="tag" id="weekRange">Semana atual</div>
-    </div>
+        <div class="app-actions">
+            <div class="tag" id="weekRange">Semana atual</div>
+            <span class="muted">Atualizado automaticamente</span>
+        </div>
+    </header>
 
-    <section class="grid grid-3">
+    <section class="section">
+        <div class="section-header">
+            <h2>Semana em foco</h2>
+            <span>Resumo dos próximos passos</span>
+        </div>
+        <div class="grid grid-3">
         <div class="card">
             <div class="card-header">
                 <h3>Atividades da semana</h3>
@@ -528,9 +552,15 @@ include __DIR__ . '/includes/header.php';
                 <div id="financeList" class="list"></div>
             </div>
         </div>
+        </div>
     </section>
 
-    <section class="grid grid-2" style="margin-top: 16px;">
+    <section class="section">
+        <div class="section-header">
+            <h2>Performance diária</h2>
+            <span>Hábitos e treino</span>
+        </div>
+        <div class="grid grid-2">
         <div class="card">
             <div class="card-header">
                 <h3>Habit Tracker</h3>
@@ -548,9 +578,15 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="list" id="workoutList"></div>
         </div>
+        </div>
     </section>
 
-    <section class="grid grid-3" style="margin-top: 16px;">
+    <section class="section">
+        <div class="section-header">
+            <h2>Registros essenciais</h2>
+            <span>Corridas, fotos e agenda</span>
+        </div>
+        <div class="grid grid-3">
         <div class="card">
             <div class="card-header">
                 <h3>Cadastro de corrida</h3>
@@ -573,9 +609,15 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="list" id="eventsList"></div>
         </div>
+        </div>
     </section>
 
-    <section class="grid grid-3" style="margin-top: 16px;">
+    <section class="section">
+        <div class="section-header">
+            <h2>Planejamento e regras</h2>
+            <span>Rotina, regras e metas</span>
+        </div>
+        <div class="grid grid-3">
         <div class="card">
             <div class="card-header">
                 <h3>Rotina do dia</h3>
@@ -601,6 +643,7 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </div>
             <p class="muted" id="goalsWeekDone">Sem metas concluídas nesta semana.</p>
+        </div>
         </div>
     </section>
 </main>
