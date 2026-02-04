@@ -573,6 +573,7 @@ include __DIR__ . '/includes/header.php';
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
     .card-compact { min-height: 120px; }
     .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; color: var(--accent); }
+    .finance-metric { color: #ffffff; }
     .input-sm { padding: 8px 10px; font-size: 0.85rem; }
     .activity-item { align-items: center; }
     .activity-done .activity-title { text-decoration: line-through; color: var(--muted); }
@@ -748,14 +749,14 @@ include __DIR__ . '/includes/header.php';
                 <h3>Entrada</h3>
                 <button class="btn" data-modal="modalFinance">Lançar</button>
             </div>
-            <div class="metric">R$ <span id="financeIncome">0</span></div>
+            <div class="metric finance-metric">R$ <span id="financeIncome">0</span></div>
         </div>
 
         <div class="card card-compact">
             <div class="card-header">
                 <h3>Saída</h3>
             </div>
-            <div class="metric">R$ <span id="financeExpense">0</span></div>
+            <div class="metric finance-metric">R$ <span id="financeExpense">0</span></div>
         </div>
 
         <div class="card card-compact">
@@ -763,7 +764,7 @@ include __DIR__ . '/includes/header.php';
                 <h3>Total no banco</h3>
                 <button class="btn" data-modal="modalFinanceBase">Definir base</button>
             </div>
-            <div class="metric">R$ <span id="financeTotal">0</span></div>
+            <div class="metric finance-metric">R$ <span id="financeTotal">0</span></div>
         </div>
     </div>
 
