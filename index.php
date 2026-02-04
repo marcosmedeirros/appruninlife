@@ -85,9 +85,34 @@ if (isset($_GET['api'])) {
             json_response($stmt->fetchAll());
         }
 
+        if ($action === 'get_workouts_month') {
+            $month = $_GET['month'] ?? date('Y-m');
+            $monthStart = $month . '-01';
+            $monthEnd = date('Y-m-t', strtotime($monthStart));
+            $stmt = $pdo->prepare("SELECT * FROM workouts WHERE user_id = ? AND workout_date BETWEEN ? AND ? ORDER BY workout_date ASC, id DESC");
+            $stmt->execute([$user_id, $monthStart, $monthEnd]);
+            json_response($stmt->fetchAll());
+        }
+
         if ($action === 'save_workout') {
             $stmt = $pdo->prepare("INSERT INTO workouts (user_id, name, workout_date, done) VALUES (?, ?, ?, 0)");
             $stmt->execute([$user_id, $data['name'] ?? '', $data['date'] ?? date('Y-m-d')]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'toggle_workout_day') {
+            $date = $data['date'] ?? date('Y-m-d');
+            $name = $data['name'] ?? 'Treino';
+            $check = $pdo->prepare("SELECT id, done FROM workouts WHERE user_id = ? AND workout_date = ? ORDER BY id DESC LIMIT 1");
+            $check->execute([$user_id, $date]);
+            $row = $check->fetch();
+            if ($row) {
+                $stmt = $pdo->prepare("UPDATE workouts SET done = 1 - done WHERE id = ? AND user_id = ?");
+                $stmt->execute([$row['id'], $user_id]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO workouts (user_id, name, workout_date, done) VALUES (?, ?, ?, 1)");
+                $stmt->execute([$user_id, $name, $date]);
+            }
             json_response(['success' => true]);
         }
 
@@ -275,92 +300,109 @@ if (isset($_GET['api'])) {
     }
 }
 
-$page_title = 'Lifestyle - Caderno Semanal';
+$page_title = 'Planner - Rotina & Metas';
 include __DIR__ . '/includes/header.php';
 ?>
 
 <style>
     :root {
         color-scheme: dark;
-        --bg: #070707;
-        --panel: #0e0e0f;
-        --panel-2: #151515;
-        --text: #ffffff;
-        --muted: #b9b9b9;
-        --red: #ff2d2d;
-        --red-soft: rgba(255, 45, 45, 0.18);
-        --shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
-        --border: 1px solid rgba(255, 255, 255, 0.08);
-        --radius: 18px;
+        --bg: #0b0f14;
+        --surface: #0f172a;
+        --surface-2: #111827;
+        --text: #e9eef5;
+        --muted: #9aa4b2;
+        --accent: #7c3aed;
+        --accent-2: #22d3ee;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --shadow: 0 20px 45px rgba(4, 8, 20, 0.5);
+        --border: 1px solid rgba(148, 163, 184, 0.18);
+        --radius: 20px;
     }
     * { box-sizing: border-box; }
     body {
-        background: radial-gradient(circle at top, rgba(255,45,45,0.08), transparent 45%), var(--bg);
+        background: radial-gradient(circle at top, rgba(124, 58, 237, 0.18), transparent 45%), var(--bg);
         color: var(--text);
         font-family: 'Outfit', sans-serif;
         margin: 0;
     }
     .app {
-        max-width: 1300px;
+        max-width: 1320px;
         margin: 0 auto;
-        padding: 28px 20px 70px;
+        padding: 30px 22px 80px;
     }
     .app-header {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        gap: 16px;
-        margin-bottom: 24px;
-        padding: 18px 20px;
-        border-radius: var(--radius);
-        background: linear-gradient(120deg, rgba(255,45,45,0.15), rgba(255,255,255,0.02));
+        gap: 18px;
+        margin-bottom: 26px;
+        padding: 22px 24px;
+        border-radius: calc(var(--radius) + 4px);
+        background: linear-gradient(120deg, rgba(124, 58, 237, 0.2), rgba(34, 211, 238, 0.08));
         border: var(--border);
         box-shadow: var(--shadow);
     }
     .app-title h1 {
         margin: 0;
-        font-size: 2.1rem;
-        letter-spacing: 0.5px;
+        font-size: 2.2rem;
+        letter-spacing: 0.4px;
     }
     .app-title p {
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         color: var(--muted);
     }
     .chip {
         padding: 6px 12px;
         border-radius: 999px;
-        background: var(--red-soft);
-        color: var(--red);
+        background: rgba(124, 58, 237, 0.2);
+        color: #d8b4fe;
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         text-transform: uppercase;
-        letter-spacing: 0.15em;
+        letter-spacing: 0.18em;
     }
     .app-actions {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 8px;
+        gap: 10px;
+    }
+    .app-actions-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .week-pill {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--text);
+        font-size: 0.85rem;
     }
     .tag {
         padding: 6px 12px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(148, 163, 184, 0.12);
         font-size: 0.8rem;
         color: var(--muted);
     }
     .section {
-        margin-top: 22px;
+        margin-top: 26px;
     }
     .section-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
+        gap: 16px;
+        margin-bottom: 14px;
     }
     .section-header h2 {
-        font-size: 1.2rem;
+        font-size: 1.25rem;
         margin: 0;
         font-weight: 600;
     }
@@ -370,17 +412,17 @@ include __DIR__ . '/includes/header.php';
     }
     .grid {
         display: grid;
-        gap: 16px;
+        gap: 18px;
     }
-    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
     .card {
-        background: linear-gradient(155deg, var(--panel), var(--panel-2));
+        background: linear-gradient(155deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.95));
         border: var(--border);
         border-radius: var(--radius);
         padding: 18px;
         box-shadow: var(--shadow);
-        min-height: 160px;
+        min-height: 170px;
     }
     .card-header {
         display: flex;
@@ -396,24 +438,25 @@ include __DIR__ . '/includes/header.php';
     }
     .btn {
         background: transparent;
-        border: 1px solid var(--red);
-        color: var(--red);
+        border: 1px solid rgba(124, 58, 237, 0.65);
+        color: #e9d5ff;
         padding: 8px 14px;
-        border-radius: 10px;
+        border-radius: 12px;
         font-weight: 600;
         font-size: 0.85rem;
         transition: all .2s ease;
+        cursor: pointer;
     }
-    .btn:hover { background: var(--red); color: #000; }
-    .btn-solid { background: var(--red); color: #000; border: none; }
+    .btn:hover { background: rgba(124, 58, 237, 0.2); }
+    .btn-solid { background: linear-gradient(120deg, #7c3aed, #22d3ee); color: #0b0f14; border: none; }
     .list {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
     .list-item {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 12px;
         padding: 10px 12px;
         display: flex;
@@ -423,23 +466,23 @@ include __DIR__ . '/includes/header.php';
     }
     .list-item small { color: var(--muted); }
     .muted { color: var(--muted); }
-    .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0; }
+    .divider { height: 1px; background: rgba(148, 163, 184, 0.2); margin: 12px 0; }
     .modal {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.75);
+        background: rgba(7, 10, 18, 0.75);
         display: none;
         align-items: center;
         justify-content: center;
         z-index: 50;
         padding: 20px;
-        backdrop-filter: blur(6px);
+        backdrop-filter: blur(8px);
     }
     .modal.active { display: flex; }
     .modal-content {
         width: min(520px, 95vw);
-        background: #0c0c0c;
-        border: 1px solid rgba(255,255,255,0.1);
+        background: #0f172a;
+        border: 1px solid rgba(148, 163, 184, 0.2);
         border-radius: var(--radius);
         padding: 20px;
         box-shadow: var(--shadow);
@@ -454,17 +497,17 @@ include __DIR__ . '/includes/header.php';
     .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.2rem; }
     .input {
         width: 100%;
-        background: #111;
-        color: #fff;
-        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--text);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         padding: 10px 12px;
-        border-radius: 10px;
+        border-radius: 12px;
         margin-bottom: 10px;
     }
     .habit-grid { overflow-x: auto; padding-bottom: 6px; }
     .habit-table { width: 100%; border-collapse: collapse; min-width: 700px; }
     .habit-table th, .habit-table td {
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
         padding: 8px;
         text-align: center;
         font-size: 0.75rem;
@@ -472,56 +515,144 @@ include __DIR__ . '/includes/header.php';
     .habit-table th:first-child, .habit-table td:first-child {
         text-align: left;
         font-weight: 600;
-        color: #fff;
+        color: var(--text);
     }
     .check {
         width: 26px;
         height: 26px;
         border-radius: 8px;
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
     }
-    .check.active { background: var(--red); color: #000; border-color: var(--red); }
+    .check.active { background: rgba(34, 197, 94, 0.35); color: #dcfce7; border-color: rgba(34, 197, 94, 0.6); }
     .photo-box {
         width: 100%;
         height: 210px;
         border-radius: 16px;
-        background: #111;
+        background: rgba(15, 23, 42, 0.8);
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--muted);
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+    .calendar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .calendar-cell {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        min-height: 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        cursor: pointer;
+        color: var(--text);
+        transition: all 0.2s ease;
+    }
+    .calendar-cell:hover { transform: translateY(-2px); border-color: rgba(34, 211, 238, 0.4); }
+    .calendar-cell.is-empty {
+        background: transparent;
+        border: 1px dashed rgba(148, 163, 184, 0.2);
+        cursor: default;
+        box-shadow: none;
+    }
+    .calendar-cell.is-done {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: rgba(34, 197, 94, 0.5);
+        color: #dcfce7;
+    }
+    .calendar-cell.is-today {
+        outline: 2px solid rgba(34, 211, 238, 0.4);
+    }
+    .calendar-cell .day { font-size: 0.9rem; font-weight: 600; }
+    .calendar-cell .mark { font-size: 0.85rem; color: var(--success); }
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--text);
+        cursor: pointer;
+    }
+    .month-label { font-weight: 600; font-size: 0.9rem; text-transform: capitalize; }
+    .calendar-legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 8px;
+    }
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .dot-success { background: var(--success); }
+    .dot-muted { background: rgba(148, 163, 184, 0.4); }
     @media (max-width: 768px) {
         .app-header { align-items: flex-start; }
-        .app-title h1 { font-size: 1.6rem; }
+        .app-title h1 { font-size: 1.7rem; }
         .app-actions { align-items: flex-start; }
+        .app-actions-row { justify-content: flex-start; }
     }
 </style>
 
 <main class="app">
     <header class="app-header">
         <div class="app-title">
-            <span class="chip">Caderno Lifestyle</span>
-            <h1>Controle semanal da vida</h1>
-            <p>Um painel completo para hábitos, treinos, finanças e rotinas.</p>
+            <span class="chip">Life Planner</span>
+            <h1>Rotina semanal & metas</h1>
+            <p>Organize sua semana, acompanhe hábitos e marque treinos do mês.</p>
         </div>
         <div class="app-actions">
-            <div class="tag" id="weekRange">Semana atual</div>
-            <span class="muted">Atualizado automaticamente</span>
+            <div class="week-pill" id="weekRange">Semana atual</div>
+            <div class="app-actions-row">
+                <button class="btn btn-solid" data-modal="modalActivity">Nova atividade</button>
+                <button class="btn" data-modal="modalGoal">Nova meta</button>
+            </div>
         </div>
     </header>
 
     <section class="section">
         <div class="section-header">
-            <h2>Semana em foco</h2>
-            <span>Resumo dos próximos passos</span>
+            <div>
+                <h2>Panorama da semana</h2>
+                <span>Resumo rápido do que precisa de foco</span>
+            </div>
+            <span class="tag" id="messageDate">Hoje</span>
         </div>
         <div class="grid grid-3">
         <div class="card">
@@ -530,14 +661,6 @@ include __DIR__ . '/includes/header.php';
                 <button class="btn" data-modal="modalActivity">Adicionar</button>
             </div>
             <div class="list" id="activitiesList"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>Mensagem do dia</h3>
-                <span class="tag" id="messageDate">Hoje</span>
-            </div>
-            <p id="dailyMessage" class="muted"></p>
         </div>
 
         <div class="card">
@@ -552,70 +675,23 @@ include __DIR__ . '/includes/header.php';
                 <div id="financeList" class="list"></div>
             </div>
         </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="section-header">
-            <h2>Performance diária</h2>
-            <span>Hábitos e treino</span>
-        </div>
-        <div class="grid grid-2">
-        <div class="card">
-            <div class="card-header">
-                <h3>Habit Tracker</h3>
-                <button class="btn" data-modal="modalHabit">Adicionar</button>
-            </div>
-            <div class="habit-grid">
-                <table class="habit-table" id="habitTable"></table>
-            </div>
-        </div>
 
         <div class="card">
             <div class="card-header">
-                <h3>Check-in de treino</h3>
-                <button class="btn" data-modal="modalWorkout">Adicionar</button>
+                <h3>Mensagem do dia</h3>
             </div>
-            <div class="list" id="workoutList"></div>
+            <p id="dailyMessage" class="muted"></p>
         </div>
         </div>
     </section>
 
     <section class="section">
         <div class="section-header">
-            <h2>Registros essenciais</h2>
-            <span>Corridas, fotos e agenda</span>
-        </div>
-        <div class="grid grid-3">
-        <div class="card">
-            <div class="card-header">
-                <h3>Cadastro de corrida</h3>
-                <button class="btn" data-modal="modalRun">Cadastrar</button>
+            <div>
+                <h2>Rotina & metas</h2>
+                <span>Consistência diária e objetivos em andamento</span>
             </div>
-            <div class="list" id="runList"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>Foto do dia</h3>
-                <button class="btn" data-modal="modalPhoto">Cadastrar</button>
-            </div>
-            <div class="photo-box" id="photoBox">Sem foto hoje</div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>Eventos (Google Agenda)</h3>
-            </div>
-            <div class="list" id="eventsList"></div>
-        </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="section-header">
-            <h2>Planejamento e regras</h2>
-            <span>Rotina, regras e metas</span>
+            <span class="tag">Rotina diária</span>
         </div>
         <div class="grid grid-3">
         <div class="card">
@@ -643,6 +719,86 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </div>
             <p class="muted" id="goalsWeekDone">Sem metas concluídas nesta semana.</p>
+        </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <div>
+                <h2>Hábitos & treino</h2>
+                <span>Tracker diário e calendário mensal</span>
+            </div>
+            <span class="tag">Performance</span>
+        </div>
+        <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3>Habit Tracker</h3>
+                <button class="btn" data-modal="modalHabit">Adicionar</button>
+            </div>
+            <div class="habit-grid">
+                <table class="habit-table" id="habitTable"></table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Treino do mês</h3>
+                    <span class="muted">Marque o dia em que treinou</span>
+                </div>
+                <div class="calendar-nav">
+                    <button class="icon-btn" id="prevMonth" aria-label="Mês anterior">‹</button>
+                    <div class="month-label" id="workoutMonthLabel"></div>
+                    <button class="icon-btn" id="nextMonth" aria-label="Próximo mês">›</button>
+                </div>
+            </div>
+            <div class="calendar">
+                <div class="calendar-weekdays">
+                    <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
+                </div>
+                <div class="calendar-grid" id="workoutCalendar"></div>
+            </div>
+            <div class="calendar-legend">
+                <span><span class="dot dot-success"></span> Treinou</span>
+                <span><span class="dot dot-muted"></span> Sem treino</span>
+                <button class="btn" data-modal="modalWorkout">Adicionar treino</button>
+            </div>
+        </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <div>
+                <h2>Registros & agenda</h2>
+                <span>Corridas, fotos e compromissos</span>
+            </div>
+            <span class="tag">Histórico</span>
+        </div>
+        <div class="grid grid-3">
+        <div class="card">
+            <div class="card-header">
+                <h3>Cadastro de corrida</h3>
+                <button class="btn" data-modal="modalRun">Cadastrar</button>
+            </div>
+            <div class="list" id="runList"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Foto do dia</h3>
+                <button class="btn" data-modal="modalPhoto">Cadastrar</button>
+            </div>
+            <div class="photo-box" id="photoBox">Sem foto hoje</div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Eventos (Google Agenda)</h3>
+            </div>
+            <div class="list" id="eventsList"></div>
         </div>
         </div>
     </section>
@@ -852,26 +1008,64 @@ include __DIR__ . '/includes/header.php';
         table.innerHTML = header + body;
     };
 
-    const loadWorkouts = async () => {
-        const list = await api('get_workouts_week', {}, 'GET');
-        const container = document.getElementById('workoutList');
-        container.innerHTML = '';
-        if (!list.length) {
-            container.innerHTML = '<div class="muted">Nenhum treino registrado.</div>';
-            return;
-        }
-        list.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'list-item';
-            row.innerHTML = `
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <small>${formatDate(item.workout_date)}</small>
-                </div>
-                <button class="btn" data-id="${item.id}" data-action="toggle-workout">${item.done == 1 ? 'Feito' : 'Check'}</button>
-            `;
-            container.appendChild(row);
+    let workoutMonth = new Date();
+
+    const getMonthKey = (date) => date.toISOString().slice(0, 7);
+
+    const formatMonthLabel = (date) => {
+        const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    };
+
+    const renderWorkoutCalendar = (workouts, current) => {
+        const calendar = document.getElementById('workoutCalendar');
+        const label = document.getElementById('workoutMonthLabel');
+        if (!calendar || !label) return;
+
+        label.textContent = formatMonthLabel(current);
+
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startWeekday = (firstDay.getDay() + 6) % 7;
+        const totalCells = Math.ceil((startWeekday + lastDay.getDate()) / 7) * 7;
+
+        const workoutsMap = new Map();
+        workouts.forEach(item => {
+            workoutsMap.set(item.workout_date, item);
         });
+
+        const todayKey = new Date().toISOString().slice(0, 10);
+        const monthKey = getMonthKey(current);
+        calendar.innerHTML = '';
+
+        for (let i = 0; i < totalCells; i++) {
+            const dayNumber = i - startWeekday + 1;
+            if (dayNumber < 1 || dayNumber > lastDay.getDate()) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-cell is-empty';
+                calendar.appendChild(empty);
+                continue;
+            }
+
+            const dateStr = `${monthKey}-${String(dayNumber).padStart(2, '0')}`;
+            const workout = workoutsMap.get(dateStr);
+            const isDone = workout && parseInt(workout.done, 10) === 1;
+
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.className = 'calendar-cell' + (isDone ? ' is-done' : '') + (dateStr === todayKey ? ' is-today' : '');
+            cell.dataset.date = dateStr;
+            cell.innerHTML = `<span class="day">${dayNumber}</span><span class="mark">${isDone ? '✓' : ''}</span>`;
+            calendar.appendChild(cell);
+        }
+    };
+
+    const loadWorkoutsMonth = async () => {
+        const monthKey = getMonthKey(workoutMonth);
+        const list = await fetch(`?api=get_workouts_month&month=${monthKey}`).then(r => r.json());
+        renderWorkoutCalendar(list, workoutMonth);
     };
 
     const loadRuns = async () => {
@@ -1031,9 +1225,10 @@ include __DIR__ . '/includes/header.php';
             await api('toggle_activity', { id: e.target.dataset.id });
             loadActivities();
         }
-        if (e.target.matches('[data-action="toggle-workout"]')) {
-            await api('toggle_workout', { id: e.target.dataset.id });
-            loadWorkouts();
+        const workoutCell = e.target.closest('.calendar-cell[data-date]');
+        if (workoutCell) {
+            await api('toggle_workout_day', { date: workoutCell.dataset.date });
+            loadWorkoutsMonth();
         }
         if (e.target.matches('[data-action="delete-rule"]')) {
             await api('delete_rule', { id: e.target.dataset.id });
@@ -1068,7 +1263,7 @@ include __DIR__ . '/includes/header.php';
         await api('save_workout', { name: workoutName.value, date: workoutDate.value });
         closeModals();
         workoutName.value = '';
-        loadWorkouts();
+        loadWorkoutsMonth();
     });
 
     document.getElementById('saveRun').addEventListener('click', async () => {
@@ -1149,7 +1344,7 @@ include __DIR__ . '/includes/header.php';
         loadWeekRange();
         loadActivities();
         loadHabits();
-        loadWorkouts();
+        loadWorkoutsMonth();
         loadRuns();
         loadPhoto();
         loadMessage();
@@ -1162,6 +1357,16 @@ include __DIR__ . '/includes/header.php';
     };
 
     init();
+
+    document.getElementById('prevMonth')?.addEventListener('click', () => {
+        workoutMonth.setMonth(workoutMonth.getMonth() - 1);
+        loadWorkoutsMonth();
+    });
+
+    document.getElementById('nextMonth')?.addEventListener('click', () => {
+        workoutMonth.setMonth(workoutMonth.getMonth() + 1);
+        loadWorkoutsMonth();
+    });
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

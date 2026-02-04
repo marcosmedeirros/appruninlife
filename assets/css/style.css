@@ -1,6 +1,6 @@
 body { 
-    background: #000000;
-    color: #ffffff; 
+    background: #0b0f14;
+    color: #e9eef5; 
     font-family: 'Outfit', sans-serif; 
     min-height: 100vh;
 }
@@ -25,9 +25,9 @@ body {
 }
 
 input, select, textarea { 
-    background-color: #1a1a1a; 
-    border: 1px solid #333333; 
-    color: #ffffff; 
+    background-color: #0f172a; 
+    border: 1px solid #233041; 
+    color: #e9eef5; 
     padding: 12px; 
     border-radius: 10px; 
     width: 100%; 
@@ -37,29 +37,29 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus { 
     outline: none; 
-    border-color: #ffffff; 
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1); 
-    background-color: #0f0f0f; 
+    border-color: #22d3ee; 
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2); 
+    background-color: #111c34; 
 }
 
 .glass-sidebar { 
-    background: rgba(20, 20, 20, 0.95); 
+    background: rgba(15, 23, 42, 0.95); 
     backdrop-filter: blur(10px); 
-    border-right: 1px solid rgba(255, 255, 255, 0.15); 
+    border-right: 1px solid rgba(148, 163, 184, 0.2); 
 }
 
 .glass-card { 
-    background: rgba(25, 25, 25, 0.8); 
+    background: rgba(15, 23, 42, 0.8); 
     backdrop-filter: blur(12px); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); 
+    border: 1px solid rgba(148, 163, 184, 0.2); 
+    box-shadow: 0 4px 6px -1px rgba(2, 6, 23, 0.4); 
 }
 
 .modal-glass { 
-    background: rgba(15, 15, 15, 0.98); 
+    background: rgba(15, 23, 42, 0.98); 
     backdrop-filter: blur(16px); 
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9); 
+    border: 1px solid rgba(148, 163, 184, 0.25); 
+    box-shadow: 0 25px 50px -12px rgba(2, 6, 23, 0.9); 
 }
 
 .nav-btn { 

@@ -21,30 +21,22 @@
     <script>const BASE_PATH = '<?php echo BASE_PATH; ?>';</script>
     <style>
         html, body {
-            background: #000000 !important;
-            color: #ffffff;
+            background: #0b0f14;
+            color: #e9eef5;
             min-height: 100vh;
         }
         main {
             position: relative;
             z-index: 1;
         }
-        /* Títulos em branco */
         h1, h2, h3, h4, h5, h6 {
-            color: #ffffff;
-        }
-        .text-transparent.bg-clip-text.bg-gradient-to-r.from-yellow-400.to-orange-400,
-        .text-transparent.bg-clip-text.bg-gradient-to-r.from-purple-400.to-pink-400,
-        .text-transparent.bg-clip-text.bg-gradient-to-r.from-yellow-400.to-yellow-500 {
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-            background: none !important;
+            color: #f8fafc;
         }
         button, a.btn, input[type="submit"] {
             transition: all 0.3s ease;
         }
         button:hover, a.btn:hover, input[type="submit"]:hover {
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.25);
         }
     </style>
 </head>
