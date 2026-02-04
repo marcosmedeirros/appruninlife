@@ -341,7 +341,7 @@ include __DIR__ . '/includes/header.php';
         --surface-2: #000000;
         --text: #e9eef5;
         --muted: #9aa4b2;
-        --accent: #ff2d2d;
+        --accent: #D8B4FE;
         --accent-2: #22d3ee;
         --success: #22c55e;
         --danger: #ef4444;
