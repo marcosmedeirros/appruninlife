@@ -942,15 +942,7 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <div class="grid grid-3 section">
-        <div class="card">
-            <div class="card-header">
-                <h3>Corridas</h3>
-                <button class="btn" data-modal="modalRun">Cadastrar</button>
-            </div>
-            <div class="list" id="runList"></div>
-        </div>
-
+    <div class="grid grid-2 section">
         <div class="card">
             <div class="card-header">
                 <h3>Foto do dia</h3>
