@@ -155,6 +155,12 @@ if (isset($_GET['api'])) {
             json_response($stmt->fetch() ?: null);
         }
 
+        if ($action === 'get_photos') {
+            $stmt = $pdo->prepare("SELECT photo_date, photo_url FROM daily_photos WHERE user_id = ? ORDER BY photo_date DESC");
+            $stmt->execute([$user_id]);
+            json_response($stmt->fetchAll());
+        }
+
         if ($action === 'save_daily_photo') {
             $date = $data['date'] ?? date('Y-m-d');
             $stmt = $pdo->prepare("INSERT INTO daily_photos (user_id, photo_date, photo_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE photo_url = VALUES(photo_url)");
@@ -571,6 +577,38 @@ include __DIR__ . '/includes/header.php';
         border: 1px solid rgba(255, 255, 255, 0.12);
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-carousel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+    .photo-carousel-frame {
+        width: 100%;
+        height: 320px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+        background: #000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .photo-carousel-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .photo-carousel-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .photo-date {
+        color: var(--text);
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
     .card-compact { min-height: 120px; }
     .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; color: var(--accent); }
     .finance-metric { color: #ffffff; }
@@ -835,7 +873,10 @@ include __DIR__ . '/includes/header.php';
         <div class="card">
             <div class="card-header">
                 <h3>Foto do dia</h3>
-                <button class="btn" data-modal="modalPhoto">Cadastrar</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" data-modal="modalPhoto">Cadastrar</button>
+                    <button class="btn" data-modal="modalPhotoGallery">Ver fotos</button>
+                </div>
             </div>
             <div class="photo-box" id="photoBox">Sem foto hoje</div>
         </div>
@@ -915,6 +956,23 @@ include __DIR__ . '/includes/header.php';
         <input class="input" id="photoDate" type="date">
         <input class="input" id="photoFile" type="file" accept="image/*">
         <button class="btn btn-solid" id="savePhoto">Salvar</button>
+    </div>
+</div>
+
+<div class="modal" id="modalPhotoGallery">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Fotos do dia</h4>
+            <button class="modal-close" data-close>×</button>
+        </div>
+        <div class="photo-carousel">
+            <div class="photo-carousel-frame" id="photoCarouselFrame">Sem fotos</div>
+            <div class="photo-carousel-nav">
+                <button class="icon-btn" id="photoPrev" aria-label="Anterior">‹</button>
+                <div class="photo-date" id="photoCarouselDate"></div>
+                <button class="icon-btn" id="photoNext" aria-label="Próximo">›</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1031,6 +1089,9 @@ include __DIR__ . '/includes/header.php';
                     const baseValue = parseFloat(localStorage.getItem('financeBase') || '0') || 0;
                     baseModal.value = baseValue.toFixed(2);
                 }
+            }
+            if (e.target.dataset.modal === 'modalPhotoGallery') {
+                loadPhotoGallery();
             }
             openModal(e.target.dataset.modal);
         }
@@ -1223,6 +1284,29 @@ include __DIR__ . '/includes/header.php';
         } else {
             box.innerHTML = 'Sem foto hoje';
         }
+    };
+
+    let photoGallery = [];
+    let photoIndex = 0;
+
+    const renderPhotoCarousel = () => {
+        const frame = document.getElementById('photoCarouselFrame');
+        const dateEl = document.getElementById('photoCarouselDate');
+        if (!frame || !dateEl) return;
+        if (!photoGallery.length) {
+            frame.textContent = 'Sem fotos';
+            dateEl.textContent = '';
+            return;
+        }
+        const item = photoGallery[photoIndex];
+        frame.innerHTML = `<img src="${item.photo_url}" alt="Foto do dia">`;
+        dateEl.textContent = formatShortDate(item.photo_date);
+    };
+
+    const loadPhotoGallery = async () => {
+        photoGallery = await api('get_photos', {}, 'GET');
+        photoIndex = 0;
+        renderPhotoCarousel();
     };
 
     const loadMessage = async () => {
@@ -1445,6 +1529,18 @@ include __DIR__ . '/includes/header.php';
         closeModals();
         photoFile.value = '';
         loadPhoto();
+    });
+
+    document.getElementById('photoPrev')?.addEventListener('click', () => {
+        if (!photoGallery.length) return;
+        photoIndex = (photoIndex - 1 + photoGallery.length) % photoGallery.length;
+        renderPhotoCarousel();
+    });
+
+    document.getElementById('photoNext')?.addEventListener('click', () => {
+        if (!photoGallery.length) return;
+        photoIndex = (photoIndex + 1) % photoGallery.length;
+        renderPhotoCarousel();
     });
 
     document.getElementById('saveEvent').addEventListener('click', async () => {
