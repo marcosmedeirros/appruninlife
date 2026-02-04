@@ -148,6 +148,24 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'update_run') {
+            $stmt = $pdo->prepare("UPDATE runs SET run_date = ?, distance_km = ?, notes = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([
+                $data['date'] ?? date('Y-m-d'),
+                $data['distance'] ?? 0,
+                $data['notes'] ?? '',
+                $data['id'] ?? 0,
+                $user_id
+            ]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'delete_run') {
+            $stmt = $pdo->prepare("DELETE FROM runs WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_daily_photo') {
             $date = $_GET['date'] ?? date('Y-m-d');
             $stmt = $pdo->prepare("SELECT id, user_id, photo_date, image_path, created_at FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
@@ -364,10 +382,9 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
-        if ($action === 'get_goals_week_done') {
-            [$start, $end] = getWeekRange();
-            $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 AND completed_at BETWEEN ? AND ? ORDER BY completed_at DESC");
-            $stmt->execute([$user_id, $start . ' 00:00:00', $end . ' 23:59:59']);
+        if ($action === 'get_goals_done') {
+            $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 ORDER BY completed_at DESC");
+            $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
 
@@ -696,6 +713,11 @@ include __DIR__ . '/includes/header.php';
         font-weight: 700;
     }
     .list-actions { display: inline-flex; gap: 6px; }
+    .goals-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
     .icon-btn.subtle {
         width: 30px;
         height: 30px;
@@ -1002,6 +1024,7 @@ include __DIR__ . '/includes/header.php';
             <h4>Novo registro de corrida</h4>
             <button class="modal-close" data-close>×</button>
         </div>
+        <input type="hidden" id="runId">
         <input class="input" id="runDate" type="date">
         <input class="input" id="runDistance" type="number" step="0.1" placeholder="Distância (km)">
         <input class="input" id="runNotes" placeholder="Observações">
@@ -1115,7 +1138,7 @@ include __DIR__ . '/includes/header.php';
             <h4>Metas cadastradas</h4>
             <button class="modal-close" data-close>×</button>
         </div>
-        <div class="list" id="goalsList"></div>
+        <div class="list goals-grid" id="goalsList"></div>
     </div>
 </div>
 
@@ -1147,6 +1170,10 @@ include __DIR__ . '/includes/header.php';
                 if (eventId) eventId.value = '';
                 if (eventTitle) eventTitle.value = '';
                 if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
+            }
+            if (e.target.dataset.modal === 'modalRun') {
+                const runId = document.getElementById('runId');
+                if (runId) runId.value = '';
             }
             if (e.target.dataset.modal === 'modalFinanceBase') {
                 const baseModal = document.getElementById('financeBaseModal');
@@ -1183,8 +1210,10 @@ include __DIR__ . '/includes/header.php';
         const trimmed = path.trim();
         if (trimmed.startsWith('data:')) return trimmed;
         if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-        if (trimmed.startsWith('/')) return `${BASE_PATH}${trimmed}`;
-        return `${BASE_PATH}/${trimmed}`;
+        if (trimmed.startsWith('/uploads/')) return trimmed;
+        const base = (BASE_PATH || '').replace(/\/+$/, '');
+        if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+        return `${base}/${trimmed}`;
     };
 
     const formatWeekdayLabel = (dateStr) => {
@@ -1357,6 +1386,14 @@ include __DIR__ . '/includes/header.php';
                     <strong>${formatShortDate(item.run_date)} - ${item.distance_km} km</strong><br>
                     <small>${item.notes || 'Sem observações'}</small>
                 </div>
+                <div class="list-actions">
+                    <button class="icon-btn subtle" data-action="edit-run" data-id="${item.id}" data-date="${item.run_date}" data-distance="${item.distance_km}" data-notes="${item.notes || ''}" aria-label="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn subtle" data-action="delete-run" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -1500,11 +1537,12 @@ include __DIR__ . '/includes/header.php';
         const list = await api('get_goals', {}, 'GET');
         const container = document.getElementById('goalsList');
         container.innerHTML = '';
-        if (!list.length) {
-            container.innerHTML = '<div class="muted">Nenhuma meta cadastrada.</div>';
+        const pending = list.filter(item => parseInt(item.status, 10) === 0);
+        if (!pending.length) {
+            container.innerHTML = '<div class="muted">Nenhuma meta pendente.</div>';
             return;
         }
-        list.forEach(item => {
+        pending.forEach(item => {
             const row = document.createElement('div');
             row.className = 'list-item';
             row.innerHTML = `
@@ -1515,14 +1553,14 @@ include __DIR__ . '/includes/header.php';
         });
     };
 
-    const loadGoalsWeekDone = async () => {
-        const list = await api('get_goals_week_done', {}, 'GET');
+    const loadGoalsDone = async () => {
+        const list = await api('get_goals_done', {}, 'GET');
         const el = document.getElementById('goalsWeekDone');
         if (!list.length) {
-            el.textContent = 'Sem metas concluídas nesta semana.';
+            el.textContent = 'Sem metas concluídas ainda.';
             return;
         }
-        el.textContent = `Metas concluídas na semana: ${list.length}`;
+        el.textContent = `Metas concluídas: ${list.length}`;
     };
 
     document.addEventListener('click', async (e) => {
@@ -1560,10 +1598,23 @@ include __DIR__ . '/includes/header.php';
             await api('delete_activity', { id: btn.dataset.id });
             loadActivities();
         }
+        if (e.target.closest('[data-action="edit-run"]')) {
+            const btn = e.target.closest('[data-action="edit-run"]');
+            document.getElementById('runId').value = btn.dataset.id;
+            document.getElementById('runDate').value = btn.dataset.date;
+            document.getElementById('runDistance').value = btn.dataset.distance;
+            document.getElementById('runNotes').value = btn.dataset.notes;
+            openModal('modalRun');
+        }
+        if (e.target.closest('[data-action="delete-run"]')) {
+            const btn = e.target.closest('[data-action="delete-run"]');
+            await api('delete_run', { id: btn.dataset.id });
+            loadRuns();
+        }
         if (e.target.matches('[data-action="toggle-goal"]')) {
             await api('toggle_goal', { id: e.target.dataset.id });
             loadGoals();
-            loadGoalsWeekDone();
+            loadGoalsDone();
         }
     });
 
@@ -1598,6 +1649,21 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('saveRun').addEventListener('click', async () => {
+        const runId = document.getElementById('runId').value;
+        if (runId) {
+            await api('update_run', {
+                id: runId,
+                date: runDate.value,
+                distance: runDistance.value,
+                notes: runNotes.value
+            });
+            closeModals();
+            runId.value = '';
+            runDistance.value = '';
+            runNotes.value = '';
+            loadRuns();
+            return;
+        }
         await api('save_run', {
             title: 'Corrida',
             date: runDate.value,
@@ -1730,7 +1796,7 @@ include __DIR__ . '/includes/header.php';
         loadRules();
         loadRoutine();
         loadGoals();
-        loadGoalsWeekDone();
+        loadGoalsDone();
     };
 
     init();
