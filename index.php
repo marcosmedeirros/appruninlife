@@ -426,6 +426,13 @@ include __DIR__ . '/includes/header.php';
         font-size: 0.8rem;
         color: #ffffff;
     }
+    .weekday-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        padding: 4px 10px;
+    }
     .section {
         margin-top: 26px;
     }
@@ -552,6 +559,11 @@ include __DIR__ . '/includes/header.php';
         text-align: left;
         font-weight: 600;
         color: var(--text);
+        width: 180px;
+        min-width: 180px;
+        max-width: 240px;
+        white-space: normal;
+        word-break: break-word;
     }
     .check {
         width: 26px;
@@ -755,7 +767,7 @@ include __DIR__ . '/includes/header.php';
         </div>
     </header>
 
-    <div class="grid grid-3">
+    <div class="grid grid-2">
         <div class="card">
             <div class="card-header">
                 <h3>Atividades da semana</h3>
@@ -771,14 +783,14 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="list" id="eventsList"></div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Rotina do dia</h3>
-                <button class="btn" data-modal="modalRoutine">Cadastrar</button>
-            </div>
-            <div class="list" id="routineList"></div>
+    <div class="card section">
+        <div class="card-header">
+            <h3>Rotina do dia</h3>
+            <button class="btn" data-modal="modalRoutine">Cadastrar</button>
         </div>
+        <div class="list" id="routineList"></div>
     </div>
 
     <div class="grid grid-3 section">
@@ -1113,6 +1125,18 @@ include __DIR__ . '/includes/header.php';
         return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     };
 
+    const formatWeekdayLabel = (dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    };
+
+    const getTodayWeekdayLabel = () => {
+        const d = new Date();
+        const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    };
+
     const setDefaultDates = () => {
         const today = new Date().toISOString().slice(0, 10);
         ['workoutDate','runDate','photoDate','financeDate','eventDate'].forEach(id => {
@@ -1157,7 +1181,7 @@ include __DIR__ . '/includes/header.php';
             row.innerHTML = `
                 <div>
                     <strong class="activity-title">${item.title}</strong><br>
-                    <small class="activity-date">${formatDate(item.day_date)}</small>
+                    <span class="tag weekday-tag">${formatWeekdayLabel(item.day_date)}</span>
                 </div>
                 <div class="list-actions">
                     <label class="activity-check">
@@ -1342,7 +1366,7 @@ include __DIR__ . '/includes/header.php';
             row.innerHTML = `
                 <div>
                     <strong>${item.title}</strong><br>
-                    <small>${formatDate(item.start_date.slice(0,10))}</small>
+                    <span class="tag weekday-tag">${formatWeekdayLabel(item.start_date.slice(0,10))}</span>
                 </div>
                 <div class="list-actions">
                     <button class="icon-btn subtle" data-action="edit-event" data-id="${item.id}" data-title="${item.title}" data-date="${item.start_date.slice(0,10)}" aria-label="Editar">
@@ -1389,7 +1413,8 @@ include __DIR__ . '/includes/header.php';
             row.className = 'list-item';
             row.innerHTML = `
                 <div>
-                    <strong>${item.routine_time.slice(0,5)}</strong> - ${item.activity}
+                    <strong>${item.activity}</strong><br>
+                    <span class="tag weekday-tag">${getTodayWeekdayLabel()}</span>
                 </div>
                 <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-routine" aria-label="Apagar">
                     <i class="fa-solid fa-trash"></i>
