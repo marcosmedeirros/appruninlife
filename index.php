@@ -1176,6 +1176,15 @@ include __DIR__ . '/includes/header.php';
         return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     };
 
+    const resolveImageUrl = (path) => {
+        if (!path) return '';
+        const trimmed = path.trim();
+        if (trimmed.startsWith('data:')) return trimmed;
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+        if (trimmed.startsWith('/')) return `${BASE_PATH}${trimmed}`;
+        return `${BASE_PATH}/${trimmed}`;
+    };
+
     const formatWeekdayLabel = (dateStr) => {
         const d = new Date(dateStr + 'T00:00:00');
         const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
@@ -1355,7 +1364,8 @@ include __DIR__ . '/includes/header.php';
         const data = await api('get_daily_photo', {}, 'GET');
         const box = document.getElementById('photoBox');
         if (data && data.image_path) {
-            box.innerHTML = `<img src="${BASE_PATH}/${data.image_path}" alt="Foto do dia">`;
+            const src = resolveImageUrl(data.image_path);
+            box.innerHTML = `<img src="${src}" alt="Foto do dia">`;
         } else {
             box.innerHTML = 'Sem foto hoje';
         }
@@ -1374,7 +1384,8 @@ include __DIR__ . '/includes/header.php';
             return;
         }
         const item = photoGallery[photoIndex];
-        frame.innerHTML = `<img src="${BASE_PATH}/${item.image_path}" alt="Foto do dia">`;
+        const src = resolveImageUrl(item.image_path);
+        frame.innerHTML = `<img src="${src}" alt="Foto do dia">`;
         dateEl.textContent = formatShortDate(item.photo_date);
     };
 
