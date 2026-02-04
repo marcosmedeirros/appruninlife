@@ -167,7 +167,7 @@ if (isset($_GET['api'])) {
                 json_response(['error' => 'Arquivo de foto inválido']);
             }
 
-            $uploadDir = __DIR__ . '/board';
+            $uploadDir = __DIR__ . '/uploads/board';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0775, true);
             }
@@ -182,7 +182,7 @@ if (isset($_GET['api'])) {
                 json_response(['error' => 'Falha ao salvar a foto']);
             }
 
-            $imagePath = 'board/' . $fileName;
+            $imagePath = '/uploads/board/' . $fileName;
             $check = $pdo->prepare("SELECT id FROM board_photos WHERE user_id = ? AND photo_date = ? LIMIT 1");
             $check->execute([$user_id, $date]);
             $existingId = $check->fetchColumn();
@@ -203,7 +203,7 @@ if (isset($_GET['api'])) {
             $row = $stmt->fetch();
             if ($row) {
                 $pdo->prepare("DELETE FROM board_photos WHERE id = ? AND user_id = ?")->execute([$row['id'], $user_id]);
-                $filePath = __DIR__ . '/' . $row['image_path'];
+                $filePath = __DIR__ . '/' . ltrim($row['image_path'], '/');
                 if (is_file($filePath)) {
                     @unlink($filePath);
                 }
@@ -935,7 +935,9 @@ include __DIR__ . '/includes/header.php';
                 <div style="display:flex; gap:8px;">
                     <button class="btn" data-modal="modalPhoto">Cadastrar</button>
                     <button class="btn" data-modal="modalPhotoGallery">Ver fotos</button>
-                    <button class="btn" id="deletePhoto">Apagar</button>
+                    <button class="icon-btn subtle" id="deletePhoto" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
             </div>
             <div class="photo-box" id="photoBox">Sem foto hoje</div>
