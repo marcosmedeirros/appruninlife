@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+date_default_timezone_set('America/Sao_Paulo');
 
 $user_id = 1;
 
@@ -32,7 +33,7 @@ if (isset($_GET['api'])) {
 
         if ($action === 'get_week_activities') {
             [$start, $end] = getWeekRange();
-            $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? AND day_date BETWEEN ? AND ? ORDER BY day_date ASC, status ASC");
+            $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? AND day_date BETWEEN ? AND ? ORDER BY status ASC, day_date ASC");
             $stmt->execute([$user_id, $start, $end]);
             json_response($stmt->fetchAll());
         }
@@ -232,6 +233,28 @@ if (isset($_GET['api'])) {
             json_response($stmt->fetchAll());
         }
 
+        if ($action === 'save_event') {
+            $date = $data['date'] ?? date('Y-m-d');
+            $startDate = $date . ' 09:00:00';
+            $stmt = $pdo->prepare("INSERT INTO events (user_id, title, start_date, description) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$user_id, $data['title'] ?? '', $startDate, $data['description'] ?? '']);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'update_event') {
+            $date = $data['date'] ?? date('Y-m-d');
+            $startDate = $date . ' 09:00:00';
+            $stmt = $pdo->prepare("UPDATE events SET title = ?, start_date = ?, description = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['title'] ?? '', $startDate, $data['description'] ?? '', $data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'delete_event') {
+            $stmt = $pdo->prepare("DELETE FROM events WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_rules') {
             $stmt = $pdo->prepare("SELECT * FROM life_rules WHERE user_id = ? ORDER BY id DESC");
             $stmt->execute([$user_id]);
@@ -324,7 +347,7 @@ include __DIR__ . '/includes/header.php';
     body {
         background: radial-gradient(circle at top, rgba(124, 58, 237, 0.18), transparent 45%), var(--bg);
         color: var(--text);
-        font-family: 'Outfit', sans-serif;
+        font-family: 'Montserrat', sans-serif;
         margin: 0;
     }
     .app {
@@ -541,6 +564,47 @@ include __DIR__ . '/includes/header.php';
         border: 1px solid rgba(148, 163, 184, 0.2);
     }
     .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+    .card-compact { min-height: 120px; }
+    .metric { font-size: 1.6rem; font-weight: 600; margin-top: 6px; }
+    .field-row { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+    .input-sm { padding: 8px 10px; font-size: 0.85rem; }
+    .activity-item { align-items: center; }
+    .activity-done .activity-title { text-decoration: line-through; color: var(--muted); }
+    .activity-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .activity-check input { display: none; }
+    .activity-check span {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #0b0f14;
+        background: transparent;
+        transition: all 0.2s ease;
+    }
+    .activity-check input:checked + span {
+        background: rgba(34, 197, 94, 0.8);
+        border-color: rgba(34, 197, 94, 0.8);
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
+    .activity-check input:checked + span::after {
+        content: '✓';
+        color: #0b0f14;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .list-actions { display: inline-flex; gap: 6px; }
+    .icon-btn.subtle {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--muted);
+    }
+    .icon-btn.subtle:hover { color: var(--text); border-color: rgba(34, 211, 238, 0.4); }
     .calendar {
         display: flex;
         flex-direction: column;
@@ -646,15 +710,7 @@ include __DIR__ . '/includes/header.php';
         </div>
     </header>
 
-    <section class="section">
-        <div class="section-header">
-            <div>
-                <h2>Panorama da semana</h2>
-                <span>Resumo rápido do que precisa de foco</span>
-            </div>
-            <span class="tag" id="messageDate">Hoje</span>
-        </div>
-        <div class="grid grid-3">
+    <div class="grid grid-3">
         <div class="card">
             <div class="card-header">
                 <h3>Atividades da semana</h3>
@@ -665,35 +721,12 @@ include __DIR__ . '/includes/header.php';
 
         <div class="card">
             <div class="card-header">
-                <h3>Finanças da semana</h3>
-                <button class="btn" data-modal="modalFinance">Cadastrar</button>
+                <h3>Eventos</h3>
+                <button class="btn" data-modal="modalEvent">Adicionar</button>
             </div>
-            <div>
-                <p><strong>Entrada:</strong> R$ <span id="financeIncome">0</span></p>
-                <p><strong>Saída:</strong> R$ <span id="financeExpense">0</span></p>
-                <div class="divider"></div>
-                <div id="financeList" class="list"></div>
-            </div>
+            <div class="list" id="eventsList"></div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Mensagem do dia</h3>
-            </div>
-            <p id="dailyMessage" class="muted"></p>
-        </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="section-header">
-            <div>
-                <h2>Rotina & metas</h2>
-                <span>Consistência diária e objetivos em andamento</span>
-            </div>
-            <span class="tag">Rotina diária</span>
-        </div>
-        <div class="grid grid-3">
         <div class="card">
             <div class="card-header">
                 <h3>Rotina do dia</h3>
@@ -701,7 +734,47 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="list" id="routineList"></div>
         </div>
+    </div>
 
+    <div class="grid grid-3 section">
+        <div class="card card-compact">
+            <div class="card-header">
+                <h3>Entrada</h3>
+                <button class="btn" data-modal="modalFinance">Lançar</button>
+            </div>
+            <div class="metric">R$ <span id="financeIncome">0</span></div>
+        </div>
+
+        <div class="card card-compact">
+            <div class="card-header">
+                <h3>Saída</h3>
+            </div>
+            <div class="metric">R$ <span id="financeExpense">0</span></div>
+        </div>
+
+        <div class="card card-compact">
+            <div class="card-header">
+                <h3>Total no banco</h3>
+            </div>
+            <div class="metric">R$ <span id="financeTotal">0</span></div>
+            <div class="field-row">
+                <label class="muted" for="financeBase">Meu dinheiro base</label>
+                <input class="input input-sm" id="financeBase" type="number" step="0.01" placeholder="0,00">
+            </div>
+        </div>
+    </div>
+
+    <div class="card section">
+        <div class="card-header">
+            <h3>Habit Tracker</h3>
+            <button class="btn" data-modal="modalHabit">Adicionar</button>
+        </div>
+        <div class="habit-grid">
+            <table class="habit-table" id="habitTable"></table>
+        </div>
+    </div>
+
+    <div class="grid grid-3 section">
         <div class="card">
             <div class="card-header">
                 <h3>Regras de vida</h3>
@@ -719,27 +792,6 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </div>
             <p class="muted" id="goalsWeekDone">Sem metas concluídas nesta semana.</p>
-        </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="section-header">
-            <div>
-                <h2>Hábitos & treino</h2>
-                <span>Tracker diário e calendário mensal</span>
-            </div>
-            <span class="tag">Performance</span>
-        </div>
-        <div class="grid grid-2">
-        <div class="card">
-            <div class="card-header">
-                <h3>Habit Tracker</h3>
-                <button class="btn" data-modal="modalHabit">Adicionar</button>
-            </div>
-            <div class="habit-grid">
-                <table class="habit-table" id="habitTable"></table>
-            </div>
         </div>
 
         <div class="card">
@@ -763,24 +815,14 @@ include __DIR__ . '/includes/header.php';
             <div class="calendar-legend">
                 <span><span class="dot dot-success"></span> Treinou</span>
                 <span><span class="dot dot-muted"></span> Sem treino</span>
-                <button class="btn" data-modal="modalWorkout">Adicionar treino</button>
             </div>
         </div>
-        </div>
-    </section>
+    </div>
 
-    <section class="section">
-        <div class="section-header">
-            <div>
-                <h2>Registros & agenda</h2>
-                <span>Corridas, fotos e compromissos</span>
-            </div>
-            <span class="tag">Histórico</span>
-        </div>
-        <div class="grid grid-3">
+    <div class="grid grid-2 section">
         <div class="card">
             <div class="card-header">
-                <h3>Cadastro de corrida</h3>
+                <h3>Corridas</h3>
                 <button class="btn" data-modal="modalRun">Cadastrar</button>
             </div>
             <div class="list" id="runList"></div>
@@ -793,15 +835,15 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="photo-box" id="photoBox">Sem foto hoje</div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h3>Eventos (Google Agenda)</h3>
-            </div>
-            <div class="list" id="eventsList"></div>
+    <div class="card section">
+        <div class="card-header">
+            <h3>Mensagem do dia</h3>
+            <span class="tag" id="messageDate">Hoje</span>
         </div>
-        </div>
-    </section>
+        <p id="dailyMessage" class="muted"></p>
+    </div>
 </main>
 
 <div class="modal" id="modalActivity">
@@ -811,7 +853,15 @@ include __DIR__ . '/includes/header.php';
             <button class="modal-close" data-close>×</button>
         </div>
         <input class="input" id="activityTitle" placeholder="O que precisa fazer?">
-        <input class="input" id="activityDate" type="date">
+        <select class="input" id="activityWeekday">
+            <option value="1">Segunda-feira</option>
+            <option value="2">Terça-feira</option>
+            <option value="3">Quarta-feira</option>
+            <option value="4">Quinta-feira</option>
+            <option value="5">Sexta-feira</option>
+            <option value="6">Sábado</option>
+            <option value="7">Domingo</option>
+        </select>
         <button class="btn btn-solid" id="saveActivity">Salvar</button>
     </div>
 </div>
@@ -845,7 +895,6 @@ include __DIR__ . '/includes/header.php';
             <h4>Novo registro de corrida</h4>
             <button class="modal-close" data-close>×</button>
         </div>
-        <input class="input" id="runTitle" placeholder="Título">
         <input class="input" id="runDate" type="date">
         <input class="input" id="runDistance" type="number" step="0.1" placeholder="Distância (km)">
         <input class="input" id="runNotes" placeholder="Observações">
@@ -860,9 +909,21 @@ include __DIR__ . '/includes/header.php';
             <button class="modal-close" data-close>×</button>
         </div>
         <input class="input" id="photoDate" type="date">
-        <input class="input" id="photoUrl" placeholder="URL da foto (ou cole base64)">
         <input class="input" id="photoFile" type="file" accept="image/*">
         <button class="btn btn-solid" id="savePhoto">Salvar</button>
+    </div>
+</div>
+
+<div class="modal" id="modalEvent">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Evento</h4>
+            <button class="modal-close" data-close>×</button>
+        </div>
+        <input type="hidden" id="eventId">
+        <input class="input" id="eventTitle" placeholder="Nome do evento">
+        <input class="input" id="eventDate" type="date">
+        <button class="btn btn-solid" id="saveEvent">Salvar</button>
     </div>
 </div>
 
@@ -941,6 +1002,14 @@ include __DIR__ . '/includes/header.php';
 
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-modal]')) {
+            if (e.target.dataset.modal === 'modalEvent') {
+                const eventId = document.getElementById('eventId');
+                const eventTitle = document.getElementById('eventTitle');
+                const eventDate = document.getElementById('eventDate');
+                if (eventId) eventId.value = '';
+                if (eventTitle) eventTitle.value = '';
+                if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
+            }
             openModal(e.target.dataset.modal);
         }
         if (e.target.matches('[data-close]')) {
@@ -956,12 +1025,39 @@ include __DIR__ . '/includes/header.php';
         return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
     };
 
+    const formatShortDate = (dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    };
+
     const setDefaultDates = () => {
         const today = new Date().toISOString().slice(0, 10);
-        ['activityDate','workoutDate','runDate','photoDate','financeDate'].forEach(id => {
+        ['workoutDate','runDate','photoDate','financeDate','eventDate'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = today;
         });
+        const weekdaySelect = document.getElementById('activityWeekday');
+        if (weekdaySelect) {
+            const jsDay = new Date().getDay();
+            const weekday = jsDay === 0 ? 7 : jsDay;
+            weekdaySelect.value = String(weekday);
+        }
+    };
+
+    const getWeekDates = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const diffToMonday = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diffToMonday);
+        return monday;
+    };
+
+    const getDateForWeekday = (weekdayNumber) => {
+        const monday = getWeekDates();
+        const target = new Date(monday);
+        target.setDate(monday.getDate() + (weekdayNumber - 1));
+        return target.toISOString().slice(0, 10);
     };
 
     const loadActivities = async () => {
@@ -974,13 +1070,16 @@ include __DIR__ . '/includes/header.php';
         }
         list.forEach(item => {
             const row = document.createElement('div');
-            row.className = 'list-item';
+            row.className = 'list-item activity-item' + (item.status == 1 ? ' activity-done' : '');
             row.innerHTML = `
                 <div>
-                    <strong>${item.title}</strong><br>
-                    <small>${formatDate(item.day_date)}</small>
+                    <strong class="activity-title">${item.title}</strong><br>
+                    <small class="activity-date">${formatDate(item.day_date)}</small>
                 </div>
-                <button class="btn" data-id="${item.id}" data-action="toggle-activity">${item.status == 1 ? 'Feito' : 'Check'}</button>
+                <label class="activity-check">
+                    <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${item.status == 1 ? 'checked' : ''}>
+                    <span></span>
+                </label>
             `;
             container.appendChild(row);
         });
@@ -1081,10 +1180,9 @@ include __DIR__ . '/includes/header.php';
             row.className = 'list-item';
             row.innerHTML = `
                 <div>
-                    <strong>${item.title}</strong><br>
-                    <small>${formatDate(item.run_date)} • ${item.distance_km} km</small>
+                    <strong>${formatShortDate(item.run_date)} - ${item.distance_km} km</strong><br>
+                    <small>${item.notes || 'Sem observações'}</small>
                 </div>
-                <span class="tag">${item.notes || 'Ok'}</span>
             `;
             container.appendChild(row);
         });
@@ -1103,27 +1201,20 @@ include __DIR__ . '/includes/header.php';
     const loadMessage = async () => {
         const data = await api('get_daily_message', {}, 'GET');
         document.getElementById('dailyMessage').textContent = data.text || 'Sem mensagem disponível.';
-        document.getElementById('messageDate').textContent = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('messageDate').textContent = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     };
 
     const loadFinance = async () => {
         const data = await api('get_finance_week', {}, 'GET');
         document.getElementById('financeIncome').textContent = data.income.toFixed(2);
         document.getElementById('financeExpense').textContent = data.expense.toFixed(2);
-        const list = document.getElementById('financeList');
-        list.innerHTML = '';
-        data.items.slice(0, 4).forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'list-item';
-            row.innerHTML = `
-                <div>
-                    <strong>${item.type === 'income' ? 'Entrada' : 'Saída'}</strong><br>
-                    <small>${formatDate(item.created_at.slice(0,10))}</small>
-                </div>
-                <span class="tag">R$ ${parseFloat(item.amount).toFixed(2)}</span>
-            `;
-            list.appendChild(row);
-        });
+        const baseInput = document.getElementById('financeBase');
+        const baseValue = parseFloat(localStorage.getItem('financeBase') || '0') || 0;
+        if (baseInput && document.activeElement !== baseInput) {
+            baseInput.value = baseValue.toFixed(2);
+        }
+        const total = baseValue + data.income - data.expense;
+        document.getElementById('financeTotal').textContent = total.toFixed(2);
     };
 
     const loadEvents = async () => {
@@ -1140,7 +1231,15 @@ include __DIR__ . '/includes/header.php';
             row.innerHTML = `
                 <div>
                     <strong>${item.title}</strong><br>
-                    <small>${new Date(item.start_date).toLocaleString('pt-BR')}</small>
+                    <small>${formatDate(item.start_date.slice(0,10))}</small>
+                </div>
+                <div class="list-actions">
+                    <button class="icon-btn subtle" data-action="edit-event" data-id="${item.id}" data-title="${item.title}" data-date="${item.start_date.slice(0,10)}" aria-label="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn subtle" data-action="delete-event" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
             `;
             container.appendChild(row);
@@ -1181,7 +1280,9 @@ include __DIR__ . '/includes/header.php';
                 <div>
                     <strong>${item.routine_time.slice(0,5)}</strong> - ${item.activity}
                 </div>
-                <button class="btn" data-id="${item.id}" data-action="delete-routine">Apagar</button>
+                <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-routine" aria-label="Apagar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             `;
             container.appendChild(row);
         });
@@ -1221,14 +1322,22 @@ include __DIR__ . '/includes/header.php';
             await api('toggle_habit', { id: e.target.dataset.habit, date: e.target.dataset.date });
             loadHabits();
         }
-        if (e.target.matches('[data-action="toggle-activity"]')) {
-            await api('toggle_activity', { id: e.target.dataset.id });
-            loadActivities();
-        }
         const workoutCell = e.target.closest('.calendar-cell[data-date]');
         if (workoutCell) {
             await api('toggle_workout_day', { date: workoutCell.dataset.date });
             loadWorkoutsMonth();
+        }
+        if (e.target.closest('[data-action="edit-event"]')) {
+            const btn = e.target.closest('[data-action="edit-event"]');
+            document.getElementById('eventId').value = btn.dataset.id;
+            document.getElementById('eventTitle').value = btn.dataset.title;
+            document.getElementById('eventDate').value = btn.dataset.date;
+            openModal('modalEvent');
+        }
+        if (e.target.closest('[data-action="delete-event"]')) {
+            const btn = e.target.closest('[data-action="delete-event"]');
+            await api('delete_event', { id: btn.dataset.id });
+            loadEvents();
         }
         if (e.target.matches('[data-action="delete-rule"]')) {
             await api('delete_rule', { id: e.target.dataset.id });
@@ -1245,8 +1354,17 @@ include __DIR__ . '/includes/header.php';
         }
     });
 
+    document.addEventListener('change', async (e) => {
+        if (e.target.matches('[data-action="toggle-activity"]')) {
+            await api('toggle_activity', { id: e.target.dataset.id });
+            loadActivities();
+        }
+    });
+
     document.getElementById('saveActivity').addEventListener('click', async () => {
-        await api('save_activity', { title: activityTitle.value, date: activityDate.value });
+        const weekday = parseInt(activityWeekday.value, 10);
+        const date = getDateForWeekday(weekday);
+        await api('save_activity', { title: activityTitle.value, date });
         closeModals();
         activityTitle.value = '';
         loadActivities();
@@ -1268,13 +1386,12 @@ include __DIR__ . '/includes/header.php';
 
     document.getElementById('saveRun').addEventListener('click', async () => {
         await api('save_run', {
-            title: runTitle.value,
+            title: 'Corrida',
             date: runDate.value,
             distance: runDistance.value,
             notes: runNotes.value
         });
         closeModals();
-        runTitle.value = '';
         runDistance.value = '';
         runNotes.value = '';
         loadRuns();
@@ -1288,15 +1405,28 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('savePhoto').addEventListener('click', async () => {
-        let photo = photoUrl.value;
-        if (!photo && photoFile.files[0]) {
-            photo = await readFileAsDataUrl(photoFile.files[0]);
+        if (!photoFile.files[0]) {
+            return;
         }
+        const photo = await readFileAsDataUrl(photoFile.files[0]);
         await api('save_daily_photo', { date: photoDate.value, photo_url: photo });
         closeModals();
-        photoUrl.value = '';
         photoFile.value = '';
         loadPhoto();
+    });
+
+    document.getElementById('saveEvent').addEventListener('click', async () => {
+        const id = document.getElementById('eventId').value;
+        const payload = { title: eventTitle.value, date: eventDate.value };
+        if (id) {
+            await api('update_event', { ...payload, id });
+        } else {
+            await api('save_event', payload);
+        }
+        closeModals();
+        eventTitle.value = '';
+        eventId.value = '';
+        loadEvents();
     });
 
     document.getElementById('saveFinance').addEventListener('click', async () => {
@@ -1305,6 +1435,18 @@ include __DIR__ . '/includes/header.php';
         financeAmount.value = '';
         loadFinance();
     });
+
+    const financeBaseInput = document.getElementById('financeBase');
+    if (financeBaseInput) {
+        financeBaseInput.addEventListener('input', () => {
+            const value = parseFloat(financeBaseInput.value || '0') || 0;
+            localStorage.setItem('financeBase', value.toString());
+            const income = parseFloat(document.getElementById('financeIncome').textContent || '0') || 0;
+            const expense = parseFloat(document.getElementById('financeExpense').textContent || '0') || 0;
+            const total = value + income - expense;
+            document.getElementById('financeTotal').textContent = total.toFixed(2);
+        });
+    }
 
     document.getElementById('saveRoutine').addEventListener('click', async () => {
         await api('save_routine_item', { time: routineTime.value, activity: routineActivity.value });
