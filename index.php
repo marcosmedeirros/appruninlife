@@ -785,19 +785,29 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 
-    <div class="card section">
-        <div class="card-header">
-            <h3>Rotina do dia</h3>
-            <button class="btn" data-modal="modalRoutine">Cadastrar</button>
+    <div class="grid grid-2 section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Rotina do dia</h3>
+                <button class="btn" data-modal="modalRoutine">Cadastrar</button>
+            </div>
+            <div class="list" id="routineList"></div>
         </div>
-        <div class="list" id="routineList"></div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Corridas</h3>
+                <button class="btn" data-modal="modalRun">Cadastrar</button>
+            </div>
+            <div class="list" id="runList"></div>
+        </div>
     </div>
 
     <div class="grid grid-3 section">
         <div class="card card-compact">
             <div class="card-header">
                 <h3>Entrada</h3>
-                <button class="btn" data-modal="modalFinance">Lançar</button>
+                <button class="btn" data-modal="modalFinance" data-finance-type="entrada">Lançar</button>
             </div>
             <div class="metric finance-metric">R$ <span id="financeIncome">0</span></div>
         </div>
@@ -805,6 +815,7 @@ include __DIR__ . '/includes/header.php';
         <div class="card card-compact">
             <div class="card-header">
                 <h3>Saída</h3>
+                <button class="btn" data-modal="modalFinance" data-finance-type="saida">Lançar</button>
             </div>
             <div class="metric finance-metric">R$ <span id="financeExpense">0</span></div>
         </div>
@@ -876,14 +887,6 @@ include __DIR__ . '/includes/header.php';
     <div class="grid grid-2 section">
         <div class="card">
             <div class="card-header">
-                <h3>Corridas</h3>
-                <button class="btn" data-modal="modalRun">Cadastrar</button>
-            </div>
-            <div class="list" id="runList"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
                 <h3>Foto do dia</h3>
                 <div style="display:flex; gap:8px;">
                     <button class="btn" data-modal="modalPhoto">Cadastrar</button>
@@ -892,14 +895,14 @@ include __DIR__ . '/includes/header.php';
             </div>
             <div class="photo-box" id="photoBox">Sem foto hoje</div>
         </div>
-    </div>
 
-    <div class="card section">
-        <div class="card-header">
-            <h3>Mensagem do dia</h3>
-            <span class="tag" id="messageDate">Hoje</span>
+        <div class="card">
+            <div class="card-header">
+                <h3>Mensagem do dia</h3>
+                <span class="tag" id="messageDate">Hoje</span>
+            </div>
+            <p id="dailyMessage" class="muted"></p>
         </div>
-        <p id="dailyMessage" class="muted"></p>
     </div>
 </main>
 
@@ -1008,10 +1011,7 @@ include __DIR__ . '/includes/header.php';
             <button class="modal-close" data-close>×</button>
         </div>
         <input class="input" id="financeAmount" type="number" step="0.01" placeholder="Valor">
-        <select class="input" id="financeType">
-            <option value="saida">Saída</option>
-            <option value="entrada">Entrada</option>
-        </select>
+        <input type="hidden" id="financeType" value="entrada">
         <input class="input" id="financeDate" type="date">
         <button class="btn btn-solid" id="saveFinance">Salvar</button>
     </div>
@@ -1087,6 +1087,12 @@ include __DIR__ . '/includes/header.php';
 
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-modal]')) {
+            if (e.target.dataset.modal === 'modalFinance') {
+                const financeType = document.getElementById('financeType');
+                if (financeType && e.target.dataset.financeType) {
+                    financeType.value = e.target.dataset.financeType;
+                }
+            }
             if (e.target.dataset.modal === 'modalEvent') {
                 const eventId = document.getElementById('eventId');
                 const eventTitle = document.getElementById('eventTitle');
