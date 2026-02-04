@@ -38,7 +38,7 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'save_activity') {
-            $stmt = $pdo->prepare("INSERT INTO activities (user_id, title, category, day_date, period, status) VALUES (?, ?, '', ?, 'morning', 0)");
+            $stmt = $pdo->prepare("INSERT INTO activities (user_id, title, day_date, status) VALUES (?, ?, ?, 0)");
             $stmt->execute([$user_id, $data['title'] ?? '', $data['date'] ?? date('Y-m-d')]);
             json_response(['success' => true]);
         }
@@ -176,7 +176,7 @@ if (isset($_GET['api'])) {
 
         if ($action === 'save_finance') {
             $type = ($data['type'] === 'entrada' || $data['type'] === 'income') ? 'income' : 'expense';
-            $stmt = $pdo->prepare("INSERT INTO finances (user_id, type, amount, description, category_id, created_at, status) VALUES (?, ?, ?, ?, NULL, ?, 0)");
+            $stmt = $pdo->prepare("INSERT INTO finances (user_id, type, amount, description, created_at) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$user_id, $type, $data['amount'] ?? 0, $data['desc'] ?? '', $data['date'] ?? date('Y-m-d')]);
             json_response(['success' => true]);
         }
@@ -1124,7 +1124,7 @@ include __DIR__ . '/includes/header.php';
 <?php include __DIR__ . '/includes/footer.php'; ?><?php
 // ARQUIVO: index.php - Dashboard Principal
 require_once 'includes/auth.php';
-require_login(); // Agora requer login obrigatório
+(); // Agora requer login obrigatório
 
 // Define user_id da sessão
 $user_id = $_SESSION['user_id'];
