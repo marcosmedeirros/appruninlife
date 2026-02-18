@@ -985,14 +985,6 @@ include __DIR__ . '/includes/header.php';
     <div class="grid grid-3 section">
         <div class="card">
             <div class="card-header">
-                <h3>Regras de vida</h3>
-                <button class="btn" data-modal="modalRule">Adicionar</button>
-            </div>
-            <div class="list" id="rulesList"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
                 <h3>Metas</h3>
                 <div style="display:flex; gap:8px;">
                     <button class="btn" data-modal="modalGoal">Cadastrar</button>
@@ -1001,6 +993,14 @@ include __DIR__ . '/includes/header.php';
             </div>
             <p class="muted" id="goalsWeekDone">Sem metas concluídas ainda.</p>
             <div class="list" id="goalsDoneList"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Metas do mes</h3>
+                <button class="btn" data-modal="modalGoalMonth">Adicionar</button>
+            </div>
+            <div class="list" id="monthlyGoalsList"></div>
         </div>
 
         <div class="card">
@@ -1031,16 +1031,10 @@ include __DIR__ . '/includes/header.php';
     <div class="grid grid-2 section">
         <div class="card">
             <div class="card-header">
-                <h3>Foto do dia</h3>
-                <div style="display:flex; gap:8px;">
-                    <button class="btn" data-modal="modalPhoto">Cadastrar</button>
-                    <button class="btn" data-modal="modalPhotoGallery">Ver fotos</button>
-                    <button class="icon-btn subtle" id="deletePhoto" aria-label="Apagar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                <h3>Regras de vida</h3>
+                <button class="btn" data-modal="modalRule">Adicionar</button>
             </div>
-            <div class="photo-box" id="photoBox">Sem foto hoje</div>
+            <div class="list" id="rulesList"></div>
         </div>
 
         <div class="card">
