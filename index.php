@@ -8,6 +8,10 @@ function ensureHabitRemovalsTable(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS habit_removals (\n        habit_id INT NOT NULL PRIMARY KEY,\n        removed_from DATE NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n        KEY idx_removed_from (removed_from)\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 }
 
+function ensureMonthlyRulesTable(PDO $pdo) {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS monthly_rules (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        user_id INT DEFAULT 1,\n        rule_text TEXT NOT NULL,\n        is_active TINYINT DEFAULT 1,\n        created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+}
+
 function getWeekRange(): array {
     $now = new DateTime();
     $dayOfWeek = (int)$now->format('w');
@@ -30,6 +34,7 @@ if (isset($_GET['api'])) {
 
     try {
         ensureHabitRemovalsTable($pdo);
+        ensureMonthlyRulesTable($pdo);
 
         if ($action === 'get_week_activities') {
             $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? ORDER BY status ASC, FIELD(DAYOFWEEK(day_date), 2, 3, 4, 5, 6, 7, 1), day_date ASC");
