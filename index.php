@@ -794,6 +794,23 @@ include __DIR__ . '/includes/header.php';
         font-size: 0.7rem;
         font-weight: 700;
     }
+    .routine-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 12px;
+    }
+    .routine-time {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--accent);
+        min-width: 64px;
+    }
+    .routine-activity {
+        flex: 1;
+        font-size: 0.95rem;
+    }
     @media (max-width: 1024px) {
         .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -810,6 +827,8 @@ include __DIR__ . '/includes/header.php';
         .habit-table th, .habit-table td { padding: 6px; font-size: 0.7rem; }
         .habit-table th:first-child, .habit-table td:first-child { width: 140px; min-width: 140px; }
         #routineGrid { grid-template-columns: 1fr; }
+        .routine-item { flex-direction: column; align-items: flex-start; }
+        .routine-time { min-width: 0; }
     }
     @media (max-width: 480px) {
         .app-title h1 { font-size: 1.5rem; }
@@ -981,12 +1000,8 @@ include __DIR__ . '/includes/header.php';
     <div class="card section">
         <div class="card-header">
             <h3>Rotina do dia</h3>
-            <button class="btn" data-modal="modalRoutine">Cadastrar</button>
         </div>
-        <div class="grid grid-2" id="routineGrid">
-            <div class="list" id="routineListLeft"></div>
-            <div class="list" id="routineListRight"></div>
-        </div>
+        <div class="list" id="routineList"></div>
     </div>
 
     <div class="grid grid-3 section">
@@ -1644,34 +1659,21 @@ include __DIR__ . '/includes/header.php';
 
     const loadRoutine = async () => {
         const list = await api('get_routine_items', {}, 'GET');
-        const left = document.getElementById('routineListLeft');
-        const right = document.getElementById('routineListRight');
-        left.innerHTML = '';
-        right.innerHTML = '';
+        const container = document.getElementById('routineList');
+        container.innerHTML = '';
         if (!list.length) {
-            left.innerHTML = '<div class="muted">Cadastre sua rotina do dia.</div>';
+            container.innerHTML = '<div class="muted">Sem rotina cadastrada.</div>';
             return;
         }
-        const leftItems = list.slice(0, 5);
-        const rightItems = list.slice(5, 10);
-        const renderList = (items, container) => {
-            items.forEach(item => {
-                const row = document.createElement('div');
-                row.className = 'list-item';
-                row.innerHTML = `
-                    <div>
-                        <strong>${item.activity}</strong><br>
-                        <span class="tag weekday-tag">${getTodayWeekdayLabel()}</span>
-                    </div>
-                    <button class="icon-btn subtle" data-id="${item.id}" data-action="delete-routine" aria-label="Apagar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-                container.appendChild(row);
-            });
-        };
-        renderList(leftItems, left);
-        renderList(rightItems, right);
+        list.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'list-item routine-item';
+            row.innerHTML = `
+                <span class="routine-time">${item.routine_time?.slice(0,5) || ''}</span>
+                <span class="routine-activity">${item.activity}</span>
+            `;
+            container.appendChild(row);
+        });
     };
 
     const loadGoals = async () => {
@@ -1772,10 +1774,6 @@ include __DIR__ . '/includes/header.php';
         if (e.target.matches('[data-action="delete-rule"]')) {
             await api('delete_rule', { id: e.target.dataset.id });
             loadRules();
-        }
-        if (e.target.matches('[data-action="delete-routine"]')) {
-            await api('delete_routine_item', { id: e.target.dataset.id });
-            loadRoutine();
         }
         if (e.target.closest('[data-action="delete-activity"]')) {
             const btn = e.target.closest('[data-action="delete-activity"]');
