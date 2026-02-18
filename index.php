@@ -387,6 +387,36 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'get_goals_month') {
+            $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND goal_type = 'mensal' ORDER BY status ASC, id DESC");
+            $stmt->execute([$user_id]);
+            json_response($stmt->fetchAll());
+        }
+
+        if ($action === 'save_goal_month') {
+            $stmt = $pdo->prepare("INSERT INTO goals (user_id, title, difficulty, status, goal_type) VALUES (?, ?, 'media', 0, 'mensal')");
+            $stmt->execute([$user_id, $data['title'] ?? '']);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'update_goal_month') {
+            $stmt = $pdo->prepare("UPDATE goals SET title = ? WHERE id = ? AND user_id = ? AND goal_type = 'mensal'");
+            $stmt->execute([$data['title'] ?? '', $data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'toggle_goal_month') {
+            $stmt = $pdo->prepare("UPDATE goals SET status = 1 - status WHERE id = ? AND user_id = ? AND goal_type = 'mensal'");
+            $stmt->execute([$data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'delete_goal_month') {
+            $stmt = $pdo->prepare("DELETE FROM goals WHERE id = ? AND user_id = ? AND goal_type = 'mensal'");
+            $stmt->execute([$data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_goals_done') {
             $stmt = $pdo->prepare("SELECT * FROM goals WHERE user_id = ? AND status = 1 ORDER BY id DESC");
             $stmt->execute([$user_id]);
@@ -722,6 +752,31 @@ include __DIR__ . '/includes/header.php';
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
+    }
+    .goal-item.done .goal-title { text-decoration: line-through; color: var(--muted); }
+    .goal-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+    .goal-check input { display: none; }
+    .goal-check span {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #000000;
+        background: transparent;
+        transition: all 0.2s ease;
+    }
+    .goal-check input:checked + span {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(255, 255, 255, 0.9);
+    }
+    .goal-check input:checked + span::after {
+        content: '✓';
+        color: #000000;
+        font-size: 0.7rem;
+        font-weight: 700;
     }
     @media (max-width: 1024px) {
         .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1165,6 +1220,18 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<div class="modal" id="modalGoalMonth">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Meta do mes</h4>
+            <button class="modal-close" data-close>×</button>
+        </div>
+        <input type="hidden" id="goalMonthId">
+        <input class="input" id="goalMonthTitle" placeholder="Titulo da meta do mes">
+        <button class="btn btn-solid" id="saveGoalMonth">Salvar</button>
+    </div>
+</div>
+
 <script>
     const api = (action, payload = {}, method = 'POST') => {
         const opts = { method };
@@ -1193,6 +1260,12 @@ include __DIR__ . '/includes/header.php';
                 if (eventId) eventId.value = '';
                 if (eventTitle) eventTitle.value = '';
                 if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
+            }
+            if (e.target.dataset.modal === 'modalGoalMonth') {
+                const goalMonthId = document.getElementById('goalMonthId');
+                const goalMonthTitle = document.getElementById('goalMonthTitle');
+                if (goalMonthId) goalMonthId.value = '';
+                if (goalMonthTitle) goalMonthTitle.value = '';
             }
             if (e.target.dataset.modal === 'modalRun') {
                 const runId = document.getElementById('runId');
@@ -1581,6 +1654,39 @@ include __DIR__ . '/includes/header.php';
         });
     };
 
+    const loadMonthlyGoals = async () => {
+        const list = await api('get_goals_month', {}, 'GET');
+        const container = document.getElementById('monthlyGoalsList');
+        container.innerHTML = '';
+        if (!list.length) {
+            container.innerHTML = '<div class="muted">Nenhuma meta do mes.</div>';
+            return;
+        }
+        list.forEach(item => {
+            const isDone = parseInt(item.status, 10) === 1;
+            const row = document.createElement('div');
+            row.className = 'list-item goal-item' + (isDone ? ' done' : '');
+            row.innerHTML = `
+                <div>
+                    <div class="goal-title">${item.title}</div>
+                </div>
+                <div class="list-actions">
+                    <label class="goal-check">
+                        <input type="checkbox" data-action="toggle-goal-month" data-id="${item.id}" ${isDone ? 'checked' : ''}>
+                        <span></span>
+                    </label>
+                    <button class="icon-btn subtle" data-action="edit-goal-month" data-id="${item.id}" data-title="${item.title}" aria-label="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn subtle" data-action="delete-goal-month" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    };
+
     const loadGoalsDone = async () => {
         const list = await api('get_goals_done', {}, 'GET');
         const el = document.getElementById('goalsWeekDone');
@@ -1653,6 +1759,17 @@ include __DIR__ . '/includes/header.php';
             loadGoals();
             loadGoalsDone();
         }
+        if (e.target.closest('[data-action="edit-goal-month"]')) {
+            const btn = e.target.closest('[data-action="edit-goal-month"]');
+            document.getElementById('goalMonthId').value = btn.dataset.id;
+            document.getElementById('goalMonthTitle').value = btn.dataset.title;
+            openModal('modalGoalMonth');
+        }
+        if (e.target.closest('[data-action="delete-goal-month"]')) {
+            const btn = e.target.closest('[data-action="delete-goal-month"]');
+            await api('delete_goal_month', { id: btn.dataset.id });
+            loadMonthlyGoals();
+        }
         if (e.target.closest('[data-action="toggle-goal"]')) {
             const btn = e.target.closest('[data-action="toggle-goal"]');
             await api('toggle_goal', { id: btn.dataset.id });
@@ -1665,6 +1782,10 @@ include __DIR__ . '/includes/header.php';
         if (e.target.matches('[data-action="toggle-activity"]')) {
             await api('toggle_activity', { id: e.target.dataset.id });
             loadActivities();
+        }
+        if (e.target.matches('[data-action="toggle-goal-month"]')) {
+            await api('toggle_goal_month', { id: e.target.dataset.id });
+            loadMonthlyGoals();
         }
     });
 
@@ -1813,6 +1934,20 @@ include __DIR__ . '/includes/header.php';
         loadGoals();
     });
 
+    document.getElementById('saveGoalMonth').addEventListener('click', async () => {
+        const id = document.getElementById('goalMonthId').value;
+        const title = goalMonthTitle.value;
+        if (id) {
+            await api('update_goal_month', { id, title });
+        } else {
+            await api('save_goal_month', { title });
+        }
+        closeModals();
+        goalMonthTitle.value = '';
+        goalMonthId.value = '';
+        loadMonthlyGoals();
+    });
+
     const loadWeekRange = () => {
         const now = new Date();
         const day = now.getDay();
@@ -1840,6 +1975,7 @@ include __DIR__ . '/includes/header.php';
         loadRoutine();
         loadGoals();
         loadGoalsDone();
+        loadMonthlyGoals();
     };
 
     init();
