@@ -8,9 +8,6 @@ function ensureHabitRemovalsTable(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS habit_removals (\n        habit_id INT NOT NULL PRIMARY KEY,\n        removed_from DATE NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n        KEY idx_removed_from (removed_from)\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 }
 
-function ensureMonthlyRulesTable(PDO $pdo) {
-    $pdo->exec("CREATE TABLE IF NOT EXISTS monthly_rules (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        user_id INT DEFAULT 1,\n        rule_text TEXT NOT NULL,\n        is_active TINYINT DEFAULT 1,\n        created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-}
 
 function getWeekRange(): array {
     $now = new DateTime();
@@ -34,7 +31,6 @@ if (isset($_GET['api'])) {
 
     try {
         ensureHabitRemovalsTable($pdo);
-        ensureMonthlyRulesTable($pdo);
 
         if ($action === 'get_week_activities') {
             $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? ORDER BY status ASC, FIELD(DAYOFWEEK(day_date), 2, 3, 4, 5, 6, 7, 1), day_date ASC");
@@ -1008,7 +1004,7 @@ include __DIR__ . '/includes/header.php';
 
         <div class="card">
             <div class="card-header">
-                <h3>Metas do mes</h3>
+                <h3>Metas do Mês</h3>
                 <button class="btn" data-modal="modalGoalMonth">Adicionar</button>
             </div>
             <div class="list" id="monthlyGoalsList"></div>
@@ -1043,6 +1039,7 @@ include __DIR__ . '/includes/header.php';
         <div class="card">
             <div class="card-header">
                 <h3>Regras de vida</h3>
+                <button class="btn" data-modal="modalRule">Adicionar</button>
             </div>
             <div class="list" id="rulesList"></div>
         </div>
@@ -1228,11 +1225,10 @@ include __DIR__ . '/includes/header.php';
 <div class="modal" id="modalGoalMonth">
     <div class="modal-content">
         <div class="modal-header">
-            <h4>Meta do mes</h4>
+            <h4>Meta do Mês</h4>
             <button class="modal-close" data-close>×</button>
         </div>
-        <input type="hidden" id="goalMonthId">
-        <input class="input" id="goalMonthTitle" placeholder="Titulo da meta do mes">
+        <input class="input" id="goalMonthTitle" placeholder="Titulo da meta do mês">
         <button class="btn btn-solid" id="saveGoalMonth">Salvar</button>
     </div>
 </div>
@@ -1267,9 +1263,7 @@ include __DIR__ . '/includes/header.php';
                 if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
             }
             if (e.target.dataset.modal === 'modalGoalMonth') {
-                const goalMonthId = document.getElementById('goalMonthId');
                 const goalMonthTitle = document.getElementById('goalMonthTitle');
-                if (goalMonthId) goalMonthId.value = '';
                 if (goalMonthTitle) goalMonthTitle.value = '';
             }
             if (e.target.dataset.modal === 'modalRule') {
@@ -1602,6 +1596,11 @@ include __DIR__ . '/includes/header.php';
             row.className = 'list-item';
             row.innerHTML = `
                 <div>${item.rule_text}</div>
+                <div class="list-actions">
+                    <button class="icon-btn subtle" data-action="delete-rule" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -1669,7 +1668,7 @@ include __DIR__ . '/includes/header.php';
         const container = document.getElementById('monthlyGoalsList');
         container.innerHTML = '';
         if (!list.length) {
-            container.innerHTML = '<div class="muted">Nenhuma meta do mes.</div>';
+            container.innerHTML = '<div class="muted">Nenhuma meta do mês.</div>';
             return;
         }
         list.forEach(item => {
@@ -1685,9 +1684,6 @@ include __DIR__ . '/includes/header.php';
                         <input type="checkbox" data-action="toggle-goal-month" data-id="${item.id}" ${isDone ? 'checked' : ''}>
                         <span></span>
                     </label>
-                    <button class="icon-btn subtle" data-action="edit-goal-month" data-id="${item.id}" data-title="${item.title}" aria-label="Editar">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
                     <button class="icon-btn subtle" data-action="delete-goal-month" data-id="${item.id}" aria-label="Apagar">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -1741,14 +1737,6 @@ include __DIR__ . '/includes/header.php';
             await api('delete_rule', { id: e.target.dataset.id });
             loadRules();
         }
-        if (e.target.closest('[data-action="edit-rule"]')) {
-            const btn = e.target.closest('[data-action="edit-rule"]');
-            const ruleId = document.getElementById('ruleId');
-            const ruleText = document.getElementById('ruleText');
-            if (ruleId) ruleId.value = btn.dataset.id;
-            if (ruleText) ruleText.value = btn.dataset.text || '';
-            openModal('modalRule');
-        }
         if (e.target.matches('[data-action="delete-routine"]')) {
             await api('delete_routine_item', { id: e.target.dataset.id });
             loadRoutine();
@@ -1776,12 +1764,6 @@ include __DIR__ . '/includes/header.php';
             await api('delete_goal', { id: btn.dataset.id });
             loadGoals();
             loadGoalsDone();
-        }
-        if (e.target.closest('[data-action="edit-goal-month"]')) {
-            const btn = e.target.closest('[data-action="edit-goal-month"]');
-            document.getElementById('goalMonthId').value = btn.dataset.id;
-            document.getElementById('goalMonthTitle').value = btn.dataset.title;
-            openModal('modalGoalMonth');
         }
         if (e.target.closest('[data-action="delete-goal-month"]')) {
             const btn = e.target.closest('[data-action="delete-goal-month"]');
@@ -1961,16 +1943,10 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('saveGoalMonth').addEventListener('click', async () => {
-        const id = document.getElementById('goalMonthId').value;
         const title = goalMonthTitle.value;
-        if (id) {
-            await api('update_goal_month', { id, title });
-        } else {
-            await api('save_goal_month', { title });
-        }
+        await api('save_goal_month', { title });
         closeModals();
         goalMonthTitle.value = '';
-        goalMonthId.value = '';
         loadMonthlyGoals();
     });
 
