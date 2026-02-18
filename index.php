@@ -1962,14 +1962,15 @@ include __DIR__ . '/includes/header.php';
 
     document.getElementById('saveRule').addEventListener('click', async () => {
         const id = document.getElementById('ruleId').value;
-        const text = ruleText.value;
+        const ruleInput = document.getElementById('ruleText');
+        const text = ruleInput ? ruleInput.value : '';
         if (id) {
             await api('update_rule', { id, rule_text: text });
         } else {
             await api('save_rule', { rule_text: text });
         }
         closeModals();
-        ruleText.value = '';
+        if (ruleInput) ruleInput.value = '';
         document.getElementById('ruleId').value = '';
         loadRules();
     });
