@@ -8,6 +8,14 @@ function ensureHabitRemovalsTable(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS habit_removals (\n        habit_id INT NOT NULL PRIMARY KEY,\n        removed_from DATE NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n        KEY idx_removed_from (removed_from)\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 }
 
+function ensureGoalsMonthlyEnum(PDO $pdo) {
+    try {
+        $pdo->exec("ALTER TABLE goals MODIFY goal_type ENUM('geral','anual','mensal') DEFAULT 'geral'");
+    } catch (Exception $e) {
+        error_log('[DB] Falha ao ajustar enum goal_type: ' . $e->getMessage());
+    }
+}
+
 
 function getWeekRange(): array {
     $now = new DateTime();
@@ -31,6 +39,7 @@ if (isset($_GET['api'])) {
 
     try {
         ensureHabitRemovalsTable($pdo);
+        ensureGoalsMonthlyEnum($pdo);
 
         if ($action === 'get_week_activities') {
             $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? ORDER BY status ASC, FIELD(DAYOFWEEK(day_date), 2, 3, 4, 5, 6, 7, 1), day_date ASC");
@@ -1943,10 +1952,11 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('saveGoalMonth').addEventListener('click', async () => {
-        const title = goalMonthTitle.value;
+        const input = document.getElementById('goalMonthTitle');
+        const title = input ? input.value : '';
         await api('save_goal_month', { title });
         closeModals();
-        goalMonthTitle.value = '';
+        if (input) input.value = '';
         loadMonthlyGoals();
     });
 
