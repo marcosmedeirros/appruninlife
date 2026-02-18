@@ -878,6 +878,33 @@ include __DIR__ . '/includes/header.php';
     }
     .calendar-cell .day { font-size: 0.9rem; font-weight: 600; }
     .calendar-cell .mark { font-size: 0.85rem; color: var(--success); }
+
+    /* Mobile-first layout defaults */
+    .app { padding: 16px 14px 64px; }
+    .app-header { flex-direction: column; align-items: flex-start; }
+    .app-actions { width: 100%; align-items: stretch; }
+    .app-actions-row { width: 100%; justify-content: flex-start; }
+    .week-pill { width: 100%; text-align: center; }
+    .card-header { flex-wrap: wrap; }
+    .card-header > div,
+    .card-header > button,
+    .card-header > span { width: 100%; }
+    .modal-content { width: min(520px, 100%); }
+    .list-item { flex-direction: column; align-items: flex-start; }
+    .list-actions { width: 100%; justify-content: flex-end; }
+
+    @media (min-width: 768px) {
+        .app { padding: 30px 22px 80px; }
+        .app-header { flex-direction: row; align-items: center; }
+        .app-actions { width: auto; align-items: flex-end; }
+        .app-actions-row { width: auto; justify-content: flex-end; }
+        .week-pill { width: auto; text-align: left; }
+        .card-header > div,
+        .card-header > button,
+        .card-header > span { width: auto; }
+        .list-item { flex-direction: row; align-items: center; }
+        .list-actions { width: auto; }
+    }
     .calendar-nav {
         display: flex;
         align-items: center;

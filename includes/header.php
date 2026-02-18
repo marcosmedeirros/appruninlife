@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#000000">
     <meta name="description" content="LifeOS - Sistema de Gestão de Vida: organize tarefas, finanças, hábitos, metas e mais.">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,6 +19,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?php require_once __DIR__ . '/paths.php'; echo BASE_PATH; ?>/assets/css/style.css?v=20251220-2">
     <script>const BASE_PATH = '<?php echo BASE_PATH; ?>';</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swUrl = `${BASE_PATH}/sw.js`;
+                navigator.serviceWorker.register(swUrl).catch(() => {});
+            });
+        }
+    </script>
     <style>
         html, body {
             background: #000000;

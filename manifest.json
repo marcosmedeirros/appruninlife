@@ -3,10 +3,10 @@
   "short_name": "LifeOS",
   "description": "Sistema de Gestão de Vida - Dashboard Pessoal",
   "start_url": "./index.php",
-  "scope": "/lifeos/",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0a",
-  "theme_color": "#ffffff",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
