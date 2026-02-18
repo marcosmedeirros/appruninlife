@@ -333,31 +333,25 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'get_rules') {
-            $stmt = $pdo->prepare("SELECT id, user_id, rule_text, is_active, created_at FROM monthly_rules WHERE user_id = ? ORDER BY id DESC");
+            $stmt = $pdo->prepare("SELECT id, rule_text FROM life_rules WHERE user_id = ? ORDER BY id DESC");
             $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
 
         if ($action === 'save_rule') {
-            $stmt = $pdo->prepare("INSERT INTO monthly_rules (user_id, rule_text) VALUES (?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO life_rules (user_id, rule_text) VALUES (?, ?)");
             $stmt->execute([$user_id, $data['rule_text'] ?? '']);
             json_response(['success' => true]);
         }
 
         if ($action === 'update_rule') {
-            $stmt = $pdo->prepare("UPDATE monthly_rules SET rule_text = ? WHERE id = ? AND user_id = ?");
+            $stmt = $pdo->prepare("UPDATE life_rules SET rule_text = ? WHERE id = ? AND user_id = ?");
             $stmt->execute([$data['rule_text'] ?? '', $data['id'] ?? 0, $user_id]);
             json_response(['success' => true]);
         }
 
-        if ($action === 'toggle_rule') {
-            $stmt = $pdo->prepare("UPDATE monthly_rules SET is_active = 1 - is_active WHERE id = ? AND user_id = ?");
-            $stmt->execute([$data['id'] ?? 0, $user_id]);
-            json_response(['success' => true]);
-        }
-
         if ($action === 'delete_rule') {
-            $stmt = $pdo->prepare("DELETE FROM monthly_rules WHERE id = ? AND user_id = ?");
+            $stmt = $pdo->prepare("DELETE FROM life_rules WHERE id = ? AND user_id = ?");
             $stmt->execute([$data['id'] ?? 0, $user_id]);
             json_response(['success' => true]);
         }
@@ -1048,8 +1042,7 @@ include __DIR__ . '/includes/header.php';
     <div class="grid grid-2 section">
         <div class="card">
             <div class="card-header">
-                <h3>Regras do mes</h3>
-                <button class="btn" data-modal="modalRule">Adicionar</button>
+                <h3>Regras de vida</h3>
             </div>
             <div class="list" id="rulesList"></div>
         </div>
@@ -1202,7 +1195,7 @@ include __DIR__ . '/includes/header.php';
 <div class="modal" id="modalRule">
     <div class="modal-content">
         <div class="modal-header">
-            <h4>Regra do mes</h4>
+            <h4>Nova regra de vida</h4>
             <button class="modal-close" data-close>×</button>
         </div>
         <input type="hidden" id="ruleId">
@@ -1601,31 +1594,14 @@ include __DIR__ . '/includes/header.php';
         const container = document.getElementById('rulesList');
         container.innerHTML = '';
         if (!list.length) {
-            container.innerHTML = '<div class="muted">Adicione uma regra do mes.</div>';
+            container.innerHTML = '<div class="muted">Sem regras cadastradas.</div>';
             return;
         }
         list.forEach(item => {
-            const isActive = parseInt(item.is_active, 10) === 1;
-            const safeText = (item.rule_text || '').replace(/"/g, '&quot;');
             const row = document.createElement('div');
-            row.className = 'list-item goal-item' + (isActive ? '' : ' done');
+            row.className = 'list-item';
             row.innerHTML = `
-                <div>
-                    <div class="goal-title">${item.rule_text}</div>
-                    <div class="muted" style="font-size: 0.8rem;">ID: ${item.id} • User: ${item.user_id} • Ativo: ${isActive ? '1' : '0'} • Criado: ${item.created_at || ''}</div>
-                </div>
-                <div class="list-actions">
-                    <label class="goal-check">
-                        <input type="checkbox" data-action="toggle-rule" data-id="${item.id}" ${isActive ? 'checked' : ''}>
-                        <span></span>
-                    </label>
-                    <button class="icon-btn subtle" data-action="edit-rule" data-id="${item.id}" data-text="${safeText}" aria-label="Editar">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="icon-btn subtle" data-action="delete-rule" data-id="${item.id}" aria-label="Apagar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+                <div>${item.rule_text}</div>
             `;
             container.appendChild(row);
         });
@@ -1772,10 +1748,6 @@ include __DIR__ . '/includes/header.php';
             if (ruleId) ruleId.value = btn.dataset.id;
             if (ruleText) ruleText.value = btn.dataset.text || '';
             openModal('modalRule');
-        }
-        if (e.target.matches('[data-action="toggle-rule"]')) {
-            await api('toggle_rule', { id: e.target.dataset.id });
-            loadRules();
         }
         if (e.target.matches('[data-action="delete-routine"]')) {
             await api('delete_routine_item', { id: e.target.dataset.id });
