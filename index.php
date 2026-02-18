@@ -328,7 +328,7 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'get_rules') {
-            $stmt = $pdo->prepare("SELECT id, rule_text, is_active FROM monthly_rules WHERE user_id = ? ORDER BY id DESC");
+            $stmt = $pdo->prepare("SELECT id, user_id, rule_text, is_active, created_at FROM monthly_rules WHERE user_id = ? ORDER BY id DESC");
             $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
@@ -1607,6 +1607,7 @@ include __DIR__ . '/includes/header.php';
             row.innerHTML = `
                 <div>
                     <div class="goal-title">${item.rule_text}</div>
+                    <div class="muted" style="font-size: 0.8rem;">ID: ${item.id} • User: ${item.user_id} • Ativo: ${isActive ? '1' : '0'} • Criado: ${item.created_at || ''}</div>
                 </div>
                 <div class="list-actions">
                     <label class="goal-check">
