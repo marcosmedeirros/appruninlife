@@ -32,9 +32,8 @@ if (isset($_GET['api'])) {
         ensureHabitRemovalsTable($pdo);
 
         if ($action === 'get_week_activities') {
-            [$start, $end] = getWeekRange();
-            $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? AND day_date BETWEEN ? AND ? ORDER BY status ASC, day_date ASC");
-            $stmt->execute([$user_id, $start, $end]);
+            $stmt = $pdo->prepare("SELECT * FROM activities WHERE user_id = ? ORDER BY status ASC, FIELD(DAYOFWEEK(day_date), 2, 3, 4, 5, 6, 7, 1), day_date ASC");
+            $stmt->execute([$user_id]);
             json_response($stmt->fetchAll());
         }
 
