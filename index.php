@@ -53,6 +53,12 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'update_activity') {
+            $stmt = $pdo->prepare("UPDATE activities SET title = ?, day_date = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['title'] ?? '', $data['date'] ?? date('Y-m-d'), $data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'toggle_activity') {
             $stmt = $pdo->prepare("UPDATE activities SET status = 1 - status WHERE id = ? AND user_id = ?");
             $stmt->execute([$data['id'], $user_id]);
@@ -771,7 +777,7 @@ include __DIR__ . '/includes/header.php';
     }
     .activities-board {
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 12px;
         overflow-x: hidden;
         padding-bottom: 8px;
@@ -1141,6 +1147,7 @@ include __DIR__ . '/includes/header.php';
             <h4>Nova atividade da semana</h4>
             <button class="modal-close" data-close>×</button>
         </div>
+        <input type="hidden" id="activityId">
         <input class="input" id="activityTitle" placeholder="O que precisa fazer?">
         <select class="input" id="activityWeekday">
             <option value="1">Segunda-feira</option>
@@ -1344,6 +1351,14 @@ include __DIR__ . '/includes/header.php';
                 if (eventTitle) eventTitle.value = '';
                 if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
             }
+            if (e.target.dataset.modal === 'modalActivity') {
+                const activityId = document.getElementById('activityId');
+                const activityTitle = document.getElementById('activityTitle');
+                const activityWeekday = document.getElementById('activityWeekday');
+                if (activityId) activityId.value = '';
+                if (activityTitle) activityTitle.value = '';
+                if (activityWeekday) activityWeekday.value = String(getWeekdayNumber(new Date().toISOString().slice(0, 10)));
+            }
             if (e.target.dataset.modal === 'modalGoalMonth') {
                 const goalMonthTitle = document.getElementById('goalMonthTitle');
                 if (goalMonthTitle) goalMonthTitle.value = '';
@@ -1466,16 +1481,16 @@ include __DIR__ . '/includes/header.php';
             { id: 3, label: 'Quarta' },
             { id: 4, label: 'Quinta' },
             { id: 5, label: 'Sexta' },
-            { id: 6, label: 'Sabado' },
-            { id: 7, label: 'Domingo' }
+            { id: 'weekend', label: 'Sab/Dom' }
         ];
 
         const grouped = new Map();
         weekdays.forEach(day => grouped.set(day.id, []));
         list.forEach(item => {
             const day = getWeekdayNumber(item.day_date);
-            if (!grouped.has(day)) grouped.set(day, []);
-            grouped.get(day).push(item);
+            const key = (day === 6 || day === 7) ? 'weekend' : day;
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(item);
         });
 
         weekdays.forEach(day => {
@@ -1485,6 +1500,7 @@ include __DIR__ . '/includes/header.php';
             const itemsHtml = items.length
                 ? items.map(item => {
                     const isDone = item.status == 1;
+                    const weekdayNum = getWeekdayNumber(item.day_date);
                     return `
                         <div class="list-item activity-item${isDone ? ' activity-done' : ''}">
                             <div>
@@ -1495,6 +1511,9 @@ include __DIR__ . '/includes/header.php';
                                     <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${isDone ? 'checked' : ''}>
                                     <span></span>
                                 </label>
+                                <button class="icon-btn subtle" data-action="edit-activity" data-id="${item.id}" data-title="${item.title}" data-weekday="${weekdayNum}" aria-label="Editar">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
                                 <button class="icon-btn subtle" data-action="delete-activity" data-id="${item.id}" aria-label="Apagar">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
@@ -1851,6 +1870,16 @@ include __DIR__ . '/includes/header.php';
             await api('delete_event', { id: btn.dataset.id });
             loadEvents();
         }
+        if (e.target.closest('[data-action="edit-activity"]')) {
+            const btn = e.target.closest('[data-action="edit-activity"]');
+            const activityId = document.getElementById('activityId');
+            const activityTitle = document.getElementById('activityTitle');
+            const activityWeekday = document.getElementById('activityWeekday');
+            if (activityId) activityId.value = btn.dataset.id;
+            if (activityTitle) activityTitle.value = btn.dataset.title || '';
+            if (activityWeekday) activityWeekday.value = btn.dataset.weekday || '1';
+            openModal('modalActivity');
+        }
         if (e.target.closest('[data-action="edit-routine"]')) {
             const btn = e.target.closest('[data-action="edit-routine"]');
             const routineId = document.getElementById('routineId');
@@ -1918,11 +1947,19 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('saveActivity').addEventListener('click', async () => {
-        const weekday = parseInt(activityWeekday.value, 10);
+        const activityId = document.getElementById('activityId');
+        const activityTitle = document.getElementById('activityTitle');
+        const activityWeekday = document.getElementById('activityWeekday');
+        const weekday = parseInt(activityWeekday?.value || '1', 10);
         const date = getDateForWeekday(weekday);
-        await api('save_activity', { title: activityTitle.value, date });
+        if (activityId && activityId.value) {
+            await api('update_activity', { id: activityId.value, title: activityTitle?.value || '', date });
+        } else {
+            await api('save_activity', { title: activityTitle?.value || '', date });
+        }
         closeModals();
-        activityTitle.value = '';
+        if (activityTitle) activityTitle.value = '';
+        if (activityId) activityId.value = '';
         loadActivities();
     });
 
