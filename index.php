@@ -771,13 +771,11 @@ include __DIR__ . '/includes/header.php';
     }
     .activities-board {
         display: grid;
-        grid-template-columns: repeat(7, minmax(180px, 1fr));
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 12px;
-        overflow-x: auto;
+        overflow-x: hidden;
         padding-bottom: 8px;
     }
-    .activities-board::-webkit-scrollbar { height: 6px; }
-    .activities-board::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
     .activity-column {
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
