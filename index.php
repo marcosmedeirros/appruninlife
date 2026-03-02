@@ -373,6 +373,12 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'update_routine_item') {
+            $stmt = $pdo->prepare("UPDATE routine_items SET routine_time = ?, activity = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$data['time'] ?? '08:00', $data['activity'] ?? '', $data['id'] ?? 0, $user_id]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'delete_routine_item') {
             $stmt = $pdo->prepare("DELETE FROM routine_items WHERE id = ? AND user_id = ?");
             $stmt->execute([$data['id'], $user_id]);
@@ -763,6 +769,34 @@ include __DIR__ . '/includes/header.php';
         font-size: 0.75rem;
         font-weight: 700;
     }
+    .activities-board {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(180px, 1fr));
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    .activities-board::-webkit-scrollbar { height: 6px; }
+    .activities-board::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+    .activity-column {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px;
+        min-height: 160px;
+        background: #000000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .activity-day-header {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .activity-items { display: flex; flex-direction: column; gap: 10px; }
+    .activity-empty { font-size: 0.8rem; color: var(--muted); }
     .list-actions { display: inline-flex; gap: 6px; }
     .goals-grid {
         display: grid;
@@ -1948,9 +1982,19 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('saveRoutine').addEventListener('click', async () => {
-        await api('save_routine_item', { time: routineTime.value, activity: routineActivity.value });
+        const routineId = document.getElementById('routineId');
+        const routineTime = document.getElementById('routineTime');
+        const routineActivity = document.getElementById('routineActivity');
+        const payload = { time: routineTime ? routineTime.value : '', activity: routineActivity ? routineActivity.value : '' };
+        if (routineId && routineId.value) {
+            await api('update_routine_item', { ...payload, id: routineId.value });
+        } else {
+            await api('save_routine_item', payload);
+        }
         closeModals();
-        routineActivity.value = '';
+        if (routineActivity) routineActivity.value = '';
+        if (routineTime) routineTime.value = '';
+        if (routineId) routineId.value = '';
         loadRoutine();
     });
 
