@@ -1013,29 +1013,20 @@ include __DIR__ . '/includes/header.php';
         </div>
     </header>
 
-    <div class="grid grid-2">
-        <div class="card">
-            <div class="card-header">
-                <h3>Atividades da semana</h3>
-                <button class="btn" data-modal="modalActivity">Adicionar</button>
-            </div>
-            <div class="activities-board" id="activitiesBoard"></div>
+    <div class="card section">
+        <div class="card-header">
+            <h3>Atividades da semana</h3>
+            <button class="btn" data-modal="modalActivity">Adicionar</button>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3>Eventos</h3>
-                <button class="btn" data-modal="modalEvent">Adicionar</button>
-            </div>
-            <div class="list" id="eventsList"></div>
-        </div>
+        <div class="activities-board" id="activitiesBoard"></div>
     </div>
 
     <div class="card section">
         <div class="card-header">
-            <h3>Rotina do dia</h3>
+            <h3>Eventos</h3>
+            <button class="btn" data-modal="modalEvent">Adicionar</button>
         </div>
-        <div class="list" id="routineList"></div>
+        <div class="list" id="eventsList"></div>
     </div>
 
     <div class="grid grid-3 section">
@@ -1072,6 +1063,13 @@ include __DIR__ . '/includes/header.php';
         <div class="habit-grid">
             <table class="habit-table" id="habitTable"></table>
         </div>
+    </div>
+
+    <div class="card section">
+        <div class="card-header">
+            <h3>Rotina do dia</h3>
+        </div>
+        <div class="list" id="routineList"></div>
     </div>
 
     <div class="grid grid-3 section">
