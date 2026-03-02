@@ -1019,7 +1019,7 @@ include __DIR__ . '/includes/header.php';
                 <h3>Atividades da semana</h3>
                 <button class="btn" data-modal="modalActivity">Adicionar</button>
             </div>
-            <div class="list" id="activitiesList"></div>
+            <div class="activities-board" id="activitiesBoard"></div>
         </div>
 
         <div class="card">
@@ -1268,6 +1268,7 @@ include __DIR__ . '/includes/header.php';
             <h4>Nova rotina</h4>
             <button class="modal-close" data-close>×</button>
         </div>
+        <input type="hidden" id="routineId">
         <input class="input" id="routineTime" type="time">
         <input class="input" id="routineActivity" placeholder="Atividade">
         <button class="btn btn-solid" id="saveRoutine">Salvar</button>
@@ -1361,6 +1362,14 @@ include __DIR__ . '/includes/header.php';
                 const runId = document.getElementById('runId');
                 if (runId) runId.value = '';
             }
+            if (e.target.dataset.modal === 'modalRoutine') {
+                const routineId = document.getElementById('routineId');
+                const routineTime = document.getElementById('routineTime');
+                const routineActivity = document.getElementById('routineActivity');
+                if (routineId) routineId.value = '';
+                if (routineTime) routineTime.value = '';
+                if (routineActivity) routineActivity.value = '';
+            }
             if (e.target.dataset.modal === 'modalFinanceBase') {
                 const baseModal = document.getElementById('financeBaseModal');
                 if (baseModal) {
@@ -1408,6 +1417,12 @@ include __DIR__ . '/includes/header.php';
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
+    const getWeekdayNumber = (dateStr) => {
+        const d = new Date(dateStr + 'T00:00:00');
+        const jsDay = d.getDay();
+        return jsDay === 0 ? 7 : jsDay;
+    };
+
     const getTodayWeekdayLabel = () => {
         const d = new Date();
         const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
@@ -1446,31 +1461,58 @@ include __DIR__ . '/includes/header.php';
 
     const loadActivities = async () => {
         const list = await api('get_week_activities', {}, 'GET');
-        const container = document.getElementById('activitiesList');
+        const container = document.getElementById('activitiesBoard');
         container.innerHTML = '';
-        if (!list.length) {
-            container.innerHTML = '<div class="muted">Nada por aqui. Adicione uma atividade.</div>';
-            return;
-        }
+
+        const weekdays = [
+            { id: 1, label: 'Segunda' },
+            { id: 2, label: 'Terca' },
+            { id: 3, label: 'Quarta' },
+            { id: 4, label: 'Quinta' },
+            { id: 5, label: 'Sexta' },
+            { id: 6, label: 'Sabado' },
+            { id: 7, label: 'Domingo' }
+        ];
+
+        const grouped = new Map();
+        weekdays.forEach(day => grouped.set(day.id, []));
         list.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'list-item activity-item' + (item.status == 1 ? ' activity-done' : '');
-            row.innerHTML = `
-                <div>
-                    <strong class="activity-title">${item.title}</strong><br>
-                    <span class="tag weekday-tag">${formatWeekdayLabel(item.day_date)}</span>
-                </div>
-                <div class="list-actions">
-                    <label class="activity-check">
-                        <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${item.status == 1 ? 'checked' : ''}>
-                        <span></span>
-                    </label>
-                    <button class="icon-btn subtle" data-action="delete-activity" data-id="${item.id}" aria-label="Apagar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+            const day = getWeekdayNumber(item.day_date);
+            if (!grouped.has(day)) grouped.set(day, []);
+            grouped.get(day).push(item);
+        });
+
+        weekdays.forEach(day => {
+            const column = document.createElement('div');
+            column.className = 'activity-column';
+            const items = grouped.get(day.id) || [];
+            const itemsHtml = items.length
+                ? items.map(item => {
+                    const isDone = item.status == 1;
+                    return `
+                        <div class="list-item activity-item${isDone ? ' activity-done' : ''}">
+                            <div>
+                                <strong class="activity-title">${item.title}</strong>
+                            </div>
+                            <div class="list-actions">
+                                <label class="activity-check">
+                                    <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${isDone ? 'checked' : ''}>
+                                    <span></span>
+                                </label>
+                                <button class="icon-btn subtle" data-action="delete-activity" data-id="${item.id}" aria-label="Apagar">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : `<div class="activity-empty">Sem atividades</div>`;
+
+            column.innerHTML = `
+                <div class="activity-day-header">${day.label}</div>
+                <div class="activity-items">${itemsHtml}</div>
             `;
-            container.appendChild(row);
+            container.appendChild(column);
         });
     };
 
@@ -1705,6 +1747,14 @@ include __DIR__ . '/includes/header.php';
             row.innerHTML = `
                 <span class="routine-time">${item.routine_time?.slice(0,5) || ''}</span>
                 <span class="routine-activity">${item.activity}</span>
+                <div class="list-actions">
+                    <button class="icon-btn subtle" data-action="edit-routine" data-id="${item.id}" data-time="${item.routine_time || ''}" data-activity="${item.activity || ''}" aria-label="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn subtle" data-action="delete-routine" data-id="${item.id}" aria-label="Apagar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -1804,6 +1854,20 @@ include __DIR__ . '/includes/header.php';
             const btn = e.target.closest('[data-action="delete-event"]');
             await api('delete_event', { id: btn.dataset.id });
             loadEvents();
+        }
+        if (e.target.closest('[data-action="edit-routine"]')) {
+            const btn = e.target.closest('[data-action="edit-routine"]');
+            const routineId = document.getElementById('routineId');
+            const routineTime = document.getElementById('routineTime');
+            const routineActivity = document.getElementById('routineActivity');
+            if (routineId) routineId.value = btn.dataset.id;
+            if (routineTime) routineTime.value = btn.dataset.time || '';
+            if (routineActivity) routineActivity.value = btn.dataset.activity || '';
+            openModal('modalRoutine');
+        }
+        if (e.target.matches('[data-action="delete-routine"]')) {
+            await api('delete_routine_item', { id: e.target.dataset.id });
+            loadRoutine();
         }
         if (e.target.matches('[data-action="delete-rule"]')) {
             await api('delete_rule', { id: e.target.dataset.id });
