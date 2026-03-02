@@ -1158,7 +1158,10 @@ include __DIR__ . '/includes/header.php';
             <option value="6">Sábado</option>
             <option value="7">Domingo</option>
         </select>
-        <button class="btn btn-solid" id="saveActivity">Salvar</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn" id="deleteActivity" style="display:none;">Apagar</button>
+            <button class="btn btn-solid" id="saveActivity">Salvar</button>
+        </div>
     </div>
 </div>
 
@@ -1355,9 +1358,11 @@ include __DIR__ . '/includes/header.php';
                 const activityId = document.getElementById('activityId');
                 const activityTitle = document.getElementById('activityTitle');
                 const activityWeekday = document.getElementById('activityWeekday');
+                const deleteBtn = document.getElementById('deleteActivity');
                 if (activityId) activityId.value = '';
                 if (activityTitle) activityTitle.value = '';
                 if (activityWeekday) activityWeekday.value = String(getWeekdayNumber(new Date().toISOString().slice(0, 10)));
+                if (deleteBtn) deleteBtn.style.display = 'none';
             }
             if (e.target.dataset.modal === 'modalGoalMonth') {
                 const goalMonthTitle = document.getElementById('goalMonthTitle');
@@ -1513,9 +1518,6 @@ include __DIR__ . '/includes/header.php';
                                 </label>
                                 <button class="icon-btn subtle" data-action="edit-activity" data-id="${item.id}" data-title="${item.title}" data-weekday="${weekdayNum}" aria-label="Editar">
                                     <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button class="icon-btn subtle" data-action="delete-activity" data-id="${item.id}" aria-label="Apagar">
-                                    <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
                         </div>
@@ -1875,9 +1877,11 @@ include __DIR__ . '/includes/header.php';
             const activityId = document.getElementById('activityId');
             const activityTitle = document.getElementById('activityTitle');
             const activityWeekday = document.getElementById('activityWeekday');
+            const deleteBtn = document.getElementById('deleteActivity');
             if (activityId) activityId.value = btn.dataset.id;
             if (activityTitle) activityTitle.value = btn.dataset.title || '';
             if (activityWeekday) activityWeekday.value = btn.dataset.weekday || '1';
+            if (deleteBtn) deleteBtn.style.display = 'inline-flex';
             openModal('modalActivity');
         }
         if (e.target.closest('[data-action="edit-routine"]')) {
@@ -1897,11 +1901,6 @@ include __DIR__ . '/includes/header.php';
         if (e.target.matches('[data-action="delete-rule"]')) {
             await api('delete_rule', { id: e.target.dataset.id });
             loadRules();
-        }
-        if (e.target.closest('[data-action="delete-activity"]')) {
-            const btn = e.target.closest('[data-action="delete-activity"]');
-            await api('delete_activity', { id: btn.dataset.id });
-            loadActivities();
         }
         if (e.target.closest('[data-action="edit-run"]')) {
             const btn = e.target.closest('[data-action="edit-run"]');
@@ -1950,6 +1949,7 @@ include __DIR__ . '/includes/header.php';
         const activityId = document.getElementById('activityId');
         const activityTitle = document.getElementById('activityTitle');
         const activityWeekday = document.getElementById('activityWeekday');
+        const deleteBtn = document.getElementById('deleteActivity');
         const weekday = parseInt(activityWeekday?.value || '1', 10);
         const date = getDateForWeekday(weekday);
         if (activityId && activityId.value) {
@@ -1960,6 +1960,20 @@ include __DIR__ . '/includes/header.php';
         closeModals();
         if (activityTitle) activityTitle.value = '';
         if (activityId) activityId.value = '';
+        if (deleteBtn) deleteBtn.style.display = 'none';
+        loadActivities();
+    });
+
+    document.getElementById('deleteActivity').addEventListener('click', async () => {
+        const activityId = document.getElementById('activityId');
+        if (!activityId || !activityId.value) return;
+        await api('delete_activity', { id: activityId.value });
+        closeModals();
+        activityId.value = '';
+        const activityTitle = document.getElementById('activityTitle');
+        if (activityTitle) activityTitle.value = '';
+        const deleteBtn = document.getElementById('deleteActivity');
+        if (deleteBtn) deleteBtn.style.display = 'none';
         loadActivities();
     });
 
