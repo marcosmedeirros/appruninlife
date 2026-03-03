@@ -39,9 +39,9 @@ require_once __DIR__ . '/includes/paths.php';
         }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-gray-900 text-gray-200">
+<body class="flex h-screen overflow-hidden bg-gray-900 text-gray-200 relative">
 
-    <aside class="flex-shrink-0 w-64 bg-gray-800 flex flex-col shadow-lg">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 flex flex-col shadow-lg transform -translate-x-full transition-transform duration-200 md:static md:translate-x-0">
         <div class="h-16 flex items-center justify-center px-4 shadow-md bg-gray-900">
             <h1 class="text-xl font-semibold text-white">General Bets</h1>
         </div>
@@ -58,21 +58,24 @@ require_once __DIR__ . '/includes/paths.php';
                 <i data-lucide="trophy" class="w-5 h-5 mr-3"></i>
                 Competicoes
             </a>
-            <a href="#" class="nav-link group" data-page="times">
-                <i data-lucide="users" class="w-5 h-5 mr-3"></i>
-                Times
-            </a>
             <a href="#" class="nav-link group" data-page="caixa">
                 <i data-lucide="calendar-days" class="w-5 h-5 mr-3"></i>
                 Caixa Diario
             </a>
         </nav>
-        <div class="p-4 border-t border-gray-700">
-            <button id="banca-open" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">Definir banca atual</button>
-        </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-8">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="flex items-center justify-between mb-6 md:hidden">
+            <button id="menu-toggle" class="text-gray-200 hover:text-white" aria-label="Abrir menu">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-lg font-semibold text-white">General Bets</h2>
+            <span class="w-6 h-6"></span>
+        </div>
+
         <div id="page-dashboard" class="page-content space-y-8">
             <h2 class="text-3xl font-bold text-white">Dashboard Geral</h2>
 
@@ -82,8 +85,8 @@ require_once __DIR__ . '/includes/paths.php';
                     <p id="dash-lucro" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-                    <h3 class="text-sm font-medium text-gray-400">Saldo Total</h3>
-                    <p id="dash-saldo" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
+                    <h3 class="text-sm font-medium text-gray-400">Total Investido</h3>
+                    <p id="dash-valor" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg shadow-md">
                     <h3 class="text-sm font-medium text-gray-400">Total de Entradas</h3>
@@ -105,7 +108,7 @@ require_once __DIR__ . '/includes/paths.php';
         </div>
 
         <div id="page-entradas" class="page-content hidden space-y-6">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h2 class="text-3xl font-bold text-white">Registro de Apostas</h2>
                 <button onclick="openModal()" class="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
@@ -113,7 +116,7 @@ require_once __DIR__ . '/includes/paths.php';
                 </button>
             </div>
 
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
@@ -139,7 +142,7 @@ require_once __DIR__ . '/includes/paths.php';
 
         <div id="page-competicoes" class="page-content hidden space-y-6">
             <h2 class="text-3xl font-bold text-white">Performance por Competicao</h2>
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
@@ -157,29 +160,9 @@ require_once __DIR__ . '/includes/paths.php';
             </div>
         </div>
 
-        <div id="page-times" class="page-content hidden space-y-6">
-            <h2 class="text-3xl font-bold text-white">Performance por Time</h2>
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <table class="min-w-full divide-y divide-gray-700">
-                    <thead class="bg-gray-700">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Qtd. Apostas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lucro Liquido</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Winrate</th>
-                        </tr>
-                    </thead>
-                    <tbody id="times-table-body" class="divide-y divide-gray-700"></tbody>
-                </table>
-                <div id="times-empty" class="hidden p-8 text-center text-gray-400">
-                    <p>Sem dados suficientes.</p>
-                </div>
-            </div>
-        </div>
-
         <div id="page-caixa" class="page-content hidden space-y-6">
             <h2 class="text-3xl font-bold text-white">Fluxo de Caixa Diario</h2>
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
@@ -228,7 +211,7 @@ require_once __DIR__ . '/includes/paths.php';
                 <div class="space-y-4 bg-gray-900 p-4 rounded-lg border border-gray-700">
                     <h4 class="text-sm font-semibold text-indigo-400 uppercase tracking-wide">Detalhes da Aposta</h4>
 
-                    <div id="sel-1-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div id="sel-1-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao / Esporte</label>
                             <input type="text" id="comp1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Premier League" list="competicoes-list" required>
@@ -237,13 +220,9 @@ require_once __DIR__ . '/includes/paths.php';
                             <label class="block text-xs text-gray-400 mb-1">Descricao / Mercado</label>
                             <input type="text" id="desc1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Arsenal para vencer" required>
                         </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Time</label>
-                            <input type="text" id="time1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Arsenal" required>
-                        </div>
                     </div>
 
-                    <div id="sel-2-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden pt-4 border-t border-gray-800">
+                    <div id="sel-2-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao 2</label>
                             <input type="text" id="comp2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: NBA" list="competicoes-list">
@@ -252,13 +231,9 @@ require_once __DIR__ . '/includes/paths.php';
                             <label class="block text-xs text-gray-400 mb-1">Descricao 2</label>
                             <input type="text" id="desc2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Lakers +5.5">
                         </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Time 2</label>
-                            <input type="text" id="time2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Lakers">
-                        </div>
                     </div>
 
-                    <div id="sel-3-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden pt-4 border-t border-gray-800">
+                    <div id="sel-3-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao 3</label>
                             <input type="text" id="comp3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: UFC" list="competicoes-list">
@@ -266,10 +241,6 @@ require_once __DIR__ . '/includes/paths.php';
                          <div>
                             <label class="block text-xs text-gray-400 mb-1">Descricao 3</label>
                             <input type="text" id="desc3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Poatan KO">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Time 3</label>
-                            <input type="text" id="time3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Poatan">
                         </div>
                     </div>
                 </div>
@@ -324,33 +295,49 @@ require_once __DIR__ . '/includes/paths.php';
         </div>
     </div>
 
-    <div id="banca-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
-        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white">Definir banca atual</h3>
-                <button type="button" onclick="closeBancaModal()" class="text-gray-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <label for="banca-inicial" class="block text-sm text-gray-400 mb-1">Banca atual</label>
-            <input type="number" step="0.01" id="banca-inicial" class="form-input w-full bg-gray-900 border-gray-700 rounded text-white" placeholder="0.00">
-            <div class="flex justify-end space-x-3 mt-6">
-                <button type="button" onclick="closeBancaModal()" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Cancelar</button>
-                <button id="banca-salvar" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Salvar</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const BASE_PATH = "<?php echo BASE_PATH; ?>";
-        const API_URL = `${BASE_PATH}/app_api.php`;
+        // Calcular base path dinamicamente
+        const getBasePath = () => {
+            const pathname = window.location.pathname;
+            if (pathname.includes('/app')) {
+                return pathname.substring(0, pathname.indexOf('/app'));
+            }
+            return '';
+        };
+
+        const BASE_PATH = getBasePath();
+        const API_URL = BASE_PATH + '/api.php';
 
         // --- 1. Estado Global ---
         let db = { apostas: [] };
         let editId = null;
         let deleteCallback = null;
         let bankrollChartInstance = null;
-        let bancaInicial = 0;
+
+        // Mobile Menu Toggle
+        const toggleMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar) return;
+            const isHidden = sidebar.classList.toggle('-translate-x-full');
+            if (overlay) overlay.classList.toggle('hidden', isHidden);
+        };
+
+        document.getElementById('menu-toggle')?.addEventListener('click', toggleMenu);
+        document.getElementById('sidebar-overlay')?.addEventListener('click', toggleMenu);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            document.getElementById('sidebar')?.classList.add('-translate-x-full');
+                            document.getElementById('sidebar-overlay')?.classList.add('hidden');
+                        }
+                    });
+                });
+            }, 100);
+        });
 
         // --- 2. Funcoes Utilitarias ---
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -377,7 +364,6 @@ require_once __DIR__ . '/includes/paths.php';
         // --- 3. Core Logic ---
         const initializeApp = async () => {
             await loadData();
-            await loadSettings();
 
             // Navegacao
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -394,10 +380,6 @@ require_once __DIR__ . '/includes/paths.php';
             ['odds', 'valor', 'gr'].forEach(id => {
                 document.getElementById(id).addEventListener('input', calculateLucro);
             });
-
-            // Banca inicial
-            document.getElementById('banca-open').addEventListener('click', openBancaModal);
-            document.getElementById('banca-salvar').addEventListener('click', saveBancaInicial);
 
             // Delete
             document.getElementById('confirm-delete').addEventListener('click', () => deleteCallback && deleteCallback());
@@ -424,7 +406,6 @@ require_once __DIR__ . '/includes/paths.php';
             if (page === 'dashboard') renderDashboard();
             if (page === 'entradas') renderEntradas();
             if (page === 'competicoes') renderCompeticoes();
-            if (page === 'times') renderTimes();
             if (page === 'caixa') renderCaixa();
         };
 
@@ -436,10 +417,9 @@ require_once __DIR__ . '/includes/paths.php';
             const totalBets = db.apostas.length;
             const greens = db.apostas.filter(a => a.gr === 'Green').length;
             const winrate = totalBets > 0 ? (greens / totalBets) * 100 : 0;
-            const saldoTotal = bancaInicial + totalLucro;
 
             document.getElementById('dash-lucro').innerText = formatCurrency(totalLucro);
-            document.getElementById('dash-saldo').innerText = formatCurrency(saldoTotal);
+            document.getElementById('dash-valor').innerText = formatCurrency(totalVal);
             document.getElementById('dash-total').innerText = totalBets;
             document.getElementById('dash-winrate').innerText = winrate.toFixed(1) + '%';
 
@@ -516,10 +496,9 @@ require_once __DIR__ . '/includes/paths.php';
 
             sorted.forEach(a => {
                 // Monta descricao visual das selecoes
-                const descHtml = a.selecoes.map(s => {
-                    const teamPart = s.time ? ` <span class="text-gray-400">(${s.time})</span>` : '';
-                    return `<div class="text-sm"><span class="text-indigo-400 font-semibold text-xs">[${s.comp}]</span> <span class="text-white">${s.desc}</span>${teamPart}</div>`;
-                }).join('');
+                const descHtml = a.selecoes.map(s =>
+                    `<div class="text-sm"><span class="text-indigo-400 font-semibold text-xs">[${s.comp}]</span> <span class="text-white">${s.desc}</span></div>`
+                ).join('');
 
                 const tipoLabel = a.selecoes.length > 1
                     ? `<span class="px-2 py-1 bg-purple-900 text-purple-200 rounded text-xs">Multipla (${a.selecoes.length})</span>`
@@ -531,16 +510,16 @@ require_once __DIR__ . '/includes/paths.php';
                 const tr = document.createElement('tr');
                 tr.className = 'bg-gray-800 hover:bg-gray-750 border-b border-gray-700';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-gray-300 whitespace-nowrap">${formatDate(a.data)}</td>
-                    <td class="px-6 py-4">${descHtml}</td>
-                    <td class="px-6 py-4">${tipoLabel}</td>
-                    <td class="px-6 py-4 font-bold ${grColor}">${a.gr}</td>
-                    <td class="px-6 py-4 text-gray-300">${a.odds.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(a.valor)}</td>
-                    <td class="px-6 py-4 font-bold ${lucroColor}">${formatCurrency(a.lucro)}</td>
-                    <td class="px-6 py-4 space-x-3">
-                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">Editar</button>
-                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-sm font-medium">Excluir</button>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 whitespace-nowrap text-xs md:text-sm">${formatDate(a.data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-xs md:text-sm">${descHtml}</td>
+                    <td class="px-3 md:px-6 py-4">${tipoLabel}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${grColor} text-xs md:text-sm">${a.gr}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${a.odds.toFixed(2)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(a.valor)}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${lucroColor} text-xs md:text-sm">${formatCurrency(a.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 space-x-2 md:space-x-3">
+                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-xs md:text-sm font-medium">Editar</button>
+                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-xs md:text-sm font-medium">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -577,47 +556,10 @@ require_once __DIR__ . '/includes/paths.php';
                 const wr = (st.green / st.count) * 100;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
-                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
-                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
-        const renderTimes = () => {
-            const tbody = document.getElementById('times-table-body');
-            tbody.innerHTML = '';
-
-            const stats = {};
-            db.apostas.forEach(a => {
-                a.selecoes.forEach(s => {
-                    const time = s.time || 'Sem time';
-                    if (!stats[time]) stats[time] = { lucro: 0, count: 0, green: 0 };
-
-                    stats[time].lucro += a.lucro;
-                    stats[time].count++;
-                    if (a.gr === 'Green') stats[time].green++;
-                });
-            });
-
-            const list = Object.entries(stats).sort((a,b) => b[1].lucro - a[1].lucro);
-
-            if(!list.length) {
-                document.getElementById('times-empty').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('times-empty').classList.add('hidden');
-
-            list.forEach(([nome, st]) => {
-                const wr = (st.green / st.count) * 100;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
-                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
-                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
+                    <td class="px-3 md:px-6 py-4 text-white font-medium text-xs md:text-sm">${nome}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.count}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${wr.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -646,10 +588,10 @@ require_once __DIR__ . '/includes/paths.php';
             list.forEach(([data, st]) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white">${formatDate(data)}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.qtd}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(st.val)}</td>
-                    <td class="px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.luc)}</td>
+                    <td class="px-3 md:px-6 py-4 text-white text-xs md:text-sm">${formatDate(data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.qtd}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(st.val)}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.luc)}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -662,12 +604,10 @@ require_once __DIR__ . '/includes/paths.php';
             document.getElementById('sel-2-fields').classList.toggle('hidden', n < 2);
             document.getElementById('comp2').required = n >= 2;
             document.getElementById('desc2').required = n >= 2;
-            document.getElementById('time2').required = n >= 2;
 
             document.getElementById('sel-3-fields').classList.toggle('hidden', n < 3);
             document.getElementById('comp3').required = n >= 3;
             document.getElementById('desc3').required = n >= 3;
-            document.getElementById('time3').required = n >= 3;
         };
 
         const calculateLucro = () => {
@@ -710,21 +650,9 @@ require_once __DIR__ . '/includes/paths.php';
                 document.getElementById('num-selecoes').value = len > 3 ? 3 : len; // Simplificacao
                 toggleLegFields();
 
-                if(a.selecoes[0]) {
-                    document.getElementById('comp1').value = a.selecoes[0].comp;
-                    document.getElementById('desc1').value = a.selecoes[0].desc;
-                    document.getElementById('time1').value = a.selecoes[0].time || '';
-                }
-                if(a.selecoes[1]) {
-                    document.getElementById('comp2').value = a.selecoes[1].comp;
-                    document.getElementById('desc2').value = a.selecoes[1].desc;
-                    document.getElementById('time2').value = a.selecoes[1].time || '';
-                }
-                if(a.selecoes[2]) {
-                    document.getElementById('comp3').value = a.selecoes[2].comp;
-                    document.getElementById('desc3').value = a.selecoes[2].desc;
-                    document.getElementById('time3').value = a.selecoes[2].time || '';
-                }
+                if(a.selecoes[0]) { document.getElementById('comp1').value = a.selecoes[0].comp; document.getElementById('desc1').value = a.selecoes[0].desc; }
+                if(a.selecoes[1]) { document.getElementById('comp2').value = a.selecoes[1].comp; document.getElementById('desc2').value = a.selecoes[1].desc; }
+                if(a.selecoes[2]) { document.getElementById('comp3').value = a.selecoes[2].comp; document.getElementById('desc3').value = a.selecoes[2].desc; }
 
                 document.getElementById('modal-title').innerText = 'Editar Aposta';
             } else {
@@ -739,9 +667,6 @@ require_once __DIR__ . '/includes/paths.php';
 
         const closeModal = () => document.getElementById('aposta-modal').classList.add('hidden');
         const closeConfirmModal = () => document.getElementById('confirm-modal').classList.add('hidden');
-
-        const openBancaModal = () => document.getElementById('banca-modal').classList.remove('hidden');
-        const closeBancaModal = () => document.getElementById('banca-modal').classList.add('hidden');
 
         const askDelete = (id) => {
             deleteCallback = async () => {
@@ -768,8 +693,7 @@ require_once __DIR__ . '/includes/paths.php';
                 // Se n=3, pega 1, 2 e 3
                 const c = document.getElementById(`comp${i}`).value;
                 const d = document.getElementById(`desc${i}`).value;
-                const t = document.getElementById(`time${i}`).value;
-                if(c && d) selecoes.push({ comp: c, desc: d, time: t });
+                if(c && d) selecoes.push({ comp: c, desc: d });
             }
 
             const payload = {
@@ -815,36 +739,6 @@ require_once __DIR__ . '/includes/paths.php';
                 }));
             } catch (err) {
                 db.apostas = [];
-                handleApiError(err);
-            }
-        };
-
-        const loadSettings = async () => {
-            try {
-                const data = await apiRequest('settings_get');
-                bancaInicial = parseFloat(data.initial_bankroll) || 0;
-                document.getElementById('banca-inicial').value = bancaInicial.toFixed(2);
-            } catch (err) {
-                bancaInicial = 0;
-                document.getElementById('banca-inicial').value = '0.00';
-                handleApiError(err);
-            }
-        };
-
-        const saveBancaInicial = async () => {
-            const raw = document.getElementById('banca-inicial').value;
-            const value = parseFloat(raw);
-            if (Number.isNaN(value)) {
-                alert('Informe um valor valido para a banca inicial.');
-                return;
-            }
-
-            try {
-                await apiRequest('settings_set', { initial_bankroll: value });
-                bancaInicial = value;
-                renderDashboard();
-                closeBancaModal();
-            } catch (err) {
                 handleApiError(err);
             }
         };

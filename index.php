@@ -114,6 +114,17 @@ if (isset($_GET['api'])) {
             json_response(['success' => true]);
         }
 
+        if ($action === 'remove_habit') {
+            $id = $data['id'] ?? null;
+            $removedFrom = $data['removed_from'] ?? date('Y-m-d');
+            if (!$id) {
+                json_response(['success' => false]);
+            }
+            $stmt = $pdo->prepare("INSERT INTO habit_removals (habit_id, removed_from) VALUES (?, ?) ON DUPLICATE KEY UPDATE removed_from = VALUES(removed_from)");
+            $stmt->execute([$id, $removedFrom]);
+            json_response(['success' => true]);
+        }
+
         if ($action === 'get_workouts_week') {
             [$start, $end] = getWeekRange();
             $stmt = $pdo->prepare("SELECT * FROM workouts WHERE user_id = ? AND workout_date BETWEEN ? AND ? ORDER BY workout_date DESC, id DESC");
@@ -702,6 +713,13 @@ include __DIR__ . '/includes/header.php';
         white-space: normal;
         word-break: break-word;
     }
+    .habit-name-cell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .habit-name-cell .icon-btn { flex-shrink: 0; }
     .check {
         width: 26px;
         height: 26px;
@@ -1558,7 +1576,17 @@ include __DIR__ . '/includes/header.php';
         let body = '';
         habits.forEach(habit => {
             const checks = JSON.parse(habit.checked_dates || '[]');
-            body += `<tr><td>${habit.name}</td>`;
+            body += `
+                <tr>
+                    <td>
+                        <div class="habit-name-cell">
+                            <span>${habit.name}</span>
+                            <button class="icon-btn subtle" data-action="delete-habit" data-id="${habit.id}" aria-label="Apagar hábito">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+            `;
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = `${month}-${String(d).padStart(2, '0')}`;
                 const isActive = checks.includes(date);
@@ -1867,6 +1895,12 @@ include __DIR__ . '/includes/header.php';
     document.addEventListener('click', async (e) => {
         if (e.target.matches('.check[data-habit]')) {
             await api('toggle_habit', { id: e.target.dataset.habit, date: e.target.dataset.date });
+            loadHabits();
+        }
+        if (e.target.closest('[data-action="delete-habit"]')) {
+            const btn = e.target.closest('[data-action="delete-habit"]');
+            if (!confirm('Apagar este hábito?')) return;
+            await api('remove_habit', { id: btn.dataset.id });
             loadHabits();
         }
         const workoutCell = e.target.closest('.calendar-cell[data-date]');
