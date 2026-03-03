@@ -67,6 +67,9 @@ require_once __DIR__ . '/includes/paths.php';
                 Caixa Diario
             </a>
         </nav>
+        <div class="p-4 border-t border-gray-700">
+            <button id="banca-open" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">Definir banca atual</button>
+        </div>
     </aside>
 
     <main class="flex-1 overflow-y-auto p-8">
@@ -90,18 +93,6 @@ require_once __DIR__ . '/includes/paths.php';
                     <h3 class="text-sm font-medium text-gray-400">Winrate</h3>
                     <p id="dash-winrate" class="mt-2 text-3xl font-bold text-white">0,0%</p>
                 </div>
-            </div>
-
-            <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-medium text-white mb-4">Banca Inicial</h3>
-                <div class="flex flex-col sm:flex-row sm:items-end gap-4">
-                    <div class="flex-1">
-                        <label for="banca-inicial" class="block text-sm text-gray-400 mb-1">Defina o valor da banca inicial</label>
-                        <input type="number" step="0.01" id="banca-inicial" class="form-input w-full bg-gray-900 border-gray-700 rounded text-white" placeholder="0.00">
-                    </div>
-                    <button id="banca-salvar" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">Salvar</button>
-                </div>
-                <p class="text-xs text-gray-400 mt-2">Saldo total = lucro acumulado + banca inicial.</p>
             </div>
 
             <div class="bg-gray-800 p-6 rounded-lg shadow-md">
@@ -333,6 +324,23 @@ require_once __DIR__ . '/includes/paths.php';
         </div>
     </div>
 
+    <div id="banca-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white">Definir banca atual</h3>
+                <button type="button" onclick="closeBancaModal()" class="text-gray-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <label for="banca-inicial" class="block text-sm text-gray-400 mb-1">Banca atual</label>
+            <input type="number" step="0.01" id="banca-inicial" class="form-input w-full bg-gray-900 border-gray-700 rounded text-white" placeholder="0.00">
+            <div class="flex justify-end space-x-3 mt-6">
+                <button type="button" onclick="closeBancaModal()" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Cancelar</button>
+                <button id="banca-salvar" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const BASE_PATH = "<?php echo BASE_PATH; ?>";
         const API_URL = `${BASE_PATH}/app_api.php`;
@@ -388,6 +396,7 @@ require_once __DIR__ . '/includes/paths.php';
             });
 
             // Banca inicial
+            document.getElementById('banca-open').addEventListener('click', openBancaModal);
             document.getElementById('banca-salvar').addEventListener('click', saveBancaInicial);
 
             // Delete
@@ -731,6 +740,9 @@ require_once __DIR__ . '/includes/paths.php';
         const closeModal = () => document.getElementById('aposta-modal').classList.add('hidden');
         const closeConfirmModal = () => document.getElementById('confirm-modal').classList.add('hidden');
 
+        const openBancaModal = () => document.getElementById('banca-modal').classList.remove('hidden');
+        const closeBancaModal = () => document.getElementById('banca-modal').classList.add('hidden');
+
         const askDelete = (id) => {
             deleteCallback = async () => {
                 try {
@@ -831,6 +843,7 @@ require_once __DIR__ . '/includes/paths.php';
                 await apiRequest('settings_set', { initial_bankroll: value });
                 bancaInicial = value;
                 renderDashboard();
+                closeBancaModal();
             } catch (err) {
                 handleApiError(err);
             }
