@@ -15,6 +15,8 @@ function ensure_bets_tables(PDO $pdo): void {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS bet_selections (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        bet_id INT NOT NULL,\n        comp VARCHAR(255) NOT NULL,\n        descr VARCHAR(255) NOT NULL,\n        team VARCHAR(255) NOT NULL DEFAULT '',\n        sort_order INT NOT NULL DEFAULT 1,\n        KEY idx_bet (bet_id),\n        CONSTRAINT fk_bet FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS app_settings (\n        setting_key VARCHAR(100) PRIMARY KEY,\n        setting_value VARCHAR(255) NOT NULL\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
     $stmt = $pdo->prepare("SHOW COLUMNS FROM bet_selections LIKE ?");
     $stmt->execute(['team']);
     if (!$stmt->fetch()) {
@@ -62,6 +64,21 @@ try {
         }
 
         json_response(['apostas' => $apostas]);
+    }
+
+    if ($action === 'settings_get') {
+        $stmt = $pdo->prepare("SELECT setting_value FROM app_settings WHERE setting_key = ?");
+        $stmt->execute(['initial_bankroll']);
+        $row = $stmt->fetch();
+        $value = $row ? (float)$row['setting_value'] : 0.0;
+        json_response(['initial_bankroll' => $value]);
+    }
+
+    if ($action === 'settings_set') {
+        $value = isset($input['initial_bankroll']) ? (float)$input['initial_bankroll'] : 0.0;
+        $stmt = $pdo->prepare("INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)\n            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute(['initial_bankroll', (string)$value]);
+        json_response(['success' => true]);
     }
 
     if ($action === 'create' || $action === 'update') {
@@ -128,4 +145,3 @@ try {
     error_log('[APP_API] ' . $e->getMessage());
     json_response(['error' => 'Server error.'], 500);
 }
-

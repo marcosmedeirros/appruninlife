@@ -79,8 +79,8 @@ require_once __DIR__ . '/includes/paths.php';
                     <p id="dash-lucro" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-                    <h3 class="text-sm font-medium text-gray-400">Total Investido</h3>
-                    <p id="dash-valor" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
+                    <h3 class="text-sm font-medium text-gray-400">Saldo Total</h3>
+                    <p id="dash-saldo" class="mt-2 text-3xl font-bold text-white">R$ 0,00</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg shadow-md">
                     <h3 class="text-sm font-medium text-gray-400">Total de Entradas</h3>
@@ -90,6 +90,18 @@ require_once __DIR__ . '/includes/paths.php';
                     <h3 class="text-sm font-medium text-gray-400">Winrate</h3>
                     <p id="dash-winrate" class="mt-2 text-3xl font-bold text-white">0,0%</p>
                 </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                <h3 class="text-lg font-medium text-white mb-4">Banca Inicial</h3>
+                <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <div class="flex-1">
+                        <label for="banca-inicial" class="block text-sm text-gray-400 mb-1">Defina o valor da banca inicial</label>
+                        <input type="number" step="0.01" id="banca-inicial" class="form-input w-full bg-gray-900 border-gray-700 rounded text-white" placeholder="0.00">
+                    </div>
+                    <button id="banca-salvar" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">Salvar</button>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">Saldo total = lucro acumulado + banca inicial.</p>
             </div>
 
             <div class="bg-gray-800 p-6 rounded-lg shadow-md">
@@ -170,6 +182,26 @@ require_once __DIR__ . '/includes/paths.php';
                 </table>
                 <div id="times-empty" class="hidden p-8 text-center text-gray-400">
                     <p>Sem dados suficientes.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-caixa" class="page-content hidden space-y-6">
+            <h2 class="text-3xl font-bold text-white">Fluxo de Caixa Diario</h2>
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Data</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Volume (Qtd)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Total Investido</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Resultado Dia</th>
+                        </tr>
+                    </thead>
+                    <tbody id="caixa-table-body" class="divide-y divide-gray-700"></tbody>
+                </table>
+                 <div id="caixa-empty" class="hidden p-8 text-center text-gray-400">
+                    <p>Nenhuma movimentacao registrada.</p>
                 </div>
             </div>
         </div>
@@ -310,6 +342,7 @@ require_once __DIR__ . '/includes/paths.php';
         let editId = null;
         let deleteCallback = null;
         let bankrollChartInstance = null;
+        let bancaInicial = 0;
 
         // --- 2. Funcoes Utilitarias ---
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -336,6 +369,7 @@ require_once __DIR__ . '/includes/paths.php';
         // --- 3. Core Logic ---
         const initializeApp = async () => {
             await loadData();
+            await loadSettings();
 
             // Navegacao
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -352,6 +386,9 @@ require_once __DIR__ . '/includes/paths.php';
             ['odds', 'valor', 'gr'].forEach(id => {
                 document.getElementById(id).addEventListener('input', calculateLucro);
             });
+
+            // Banca inicial
+            document.getElementById('banca-salvar').addEventListener('click', saveBancaInicial);
 
             // Delete
             document.getElementById('confirm-delete').addEventListener('click', () => deleteCallback && deleteCallback());
@@ -390,9 +427,10 @@ require_once __DIR__ . '/includes/paths.php';
             const totalBets = db.apostas.length;
             const greens = db.apostas.filter(a => a.gr === 'Green').length;
             const winrate = totalBets > 0 ? (greens / totalBets) * 100 : 0;
+            const saldoTotal = bancaInicial + totalLucro;
 
             document.getElementById('dash-lucro').innerText = formatCurrency(totalLucro);
-            document.getElementById('dash-valor').innerText = formatCurrency(totalVal);
+            document.getElementById('dash-saldo').innerText = formatCurrency(saldoTotal);
             document.getElementById('dash-total').innerText = totalBets;
             document.getElementById('dash-winrate').innerText = winrate.toFixed(1) + '%';
 
@@ -576,6 +614,38 @@ require_once __DIR__ . '/includes/paths.php';
             });
         };
 
+        const renderCaixa = () => {
+            const tbody = document.getElementById('caixa-table-body');
+            tbody.innerHTML = '';
+
+            const stats = db.apostas.reduce((acc, a) => {
+                if (!acc[a.data]) acc[a.data] = { val: 0, luc: 0, qtd: 0 };
+                acc[a.data].val += a.valor;
+                acc[a.data].luc += a.lucro;
+                acc[a.data].qtd++;
+                return acc;
+            }, {});
+
+            const list = Object.entries(stats).sort((a,b) => new Date(b[0]) - new Date(a[0]));
+
+            if(!list.length) {
+                document.getElementById('caixa-empty').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('caixa-empty').classList.add('hidden');
+
+            list.forEach(([data, st]) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-white">${formatDate(data)}</td>
+                    <td class="px-6 py-4 text-gray-300">${st.qtd}</td>
+                    <td class="px-6 py-4 text-gray-300">${formatCurrency(st.val)}</td>
+                    <td class="px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.luc)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
         // --- 5. Form Logic ---
 
         const toggleLegFields = () => {
@@ -733,6 +803,35 @@ require_once __DIR__ . '/includes/paths.php';
                 }));
             } catch (err) {
                 db.apostas = [];
+                handleApiError(err);
+            }
+        };
+
+        const loadSettings = async () => {
+            try {
+                const data = await apiRequest('settings_get');
+                bancaInicial = parseFloat(data.initial_bankroll) || 0;
+                document.getElementById('banca-inicial').value = bancaInicial.toFixed(2);
+            } catch (err) {
+                bancaInicial = 0;
+                document.getElementById('banca-inicial').value = '0.00';
+                handleApiError(err);
+            }
+        };
+
+        const saveBancaInicial = async () => {
+            const raw = document.getElementById('banca-inicial').value;
+            const value = parseFloat(raw);
+            if (Number.isNaN(value)) {
+                alert('Informe um valor valido para a banca inicial.');
+                return;
+            }
+
+            try {
+                await apiRequest('settings_set', { initial_bankroll: value });
+                bancaInicial = value;
+                renderDashboard();
+            } catch (err) {
                 handleApiError(err);
             }
         };
