@@ -58,6 +58,10 @@ require_once __DIR__ . '/includes/paths.php';
                 <i data-lucide="trophy" class="w-5 h-5 mr-3"></i>
                 Competicoes
             </a>
+            <a href="#" class="nav-link group" data-page="times">
+                <i data-lucide="users" class="w-5 h-5 mr-3"></i>
+                Times
+            </a>
             <a href="#" class="nav-link group" data-page="caixa">
                 <i data-lucide="calendar-days" class="w-5 h-5 mr-3"></i>
                 Caixa Diario
@@ -150,22 +154,22 @@ require_once __DIR__ . '/includes/paths.php';
             </div>
         </div>
 
-        <div id="page-caixa" class="page-content hidden space-y-6">
-            <h2 class="text-3xl font-bold text-white">Fluxo de Caixa Diario</h2>
+        <div id="page-times" class="page-content hidden space-y-6">
+            <h2 class="text-3xl font-bold text-white">Performance por Time</h2>
             <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Data</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Volume (Qtd)</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Total Investido</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Resultado Dia</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Qtd. Apostas</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lucro Liquido</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Winrate</th>
                         </tr>
                     </thead>
-                    <tbody id="caixa-table-body" class="divide-y divide-gray-700"></tbody>
+                    <tbody id="times-table-body" class="divide-y divide-gray-700"></tbody>
                 </table>
-                 <div id="caixa-empty" class="hidden p-8 text-center text-gray-400">
-                    <p>Nenhuma movimentacao registrada.</p>
+                <div id="times-empty" class="hidden p-8 text-center text-gray-400">
+                    <p>Sem dados suficientes.</p>
                 </div>
             </div>
         </div>
@@ -201,7 +205,7 @@ require_once __DIR__ . '/includes/paths.php';
                 <div class="space-y-4 bg-gray-900 p-4 rounded-lg border border-gray-700">
                     <h4 class="text-sm font-semibold text-indigo-400 uppercase tracking-wide">Detalhes da Aposta</h4>
 
-                    <div id="sel-1-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div id="sel-1-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao / Esporte</label>
                             <input type="text" id="comp1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Premier League" list="competicoes-list" required>
@@ -210,9 +214,13 @@ require_once __DIR__ . '/includes/paths.php';
                             <label class="block text-xs text-gray-400 mb-1">Descricao / Mercado</label>
                             <input type="text" id="desc1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Arsenal para vencer" required>
                         </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Time</label>
+                            <input type="text" id="time1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Arsenal" required>
+                        </div>
                     </div>
 
-                    <div id="sel-2-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
+                    <div id="sel-2-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao 2</label>
                             <input type="text" id="comp2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: NBA" list="competicoes-list">
@@ -221,9 +229,13 @@ require_once __DIR__ . '/includes/paths.php';
                             <label class="block text-xs text-gray-400 mb-1">Descricao 2</label>
                             <input type="text" id="desc2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Lakers +5.5">
                         </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Time 2</label>
+                            <input type="text" id="time2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Lakers">
+                        </div>
                     </div>
 
-                    <div id="sel-3-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
+                    <div id="sel-3-fields" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Competicao 3</label>
                             <input type="text" id="comp3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: UFC" list="competicoes-list">
@@ -231,6 +243,10 @@ require_once __DIR__ . '/includes/paths.php';
                          <div>
                             <label class="block text-xs text-gray-400 mb-1">Descricao 3</label>
                             <input type="text" id="desc3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Poatan KO">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Time 3</label>
+                            <input type="text" id="time3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Poatan">
                         </div>
                     </div>
                 </div>
@@ -286,45 +302,14 @@ require_once __DIR__ . '/includes/paths.php';
     </div>
 
     <script>
-        // Calcular base path dinamicamente
-        const getBasePath = () => {
-            const pathname = window.location.pathname;
-            if (pathname.includes('/app')) {
-                return pathname.substring(0, pathname.indexOf('/app'));
-            }
-            return '';
-        };
-
-        const BASE_PATH = getBasePath();
-        const API_URL = BASE_PATH + '/api.php';
+        const BASE_PATH = "<?php echo BASE_PATH; ?>";
+        const API_URL = `${BASE_PATH}/app_api.php`;
 
         // --- 1. Estado Global ---
         let db = { apostas: [] };
         let editId = null;
         let deleteCallback = null;
         let bankrollChartInstance = null;
-
-        // Mobile Menu Toggle
-        const toggleMenu = () => {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        };
-
-        // Configurar botão de toggle
-        document.getElementById('menu-toggle')?.addEventListener('click', toggleMenu);
-
-        // Fechar menu ao clicar em um link de navegação (mobile)
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (window.innerWidth < 768) {
-                            document.getElementById('sidebar').classList.add('-translate-x-full');
-                        }
-                    });
-                });
-            }, 100);
-        });
 
         // --- 2. Funcoes Utilitarias ---
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -393,6 +378,7 @@ require_once __DIR__ . '/includes/paths.php';
             if (page === 'dashboard') renderDashboard();
             if (page === 'entradas') renderEntradas();
             if (page === 'competicoes') renderCompeticoes();
+            if (page === 'times') renderTimes();
             if (page === 'caixa') renderCaixa();
         };
 
@@ -483,9 +469,10 @@ require_once __DIR__ . '/includes/paths.php';
 
             sorted.forEach(a => {
                 // Monta descricao visual das selecoes
-                const descHtml = a.selecoes.map(s =>
-                    `<div class="text-sm"><span class="text-indigo-400 font-semibold text-xs">[${s.comp}]</span> <span class="text-white">${s.desc}</span></div>`
-                ).join('');
+                const descHtml = a.selecoes.map(s => {
+                    const teamPart = s.time ? ` <span class="text-gray-400">(${s.time})</span>` : '';
+                    return `<div class="text-sm"><span class="text-indigo-400 font-semibold text-xs">[${s.comp}]</span> <span class="text-white">${s.desc}</span>${teamPart}</div>`;
+                }).join('');
 
                 const tipoLabel = a.selecoes.length > 1
                     ? `<span class="px-2 py-1 bg-purple-900 text-purple-200 rounded text-xs">Multipla (${a.selecoes.length})</span>`
@@ -497,16 +484,16 @@ require_once __DIR__ . '/includes/paths.php';
                 const tr = document.createElement('tr');
                 tr.className = 'bg-gray-800 hover:bg-gray-750 border-b border-gray-700';
                 tr.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 text-gray-300 whitespace-nowrap text-xs md:text-sm">${formatDate(a.data)}</td>
-                    <td class="px-3 md:px-6 py-4 text-xs md:text-sm">${descHtml}</td>
-                    <td class="px-3 md:px-6 py-4">${tipoLabel}</td>
-                    <td class="px-3 md:px-6 py-4 font-bold ${grColor} text-xs md:text-sm">${a.gr}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${a.odds.toFixed(2)}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(a.valor)}</td>
-                    <td class="px-3 md:px-6 py-4 font-bold ${lucroColor} text-xs md:text-sm">${formatCurrency(a.lucro)}</td>
-                    <td class="px-3 md:px-6 py-4 space-x-2 md:space-x-3">
-                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-xs md:text-sm font-medium">Editar</button>
-                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-xs md:text-sm font-medium">Excluir</button>
+                    <td class="px-6 py-4 text-gray-300 whitespace-nowrap">${formatDate(a.data)}</td>
+                    <td class="px-6 py-4">${descHtml}</td>
+                    <td class="px-6 py-4">${tipoLabel}</td>
+                    <td class="px-6 py-4 font-bold ${grColor}">${a.gr}</td>
+                    <td class="px-6 py-4 text-gray-300">${a.odds.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-gray-300">${formatCurrency(a.valor)}</td>
+                    <td class="px-6 py-4 font-bold ${lucroColor}">${formatCurrency(a.lucro)}</td>
+                    <td class="px-6 py-4 space-x-3">
+                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">Editar</button>
+                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-sm font-medium">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -543,42 +530,47 @@ require_once __DIR__ . '/includes/paths.php';
                 const wr = (st.green / st.count) * 100;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 text-white font-medium text-xs md:text-sm">${nome}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.count}</td>
-                    <td class="px-3 md:px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.lucro)}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${wr.toFixed(1)}%</td>
+                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
+                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
+                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
+                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
         };
 
-        const renderCaixa = () => {
-            const tbody = document.getElementById('caixa-table-body');
+        const renderTimes = () => {
+            const tbody = document.getElementById('times-table-body');
             tbody.innerHTML = '';
 
-            const stats = db.apostas.reduce((acc, a) => {
-                if (!acc[a.data]) acc[a.data] = { val: 0, luc: 0, qtd: 0 };
-                acc[a.data].val += a.valor;
-                acc[a.data].luc += a.lucro;
-                acc[a.data].qtd++;
-                return acc;
-            }, {});
+            const stats = {};
+            db.apostas.forEach(a => {
+                a.selecoes.forEach(s => {
+                    const time = s.time || 'Sem time';
+                    if (!stats[time]) stats[time] = { lucro: 0, count: 0, green: 0 };
 
-            const list = Object.entries(stats).sort((a,b) => new Date(b[0]) - new Date(a[0]));
+                    stats[time].lucro += a.lucro;
+                    stats[time].count++;
+                    if (a.gr === 'Green') stats[time].green++;
+                });
+            });
+
+            const list = Object.entries(stats).sort((a,b) => b[1].lucro - a[1].lucro);
 
             if(!list.length) {
-                document.getElementById('caixa-empty').classList.remove('hidden');
+                document.getElementById('times-empty').classList.remove('hidden');
                 return;
             }
-            document.getElementById('caixa-empty').classList.add('hidden');
+            document.getElementById('times-empty').classList.add('hidden');
 
-            list.forEach(([data, st]) => {
+            list.forEach(([nome, st]) => {
+                const wr = (st.green / st.count) * 100;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-3 md:px-6 py-4 text-white text-xs md:text-sm">${formatDate(data)}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.qtd}</td>
-                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(st.val)}</td>
-                    <td class="px-3 md:px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.luc)}</td>
+                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
+                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
+                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
+                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -591,10 +583,12 @@ require_once __DIR__ . '/includes/paths.php';
             document.getElementById('sel-2-fields').classList.toggle('hidden', n < 2);
             document.getElementById('comp2').required = n >= 2;
             document.getElementById('desc2').required = n >= 2;
+            document.getElementById('time2').required = n >= 2;
 
             document.getElementById('sel-3-fields').classList.toggle('hidden', n < 3);
             document.getElementById('comp3').required = n >= 3;
             document.getElementById('desc3').required = n >= 3;
+            document.getElementById('time3').required = n >= 3;
         };
 
         const calculateLucro = () => {
@@ -637,9 +631,21 @@ require_once __DIR__ . '/includes/paths.php';
                 document.getElementById('num-selecoes').value = len > 3 ? 3 : len; // Simplificacao
                 toggleLegFields();
 
-                if(a.selecoes[0]) { document.getElementById('comp1').value = a.selecoes[0].comp; document.getElementById('desc1').value = a.selecoes[0].desc; }
-                if(a.selecoes[1]) { document.getElementById('comp2').value = a.selecoes[1].comp; document.getElementById('desc2').value = a.selecoes[1].desc; }
-                if(a.selecoes[2]) { document.getElementById('comp3').value = a.selecoes[2].comp; document.getElementById('desc3').value = a.selecoes[2].desc; }
+                if(a.selecoes[0]) {
+                    document.getElementById('comp1').value = a.selecoes[0].comp;
+                    document.getElementById('desc1').value = a.selecoes[0].desc;
+                    document.getElementById('time1').value = a.selecoes[0].time || '';
+                }
+                if(a.selecoes[1]) {
+                    document.getElementById('comp2').value = a.selecoes[1].comp;
+                    document.getElementById('desc2').value = a.selecoes[1].desc;
+                    document.getElementById('time2').value = a.selecoes[1].time || '';
+                }
+                if(a.selecoes[2]) {
+                    document.getElementById('comp3').value = a.selecoes[2].comp;
+                    document.getElementById('desc3').value = a.selecoes[2].desc;
+                    document.getElementById('time3').value = a.selecoes[2].time || '';
+                }
 
                 document.getElementById('modal-title').innerText = 'Editar Aposta';
             } else {
@@ -680,7 +686,8 @@ require_once __DIR__ . '/includes/paths.php';
                 // Se n=3, pega 1, 2 e 3
                 const c = document.getElementById(`comp${i}`).value;
                 const d = document.getElementById(`desc${i}`).value;
-                if(c && d) selecoes.push({ comp: c, desc: d });
+                const t = document.getElementById(`time${i}`).value;
+                if(c && d) selecoes.push({ comp: c, desc: d, time: t });
             }
 
             const payload = {
