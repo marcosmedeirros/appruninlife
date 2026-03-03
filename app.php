@@ -286,14 +286,45 @@ require_once __DIR__ . '/includes/paths.php';
     </div>
 
     <script>
-        const BASE_PATH = "<?php echo BASE_PATH; ?>";
-        const API_URL = `${BASE_PATH}/app_api.php`;
+        // Calcular base path dinamicamente
+        const getBasePath = () => {
+            const pathname = window.location.pathname;
+            if (pathname.includes('/app')) {
+                return pathname.substring(0, pathname.indexOf('/app'));
+            }
+            return '';
+        };
+
+        const BASE_PATH = getBasePath();
+        const API_URL = BASE_PATH + '/api.php';
 
         // --- 1. Estado Global ---
         let db = { apostas: [] };
         let editId = null;
         let deleteCallback = null;
         let bankrollChartInstance = null;
+
+        // Mobile Menu Toggle
+        const toggleMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        };
+
+        // Configurar botão de toggle
+        document.getElementById('menu-toggle')?.addEventListener('click', toggleMenu);
+
+        // Fechar menu ao clicar em um link de navegação (mobile)
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            document.getElementById('sidebar').classList.add('-translate-x-full');
+                        }
+                    });
+                });
+            }, 100);
+        });
 
         // --- 2. Funcoes Utilitarias ---
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -466,16 +497,16 @@ require_once __DIR__ . '/includes/paths.php';
                 const tr = document.createElement('tr');
                 tr.className = 'bg-gray-800 hover:bg-gray-750 border-b border-gray-700';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-gray-300 whitespace-nowrap">${formatDate(a.data)}</td>
-                    <td class="px-6 py-4">${descHtml}</td>
-                    <td class="px-6 py-4">${tipoLabel}</td>
-                    <td class="px-6 py-4 font-bold ${grColor}">${a.gr}</td>
-                    <td class="px-6 py-4 text-gray-300">${a.odds.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(a.valor)}</td>
-                    <td class="px-6 py-4 font-bold ${lucroColor}">${formatCurrency(a.lucro)}</td>
-                    <td class="px-6 py-4 space-x-3">
-                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">Editar</button>
-                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-sm font-medium">Excluir</button>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 whitespace-nowrap text-xs md:text-sm">${formatDate(a.data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-xs md:text-sm">${descHtml}</td>
+                    <td class="px-3 md:px-6 py-4">${tipoLabel}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${grColor} text-xs md:text-sm">${a.gr}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${a.odds.toFixed(2)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(a.valor)}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${lucroColor} text-xs md:text-sm">${formatCurrency(a.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 space-x-2 md:space-x-3">
+                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-xs md:text-sm font-medium">Editar</button>
+                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-xs md:text-sm font-medium">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -512,10 +543,10 @@ require_once __DIR__ . '/includes/paths.php';
                 const wr = (st.green / st.count) * 100;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
-                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
-                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
+                    <td class="px-3 md:px-6 py-4 text-white font-medium text-xs md:text-sm">${nome}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.count}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${wr.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -544,10 +575,10 @@ require_once __DIR__ . '/includes/paths.php';
             list.forEach(([data, st]) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white">${formatDate(data)}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.qtd}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(st.val)}</td>
-                    <td class="px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.luc)}</td>
+                    <td class="px-3 md:px-6 py-4 text-white text-xs md:text-sm">${formatDate(data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.qtd}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(st.val)}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.luc)}</td>
                 `;
                 tbody.appendChild(tr);
             });
