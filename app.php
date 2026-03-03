@@ -1,3 +1,6 @@
+<?php
+require_once __DIR__ . '/includes/paths.php';
+?>
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full bg-gray-900">
 <head>
@@ -283,21 +286,8 @@
     </div>
 
     <script>
-        // Detectar base path dinamicamente
-        const getBasePath = () => {
-            const path = window.location.pathname;
-            // Se está em /app ou /app/, extrai a base
-            if (path.includes('/app')) {
-                return path.split('/app')[0] || '/';
-            }
-            return '/';
-        };
-
-        const BASE_PATH = getBasePath();
-        const API_URL = BASE_PATH + '/app_api.php';
-
-        console.log('BASE_PATH:', BASE_PATH);
-        console.log('API_URL:', API_URL);
+        const BASE_PATH = "<?php echo BASE_PATH; ?>";
+        const API_URL = `${BASE_PATH}/app_api.php`;
 
         // --- 1. Estado Global ---
         let db = { apostas: [] };
@@ -315,20 +305,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             } : { method: 'GET' };
-            const url = `${API_URL}?action=${encodeURIComponent(action)}`;
-            console.log('Requisição API:', url);
-            try {
-                const res = await fetch(url, opts);
-                if (!res.ok) {
-                    const errText = await res.text();
-                    console.error(`Erro na API (${action}): ${res.status}`, errText);
-                    throw new Error(`Erro na API (${action}): ${res.status} - ${errText}`);
-                }
-                return res.json();
-            } catch (err) {
-                console.error('Erro na requisição:', err);
-                throw err;
+            const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, opts);
+            if (!res.ok) {
+                throw new Error(`Erro na API (${action}): ${res.status}`);
             }
+            return res.json();
         };
 
         const handleApiError = (err) => {

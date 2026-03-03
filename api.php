@@ -1,20 +1,15 @@
 <?php
-// ===== API DE APOSTAS =====
-// Este arquivo DEVE estar acessível em /app_api.php
-// Pode ser acessado diretamente ou via /app
-
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-// Responde ao preflight
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+/**
+ * API - Wrapper para app_api.php
+ *
+ * Se /app_api.php retorna 404, use este arquivo:
+ * Copie para: /api.php ou /apostas_api.php
+ * Depois mude em app.php: const API_URL = '/api.php';
+ */
 
 require_once __DIR__ . '/config.php';
+
+header('Content-Type: application/json');
 
 function json_response(array $payload, int $status = 200): void {
     http_response_code($status);
@@ -29,7 +24,6 @@ if (!is_array($input)) {
 }
 
 try {
-
     if ($action === 'list') {
         $bets = $pdo->query("SELECT id, bet_date, odds, stake, result, profit FROM bets ORDER BY bet_date DESC, id DESC")->fetchAll();
         $byBet = [];
@@ -122,7 +116,8 @@ try {
 
     json_response(['error' => 'Unknown action.'], 400);
 } catch (Exception $e) {
-    error_log('[APP_API] ' . $e->getMessage());
+    error_log('[API] ' . $e->getMessage());
     json_response(['error' => 'Server error.'], 500);
 }
+?>
 
