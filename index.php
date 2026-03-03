@@ -16,7 +16,6 @@ function ensureGoalsMonthlyEnum(PDO $pdo) {
     }
 }
 
-
 function getWeekRange(): array {
     $now = new DateTime();
     $dayOfWeek = (int)$now->format('w');
@@ -55,7 +54,12 @@ if (isset($_GET['api'])) {
 
         if ($action === 'update_activity') {
             $stmt = $pdo->prepare("UPDATE activities SET title = ?, day_date = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([$data['title'] ?? '', $data['date'] ?? date('Y-m-d'), $data['id'] ?? 0, $user_id]);
+            $stmt->execute([
+                $data['title'] ?? '',
+                $data['date'] ?? date('Y-m-d'),
+                $data['id'] ?? 0,
+                $user_id
+            ]);
             json_response(['success' => true]);
         }
 
