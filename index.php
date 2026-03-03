@@ -12,12 +12,6 @@ if ($relative_path === '/app' || $relative_path === '/app/') {
     exit;
 }
 
-// ===== API PARA /app_api.php =====
-if ($relative_path === '/app_api.php' || $_SERVER['SCRIPT_NAME'] === '/app_api.php') {
-    include __DIR__ . '/app_api.php';
-    exit;
-}
-
 $user_id = 1;
 
 function ensureHabitRemovalsTable(PDO $pdo) {

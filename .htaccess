@@ -1,17 +1,24 @@
 # ARQUIVO: .htaccess - Configuração de URLs amigáveis
 RewriteEngine On
 
-# Detectar se está em localhost ou em produção
-# Para localhost usa /lifeos/, para produção usa /
+# Definir RewriteBase de acordo com o ambiente
 RewriteCond %{HTTP_HOST} ^localhost [NC]
-RewriteBase /lifeos/
+RewriteRule ^(.*)$ - [E=BASE:/lifeos/]
+
+RewriteCond %{HTTP_HOST} marcosmedeiros\.page [NC]
+RewriteRule ^(.*)$ - [E=BASE:/]
 
 RewriteCond %{HTTP_HOST} marcosmedeirros\.io [NC]
+RewriteRule ^(.*)$ - [E=BASE:/]
+
 RewriteBase /
 
 # Se a requisição é para um arquivo ou diretório existente, permitir acesso direto
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
 # Redirecionar /login para login.php
 RewriteRule ^login/?$ login.php [L]
@@ -19,5 +26,3 @@ RewriteRule ^login/?$ login.php [L]
 # Redirecionar /logout para limpar sessão e retornar ao login
 RewriteRule ^logout/?$ includes/auth.php?logout=1 [L]
 
-# Redirecionar /app_api.php ao app_api.php
-RewriteRule ^app_api\.php/?$ app_api.php [L]
