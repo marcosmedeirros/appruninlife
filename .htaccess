@@ -19,5 +19,5 @@ RewriteRule ^login/?$ login.php [L]
 # Redirecionar /logout para limpar sessão e retornar ao login
 RewriteRule ^logout/?$ includes/auth.php?logout=1 [L]
 
-# Redirecionar /app para o app de apostas
-RewriteRule ^app/?$ app.php [L]
+# Redirecionar /app_api.php ao app_api.php
+RewriteRule ^app_api\.php/?$ app_api.php [L]

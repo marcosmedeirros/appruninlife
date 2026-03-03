@@ -2,6 +2,22 @@
 require_once __DIR__ . '/config.php';
 date_default_timezone_set('America/Sao_Paulo');
 
+// ===== ROTEAMENTO PARA /app =====
+$request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$base_path = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+$relative_path = substr($request_uri, strlen($base_path));
+
+if ($relative_path === '/app' || $relative_path === '/app/') {
+    include __DIR__ . '/app.php';
+    exit;
+}
+
+// ===== API PARA /app_api.php =====
+if ($relative_path === '/app_api.php' || $_SERVER['SCRIPT_NAME'] === '/app_api.php') {
+    include __DIR__ . '/app_api.php';
+    exit;
+}
+
 $user_id = 1;
 
 function ensureHabitRemovalsTable(PDO $pdo) {

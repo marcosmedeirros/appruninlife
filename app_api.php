@@ -9,13 +9,6 @@ function json_response(array $payload, int $status = 200): void {
     exit;
 }
 
-function ensure_bets_tables(PDO $pdo): void {
-    // Keep schema creation close to the API so new installs work without manual SQL.
-    $pdo->exec("CREATE TABLE IF NOT EXISTS bets (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        bet_date DATE NOT NULL,\n        odds DECIMAL(10,2) NOT NULL,\n        stake DECIMAL(10,2) NOT NULL,\n        result ENUM('Green','Red','Void') NOT NULL,\n        profit DECIMAL(10,2) NOT NULL,\n        created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS bet_selections (\n        id INT AUTO_INCREMENT PRIMARY KEY,\n        bet_id INT NOT NULL,\n        comp VARCHAR(255) NOT NULL,\n        descr VARCHAR(255) NOT NULL,\n        sort_order INT NOT NULL DEFAULT 1,\n        KEY idx_bet (bet_id),\n        CONSTRAINT fk_bet FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-}
-
 $action = $_GET['action'] ?? '';
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
@@ -23,7 +16,6 @@ if (!is_array($input)) {
 }
 
 try {
-    ensure_bets_tables($pdo);
 
     if ($action === 'list') {
         $bets = $pdo->query("SELECT id, bet_date, odds, stake, result, profit FROM bets ORDER BY bet_date DESC, id DESC")->fetchAll();

@@ -286,8 +286,7 @@ require_once __DIR__ . '/includes/paths.php';
     </div>
 
     <script>
-        const BASE_PATH = "<?php echo BASE_PATH; ?>";
-        const API_URL = `${BASE_PATH}/app_api.php`;
+        const API_URL = '/app_api.php';
 
         // --- 1. Estado Global ---
         let db = { apostas: [] };
