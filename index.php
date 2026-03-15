@@ -1171,6 +1171,70 @@ include __DIR__ . '/includes/header.php';
             <p id="dailyMessage" class="muted"></p>
         </div>
     </div>
+
+    <div class="card section" id="houseTasksSection">
+        <div class="card-header">
+            <div>
+                <h3>Responsabilidades do Marc</h3>
+                <p class="muted">Marque quando fizer. Tudo reseta automaticamente toda semana.</p>
+            </div>
+            <div class="tag" id="houseTasksWeekTag">Semana</div>
+        </div>
+        <div class="house-tasks-grid">
+            <div class="house-tasks-group">
+                <h4>Tarefas diarias</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-lavar-louca"> Lavar louca</label>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-limpar-pia-cozinha"> Limpar pia da cozinha</label>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-limpar-migalhas"> Limpar migalhas da bancada</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Tarefas semanais</h4>
+                <div class="house-task-subgroup">
+                    <span>Lavar banheiro:</span>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-vaso"> Vaso</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-ralo"> Ralo</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-pia"> Pia</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-porta-escovas"> Porta escovas</label>
+                </div>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-geladeira"> Limpar geladeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-lavar-panos"> Lavar panos da lavanderia</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-tanque"> Limpar tanque</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-compras"> Compras da semana (junto ou principal execucao)</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>2x por semana</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-varrer-apartamento"> Varrer apartamento</label>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-esvaziar-lixos"> Esvaziar lixos e levar lixeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-limpar-pia-banheiro"> Limpar pia do banheiro</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Quinzenais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-armarios"> Limpar parte superior de armarios</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-pa-lixo"> Limpar pa de lixo</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-teias-teto"> Limpar teias do teto</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-air-fryer"> Limpar air fryer</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-mesa-cadeiras"> Limpar mesa e cadeiras</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Mensais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="mensal-tomadas-fios"> Limpar tomadas e fios</label>
+                <label class="house-task"><input type="checkbox" data-task-id="mensal-sacada"> Limpar sacada</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Semestrais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-tv"> Limpar televisao</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-filtro-maquina"> Limpar filtro da maquina</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-topo-geladeira"> Limpar topo da geladeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-chuveiro"> Limpar chuveiro</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-ventilador"> Limpar ventilador</label>
+            </div>
+        </div>
+    </div>
 </main>
 
 <div class="modal" id="modalActivity">
@@ -1505,6 +1569,40 @@ include __DIR__ . '/includes/header.php';
         const target = new Date(monday);
         target.setDate(monday.getDate() + (weekdayNumber - 1));
         return target.toISOString().slice(0, 10);
+    };
+
+    const getHouseTasksWeekKey = () => {
+        const monday = getWeekDates();
+        return monday.toISOString().slice(0, 10);
+    };
+
+    const loadHouseTasks = () => {
+        const weekKey = getHouseTasksWeekKey();
+        const savedWeek = localStorage.getItem('houseTasksWeek');
+        if (savedWeek !== weekKey) {
+            localStorage.setItem('houseTasksWeek', weekKey);
+            localStorage.setItem('houseTasksStatus', '{}');
+        }
+
+        const status = JSON.parse(localStorage.getItem('houseTasksStatus') || '{}');
+        document.querySelectorAll('#houseTasksSection input[type="checkbox"][data-task-id]').forEach(cb => {
+            cb.checked = Boolean(status[cb.dataset.taskId]);
+            if (cb.dataset.bound !== 'true') {
+                cb.addEventListener('change', () => {
+                    status[cb.dataset.taskId] = cb.checked;
+                    localStorage.setItem('houseTasksStatus', JSON.stringify(status));
+                });
+                cb.dataset.bound = 'true';
+            }
+        });
+
+        const tag = document.getElementById('houseTasksWeekTag');
+        if (tag) {
+            const monday = getWeekDates();
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            tag.textContent = `${monday.toLocaleDateString('pt-BR')} - ${sunday.toLocaleDateString('pt-BR')}`;
+        }
     };
 
     const loadActivities = async () => {
@@ -2216,6 +2314,7 @@ include __DIR__ . '/includes/header.php';
         loadGoals();
         loadGoalsDone();
         loadMonthlyGoals();
+        loadHouseTasks();
     };
 
     init();
