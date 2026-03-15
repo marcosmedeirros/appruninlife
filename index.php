@@ -1200,7 +1200,7 @@ include __DIR__ . '/includes/header.php';
                 <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-geladeira"> Limpar geladeira</label>
                 <label class="house-task"><input type="checkbox" data-task-id="semanal-lavar-panos"> Lavar panos da lavanderia</label>
                 <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-tanque"> Limpar tanque</label>
-                <label class="house-task"><input type="checkbox" data-task-id="semanal-compras"> Compras da semana (junto ou principal execucao)</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-compras"> Compras da semana</label>
             </div>
 
             <div class="house-tasks-group">
@@ -1576,25 +1576,88 @@ include __DIR__ . '/includes/header.php';
         return monday.toISOString().slice(0, 10);
     };
 
+    const HOUSE_TASK_LONG_FREQ = new Set(['quinzenal', 'mensal', 'semestral']);
+
+    const addDays = (date, days) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    };
+
+    const addMonths = (date, months) => {
+        const d = new Date(date);
+        const originalDay = d.getDate();
+        d.setMonth(d.getMonth() + months);
+        while (d.getDate() < originalDay) {
+            d.setDate(d.getDate() - 1);
+        }
+        return d;
+    };
+
+    const shouldResetHouseTask = (frequency, doneAtIso, now) => {
+        if (!doneAtIso) return false;
+        const doneAt = new Date(doneAtIso);
+        let resetAt = null;
+        if (frequency === 'quinzenal') resetAt = addDays(doneAt, 10);
+        if (frequency === 'mensal') resetAt = addDays(doneAt, 20);
+        if (frequency === 'semestral') resetAt = addMonths(doneAt, 5);
+        if (!resetAt) return false;
+        return now >= resetAt;
+    };
+
     const loadHouseTasks = () => {
         const weekKey = getHouseTasksWeekKey();
         const savedWeek = localStorage.getItem('houseTasksWeek');
+        const status = JSON.parse(localStorage.getItem('houseTasksStatus') || '{}');
+        const doneAt = JSON.parse(localStorage.getItem('houseTasksDoneAt') || '{}');
+        const now = new Date();
+
+        const checkboxes = document.querySelectorAll('#houseTasksSection input[type="checkbox"][data-task-id]');
         if (savedWeek !== weekKey) {
             localStorage.setItem('houseTasksWeek', weekKey);
-            localStorage.setItem('houseTasksStatus', '{}');
+            checkboxes.forEach(cb => {
+                const frequency = cb.dataset.frequency || 'weekly';
+                if (!HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                    delete status[cb.dataset.taskId];
+                    delete doneAt[cb.dataset.taskId];
+                }
+            });
         }
 
-        const status = JSON.parse(localStorage.getItem('houseTasksStatus') || '{}');
-        document.querySelectorAll('#houseTasksSection input[type="checkbox"][data-task-id]').forEach(cb => {
-            cb.checked = Boolean(status[cb.dataset.taskId]);
+        checkboxes.forEach(cb => {
+            const frequency = cb.dataset.frequency || 'weekly';
+            const id = cb.dataset.taskId;
+            if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                if (status[id] && !doneAt[id]) {
+                    doneAt[id] = now.toISOString();
+                }
+                if (status[id] && shouldResetHouseTask(frequency, doneAt[id], now)) {
+                    delete status[id];
+                    delete doneAt[id];
+                }
+            }
+
+            cb.checked = Boolean(status[id]);
             if (cb.dataset.bound !== 'true') {
                 cb.addEventListener('change', () => {
-                    status[cb.dataset.taskId] = cb.checked;
+                    if (cb.checked) {
+                        status[id] = true;
+                        if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                            doneAt[id] = new Date().toISOString();
+                        }
+                    } else {
+                        delete status[id];
+                        delete doneAt[id];
+                    }
                     localStorage.setItem('houseTasksStatus', JSON.stringify(status));
+                    localStorage.setItem('houseTasksDoneAt', JSON.stringify(doneAt));
                 });
                 cb.dataset.bound = 'true';
             }
         });
+
+        localStorage.setItem('houseTasksStatus', JSON.stringify(status));
+        localStorage.setItem('houseTasksDoneAt', JSON.stringify(doneAt));
 
         const tag = document.getElementById('houseTasksWeekTag');
         if (tag) {
