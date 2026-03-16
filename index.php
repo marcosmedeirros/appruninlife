@@ -1214,8 +1214,8 @@ include __DIR__ . '/includes/header.php';
     <div class="card section" id="houseTasksSection">
         <div class="card-header">
             <div>
-                <h3>Responsabilidades do Marc</h3>
-                <p class="muted">Marque quando fizer. Tudo reseta automaticamente toda semana.</p>
+                <h3>Atividades da casa</h3>
+                <p class="muted">Controle de atividades</p>
             </div>
             <div class="tag" id="houseTasksWeekTag">Semana</div>
         </div>
@@ -1256,16 +1256,12 @@ include __DIR__ . '/includes/header.php';
                 <label class="house-task"><input type="checkbox" data-task-id="quinzenal-teias-teto"> Limpar teias do teto</label>
                 <label class="house-task"><input type="checkbox" data-task-id="quinzenal-air-fryer"> Limpar air fryer</label>
                 <label class="house-task"><input type="checkbox" data-task-id="quinzenal-mesa-cadeiras"> Limpar mesa e cadeiras</label>
-            </div>
-
-            <div class="house-tasks-group">
-                <h4>Mensais</h4>
-                <label class="house-task"><input type="checkbox" data-task-id="mensal-tomadas-fios"> Limpar tomadas e fios</label>
-                <label class="house-task"><input type="checkbox" data-task-id="mensal-sacada"> Limpar sacada</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-sacada"> Limpar sacada</label>
             </div>
 
             <div class="house-tasks-group">
                 <h4>Semestrais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-tomadas-fios"> Limpar tomadas e fios</label>
                 <label class="house-task"><input type="checkbox" data-task-id="semestral-tv"> Limpar televisao</label>
                 <label class="house-task"><input type="checkbox" data-task-id="semestral-filtro-maquina"> Limpar filtro da maquina</label>
                 <label class="house-task"><input type="checkbox" data-task-id="semestral-topo-geladeira"> Limpar topo da geladeira</label>

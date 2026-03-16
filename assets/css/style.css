@@ -115,7 +115,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .house-tasks-group {
-    background: rgba(15, 23, 42, 0.6);
+    background: #000000;
     border: 1px solid rgba(148, 163, 184, 0.18);
     border-radius: 12px;
     padding: 14px;
@@ -147,7 +147,7 @@ input:focus, select:focus, textarea:focus {
     gap: 6px;
     padding: 8px 10px;
     margin: 8px 0 10px;
-    background: rgba(2, 6, 23, 0.4);
+    background: #000000;
     border-radius: 10px;
     border: 1px dashed rgba(148, 163, 184, 0.25);
     color: #cbd5f5;
