@@ -1,5 +1,7 @@
+<?php
+require_once __DIR__ . '/includes/paths.php';
+?>
 <!DOCTYPE html>
-<<<<<<< HEAD
 <html lang="pt-BR" class="h-full bg-gray-900">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +21,7 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -29,7 +31,7 @@
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        
+
         .nav-link {
             display: flex; align-items: center; padding: 0.75rem 1rem;
             border-radius: 0.375rem; font-weight: 500;
@@ -37,9 +39,9 @@
         }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-gray-900 text-gray-200">
+<body class="flex h-screen overflow-hidden bg-gray-900 text-gray-200 relative">
 
-    <aside class="flex-shrink-0 w-64 bg-gray-800 flex flex-col shadow-lg">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 flex flex-col shadow-lg transform -translate-x-full transition-transform duration-200 md:static md:translate-x-0">
         <div class="h-16 flex items-center justify-center px-4 shadow-md bg-gray-900">
             <h1 class="text-xl font-semibold text-white">General Bets</h1>
         </div>
@@ -54,19 +56,29 @@
             </a>
             <a href="#" class="nav-link group" data-page="competicoes">
                 <i data-lucide="trophy" class="w-5 h-5 mr-3"></i>
-                Competições
+                Competicoes
             </a>
             <a href="#" class="nav-link group" data-page="caixa">
                 <i data-lucide="calendar-days" class="w-5 h-5 mr-3"></i>
-                Caixa Diário
+                Caixa Diario
             </a>
         </nav>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-8">
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden"></div>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="flex items-center justify-between mb-6 md:hidden">
+            <button id="menu-toggle" class="text-gray-200 hover:text-white" aria-label="Abrir menu">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-lg font-semibold text-white">General Bets</h2>
+            <span class="w-6 h-6"></span>
+        </div>
+
         <div id="page-dashboard" class="page-content space-y-8">
             <h2 class="text-3xl font-bold text-white">Dashboard Geral</h2>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
                     <h3 class="text-sm font-medium text-gray-400">Lucro Total</h3>
@@ -87,16 +99,16 @@
             </div>
 
             <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-medium text-white mb-4">Evolução da Banca</h3>
+                <h3 class="text-lg font-medium text-white mb-4">Evolucao da Banca</h3>
                 <div id="chart-container" class="relative h-64 bg-gray-800 rounded-md">
                     <canvas id="bankrollChart"></canvas>
-                    <p id="chart-empty" class="text-gray-400 absolute inset-0 flex items-center justify-center hidden">Adicione apostas em dias diferentes para gerar o gráfico.</p>
+                    <p id="chart-empty" class="text-gray-400 absolute inset-0 flex items-center justify-center hidden">Adicione apostas em dias diferentes para gerar o grafico.</p>
                 </div>
             </div>
         </div>
 
         <div id="page-entradas" class="page-content hidden space-y-6">
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h2 class="text-3xl font-bold text-white">Registro de Apostas</h2>
                 <button onclick="openModal()" class="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
@@ -104,18 +116,18 @@
                 </button>
             </div>
 
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Data</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Descrição / Seleção</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Descricao / Selecao</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Tipo</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Resultado</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Odds</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Investido</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Retorno</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Ações</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Acoes</th>
                         </tr>
                     </thead>
                     <tbody id="apostas-table-body" class="divide-y divide-gray-700">
@@ -129,14 +141,14 @@
         </div>
 
         <div id="page-competicoes" class="page-content hidden space-y-6">
-            <h2 class="text-3xl font-bold text-white">Performance por Competição</h2>
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <h2 class="text-3xl font-bold text-white">Performance por Competicao</h2>
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Competição</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Competicao</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Qtd. Apostas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lucro Líquido</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Lucro Liquido</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase">Winrate</th>
                         </tr>
                     </thead>
@@ -149,8 +161,8 @@
         </div>
 
         <div id="page-caixa" class="page-content hidden space-y-6">
-            <h2 class="text-3xl font-bold text-white">Fluxo de Caixa Diário</h2>
-            <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <h2 class="text-3xl font-bold text-white">Fluxo de Caixa Diario</h2>
+            <div class="bg-gray-800 rounded-lg shadow-md overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-700">
                     <thead class="bg-gray-700">
                         <tr>
@@ -163,7 +175,7 @@
                     <tbody id="caixa-table-body" class="divide-y divide-gray-700"></tbody>
                 </table>
                  <div id="caixa-empty" class="hidden p-8 text-center text-gray-400">
-                    <p>Nenhuma movimentação registrada.</p>
+                    <p>Nenhuma movimentacao registrada.</p>
                 </div>
             </div>
         </div>
@@ -178,9 +190,9 @@
                         <i data-lucide="x" class="w-6 h-6"></i>
                     </button>
                 </div>
-                
+
                 <input type="hidden" id="aposta-id">
-                
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                         <label for="data" class="block text-sm font-medium text-gray-300 mb-1">Data do Evento</label>
@@ -189,45 +201,45 @@
                     <div>
                         <label for="num-selecoes" class="block text-sm font-medium text-gray-300 mb-1">Tipo de Aposta</label>
                         <select id="num-selecoes" class="form-input w-full bg-gray-900 border-gray-700 rounded-md text-white focus:ring-indigo-500" required onchange="toggleLegFields()">
-                            <option value="1">Simples (1 Seleção)</option>
-                            <option value="2">Dupla (2 Seleções)</option>
-                            <option value="3">Tripla+ (Múltipla)</option>
+                            <option value="1">Simples (1 Selecao)</option>
+                            <option value="2">Dupla (2 Selecoes)</option>
+                            <option value="3">Tripla+ (Multipla)</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="space-y-4 bg-gray-900 p-4 rounded-lg border border-gray-700">
                     <h4 class="text-sm font-semibold text-indigo-400 uppercase tracking-wide">Detalhes da Aposta</h4>
-                    
+
                     <div id="sel-1-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">Competição / Esporte</label>
+                            <label class="block text-xs text-gray-400 mb-1">Competicao / Esporte</label>
                             <input type="text" id="comp1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Premier League" list="competicoes-list" required>
                         </div>
                          <div>
-                            <label class="block text-xs text-gray-400 mb-1">Descrição / Mercado</label>
+                            <label class="block text-xs text-gray-400 mb-1">Descricao / Mercado</label>
                             <input type="text" id="desc1" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Arsenal para vencer" required>
                         </div>
                     </div>
-                    
+
                     <div id="sel-2-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">Competição 2</label>
+                            <label class="block text-xs text-gray-400 mb-1">Competicao 2</label>
                             <input type="text" id="comp2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: NBA" list="competicoes-list">
                         </div>
                          <div>
-                            <label class="block text-xs text-gray-400 mb-1">Descrição 2</label>
+                            <label class="block text-xs text-gray-400 mb-1">Descricao 2</label>
                             <input type="text" id="desc2" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Lakers +5.5">
                         </div>
                     </div>
 
                     <div id="sel-3-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden pt-4 border-t border-gray-800">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">Competição 3</label>
+                            <label class="block text-xs text-gray-400 mb-1">Competicao 3</label>
                             <input type="text" id="comp3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: UFC" list="competicoes-list">
                         </div>
                          <div>
-                            <label class="block text-xs text-gray-400 mb-1">Descrição 3</label>
+                            <label class="block text-xs text-gray-400 mb-1">Descricao 3</label>
                             <input type="text" id="desc3" class="form-input w-full bg-gray-800 border-gray-600 rounded text-sm" placeholder="Ex: Poatan KO">
                         </div>
                     </div>
@@ -249,18 +261,18 @@
                         <div>
                             <label for="gr" class="block text-xs text-gray-400">Status</label>
                             <select id="gr" class="form-input mt-1 w-full bg-gray-900 border-gray-700 rounded text-white" required>
-                                <option value="Green">Green (✅)</option>
-                                <option value="Red">Red (❌)</option>
-                                <option value="Void">Anulada (⛔)</option>
+                                <option value="Green">Green</option>
+                                <option value="Red">Red</option>
+                                <option value="Void">Anulada</option>
                             </select>
                         </div>
                         <div>
-                            <label for="lucro" class="block text-xs text-gray-400">Lucro/Prejuízo</label>
+                            <label for="lucro" class="block text-xs text-gray-400">Lucro/Prejuizo</label>
                             <input type="number" step="0.01" id="lucro" class="form-input mt-1 w-full bg-gray-900 border-gray-700 rounded text-white font-bold" placeholder="0.00" required>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-700">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30">Salvar Aposta</button>
@@ -268,14 +280,14 @@
             </form>
         </div>
     </div>
-    
+
     <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden p-4 backdrop-blur-sm">
         <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm border border-gray-700 p-6 text-center">
             <div class="w-12 h-12 bg-red-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="alert-triangle" class="text-red-500 w-6 h-6"></i>
             </div>
             <h3 class="text-lg font-bold text-white mb-2">Excluir Registro?</h3>
-            <p class="text-sm text-gray-400 mb-6">Essa ação é irreversível.</p>
+            <p class="text-sm text-gray-400 mb-6">Essa acao e irreversivel.</p>
             <div class="flex justify-center space-x-3">
                 <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Cancelar</button>
                 <button id="confirm-delete" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Sim, Excluir</button>
@@ -284,21 +296,76 @@
     </div>
 
     <script>
+        // Calcular base path dinamicamente
+        const getBasePath = () => {
+            const pathname = window.location.pathname;
+            if (pathname.includes('/app')) {
+                return pathname.substring(0, pathname.indexOf('/app'));
+            }
+            return '';
+        };
+
+        const BASE_PATH = getBasePath();
+        const API_URL = BASE_PATH + '/api.php';
+
         // --- 1. Estado Global ---
         let db = { apostas: [] };
         let editId = null;
         let deleteCallback = null;
         let bankrollChartInstance = null;
 
-        // --- 2. Funções Utilitárias ---
+        // Mobile Menu Toggle
+        const toggleMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar) return;
+            const isHidden = sidebar.classList.toggle('-translate-x-full');
+            if (overlay) overlay.classList.toggle('hidden', isHidden);
+        };
+
+        document.getElementById('menu-toggle')?.addEventListener('click', toggleMenu);
+        document.getElementById('sidebar-overlay')?.addEventListener('click', toggleMenu);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 768) {
+                            document.getElementById('sidebar')?.classList.add('-translate-x-full');
+                            document.getElementById('sidebar-overlay')?.classList.add('hidden');
+                        }
+                    });
+                });
+            }, 100);
+        });
+
+        // --- 2. Funcoes Utilitarias ---
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-';
-        
+
+        const apiRequest = async (action, payload = null) => {
+            const opts = payload ? {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            } : { method: 'GET' };
+            const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, opts);
+            if (!res.ok) {
+                throw new Error(`Erro na API (${action}): ${res.status}`);
+            }
+            return res.json();
+        };
+
+        const handleApiError = (err) => {
+            console.error(err);
+            alert('Nao foi possivel carregar os dados do banco.');
+        };
+
         // --- 3. Core Logic ---
-        const initializeApp = () => {
-            loadData();
-            
-            // Navegação
+        const initializeApp = async () => {
+            await loadData();
+
+            // Navegacao
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -306,18 +373,18 @@
                 });
             });
 
-            // Formulário
+            // Formulario
             document.getElementById('aposta-form').addEventListener('submit', handleFormSubmit);
-            
-            // Automação de cálculo
+
+            // Automacao de calculo
             ['odds', 'valor', 'gr'].forEach(id => {
                 document.getElementById(id).addEventListener('input', calculateLucro);
             });
-            
+
             // Delete
             document.getElementById('confirm-delete').addEventListener('click', () => deleteCallback && deleteCallback());
 
-            // Início
+            // Inicio
             navigateTo('dashboard');
         };
 
@@ -325,7 +392,7 @@
             // UI Toggle
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`page-${page}`).classList.remove('hidden');
-            
+
             // Menu Style
             document.querySelectorAll('.nav-link').forEach(el => {
                 const isActive = el.dataset.page === page;
@@ -374,7 +441,7 @@
             }, {});
 
             const days = Object.keys(daily).sort((a,b) => new Date(a) - new Date(b));
-            
+
             if (days.length < 2) {
                 document.getElementById('bankrollChart').classList.add('hidden');
                 document.getElementById('chart-empty').classList.remove('hidden');
@@ -395,7 +462,7 @@
                 data: {
                     labels: days.map(formatDate),
                     datasets: [{
-                        label: 'Evolução da Banca',
+                        label: 'Evolucao da Banca',
                         data: dataPoints,
                         borderColor: '#6366f1',
                         backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -418,7 +485,7 @@
         const renderEntradas = () => {
             const tbody = document.getElementById('apostas-table-body');
             tbody.innerHTML = '';
-            
+
             if (!db.apostas.length) {
                 document.getElementById('entradas-empty').classList.remove('hidden');
                 return;
@@ -428,13 +495,13 @@
             const sorted = [...db.apostas].sort((a,b) => new Date(b.data) - new Date(a.data));
 
             sorted.forEach(a => {
-                // Monta descrição visual das seleções
-                const descHtml = a.selecoes.map(s => 
+                // Monta descricao visual das selecoes
+                const descHtml = a.selecoes.map(s =>
                     `<div class="text-sm"><span class="text-indigo-400 font-semibold text-xs">[${s.comp}]</span> <span class="text-white">${s.desc}</span></div>`
                 ).join('');
 
-                const tipoLabel = a.selecoes.length > 1 
-                    ? `<span class="px-2 py-1 bg-purple-900 text-purple-200 rounded text-xs">Múltipla (${a.selecoes.length})</span>` 
+                const tipoLabel = a.selecoes.length > 1
+                    ? `<span class="px-2 py-1 bg-purple-900 text-purple-200 rounded text-xs">Multipla (${a.selecoes.length})</span>`
                     : `<span class="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">Simples</span>`;
 
                 const grColor = a.gr === 'Green' ? 'text-green-400' : (a.gr === 'Red' ? 'text-red-400' : 'text-gray-400');
@@ -443,16 +510,16 @@
                 const tr = document.createElement('tr');
                 tr.className = 'bg-gray-800 hover:bg-gray-750 border-b border-gray-700';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-gray-300 whitespace-nowrap">${formatDate(a.data)}</td>
-                    <td class="px-6 py-4">${descHtml}</td>
-                    <td class="px-6 py-4">${tipoLabel}</td>
-                    <td class="px-6 py-4 font-bold ${grColor}">${a.gr}</td>
-                    <td class="px-6 py-4 text-gray-300">${a.odds.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(a.valor)}</td>
-                    <td class="px-6 py-4 font-bold ${lucroColor}">${formatCurrency(a.lucro)}</td>
-                    <td class="px-6 py-4 space-x-3">
-                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-sm font-medium">Editar</button>
-                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-sm font-medium">Excluir</button>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 whitespace-nowrap text-xs md:text-sm">${formatDate(a.data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-xs md:text-sm">${descHtml}</td>
+                    <td class="px-3 md:px-6 py-4">${tipoLabel}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${grColor} text-xs md:text-sm">${a.gr}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${a.odds.toFixed(2)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(a.valor)}</td>
+                    <td class="px-3 md:px-6 py-4 font-bold ${lucroColor} text-xs md:text-sm">${formatCurrency(a.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 space-x-2 md:space-x-3">
+                        <button onclick="openModal('${a.id}')" class="text-indigo-400 hover:text-indigo-300 text-xs md:text-sm font-medium">Editar</button>
+                        <button onclick="askDelete('${a.id}')" class="text-red-400 hover:text-red-300 text-xs md:text-sm font-medium">Excluir</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -462,24 +529,23 @@
         const renderCompeticoes = () => {
             const tbody = document.getElementById('competicoes-table-body');
             tbody.innerHTML = '';
-            
-            // Agrupa por competição
+
+            // Agrupa por competicao
             const stats = {};
             db.apostas.forEach(a => {
                 a.selecoes.forEach(s => {
                     const comp = s.comp || 'Outros';
                     if (!stats[comp]) stats[comp] = { lucro: 0, count: 0, green: 0 };
-                    
-                    // Divide o lucro proporcionalmente (apenas para estimativa) ou atribui total? 
-                    // Simples: atribui total da bet para a competição para ver onde você ganha dinheiro.
-                    stats[comp].lucro += a.lucro; 
+
+                    // Atribui o lucro total para a competicao para visao simples
+                    stats[comp].lucro += a.lucro;
                     stats[comp].count++;
                     if (a.gr === 'Green') stats[comp].green++;
                 });
             });
 
             const list = Object.entries(stats).sort((a,b) => b[1].lucro - a[1].lucro);
-            
+
             if(!list.length) {
                 document.getElementById('competicoes-empty').classList.remove('hidden');
                 return;
@@ -490,10 +556,10 @@
                 const wr = (st.green / st.count) * 100;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white font-medium">${nome}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.count}</td>
-                    <td class="px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.lucro)}</td>
-                    <td class="px-6 py-4 text-gray-300">${wr.toFixed(1)}%</td>
+                    <td class="px-3 md:px-6 py-4 text-white font-medium text-xs md:text-sm">${nome}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.count}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.lucro >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.lucro)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${wr.toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -502,7 +568,7 @@
         const renderCaixa = () => {
             const tbody = document.getElementById('caixa-table-body');
             tbody.innerHTML = '';
-            
+
             const stats = db.apostas.reduce((acc, a) => {
                 if (!acc[a.data]) acc[a.data] = { val: 0, luc: 0, qtd: 0 };
                 acc[a.data].val += a.valor;
@@ -512,7 +578,7 @@
             }, {});
 
             const list = Object.entries(stats).sort((a,b) => new Date(b[0]) - new Date(a[0]));
-            
+
             if(!list.length) {
                 document.getElementById('caixa-empty').classList.remove('hidden');
                 return;
@@ -522,10 +588,10 @@
             list.forEach(([data, st]) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 text-white">${formatDate(data)}</td>
-                    <td class="px-6 py-4 text-gray-300">${st.qtd}</td>
-                    <td class="px-6 py-4 text-gray-300">${formatCurrency(st.val)}</td>
-                    <td class="px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">${formatCurrency(st.luc)}</td>
+                    <td class="px-3 md:px-6 py-4 text-white text-xs md:text-sm">${formatDate(data)}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${st.qtd}</td>
+                    <td class="px-3 md:px-6 py-4 text-gray-300 text-xs md:text-sm">${formatCurrency(st.val)}</td>
+                    <td class="px-3 md:px-6 py-4 ${st.luc >= 0 ? 'text-green-400' : 'text-red-400'} font-bold text-xs md:text-sm">${formatCurrency(st.luc)}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -538,7 +604,7 @@
             document.getElementById('sel-2-fields').classList.toggle('hidden', n < 2);
             document.getElementById('comp2').required = n >= 2;
             document.getElementById('desc2').required = n >= 2;
-            
+
             document.getElementById('sel-3-fields').classList.toggle('hidden', n < 3);
             document.getElementById('comp3').required = n >= 3;
             document.getElementById('desc3').required = n >= 3;
@@ -559,8 +625,8 @@
             const form = document.getElementById('aposta-form');
             form.reset();
             editId = id;
-            
-            // Popula Datalist de Competições
+
+            // Popula Datalist de Competicoes
             const dl = document.getElementById('competicoes-list');
             dl.innerHTML = '';
             const comps = [...new Set(db.apostas.flatMap(a => a.selecoes.map(s => s.comp)))].sort();
@@ -578,16 +644,16 @@
                 document.getElementById('valor').value = a.valor;
                 document.getElementById('gr').value = a.gr;
                 document.getElementById('lucro').value = a.lucro;
-                
-                // Popula seleções
+
+                // Popula selecoes
                 const len = a.selecoes.length;
-                document.getElementById('num-selecoes').value = len > 3 ? 3 : len; // Simplificação
+                document.getElementById('num-selecoes').value = len > 3 ? 3 : len; // Simplificacao
                 toggleLegFields();
 
                 if(a.selecoes[0]) { document.getElementById('comp1').value = a.selecoes[0].comp; document.getElementById('desc1').value = a.selecoes[0].desc; }
                 if(a.selecoes[1]) { document.getElementById('comp2').value = a.selecoes[1].comp; document.getElementById('desc2').value = a.selecoes[1].desc; }
                 if(a.selecoes[2]) { document.getElementById('comp3').value = a.selecoes[2].comp; document.getElementById('desc3').value = a.selecoes[2].desc; }
-                
+
                 document.getElementById('modal-title').innerText = 'Editar Aposta';
             } else {
                 document.getElementById('data').value = new Date().toISOString().split('T')[0];
@@ -595,7 +661,7 @@
                 toggleLegFields();
                 document.getElementById('modal-title').innerText = 'Nova Aposta';
             }
-            
+
             document.getElementById('aposta-modal').classList.remove('hidden');
         };
 
@@ -603,22 +669,26 @@
         const closeConfirmModal = () => document.getElementById('confirm-modal').classList.add('hidden');
 
         const askDelete = (id) => {
-            deleteCallback = () => {
-                db.apostas = db.apostas.filter(x => x.id !== id);
-                saveData();
-                closeConfirmModal();
-                renderDashboard();
-                renderEntradas();
+            deleteCallback = async () => {
+                try {
+                    await apiRequest('delete', { id });
+                    await loadData();
+                    closeConfirmModal();
+                    const activePage = document.querySelector('.nav-link.bg-indigo-600')?.dataset.page || 'dashboard';
+                    navigateTo(activePage);
+                } catch (err) {
+                    handleApiError(err);
+                }
             };
             document.getElementById('confirm-modal').classList.remove('hidden');
         };
 
-        const handleFormSubmit = (e) => {
+        const handleFormSubmit = async (e) => {
             e.preventDefault();
-            
+
             const n = parseInt(document.getElementById('num-selecoes').value);
             const selecoes = [];
-            
+
             for(let i=1; i<=n; i++) {
                 // Se n=3, pega 1, 2 e 3
                 const c = document.getElementById(`comp${i}`).value;
@@ -627,7 +697,7 @@
             }
 
             const payload = {
-                id: document.getElementById('aposta-id').value || `bet_${Date.now()}`,
+                id: document.getElementById('aposta-id').value || null,
                 data: document.getElementById('data').value,
                 odds: parseFloat(document.getElementById('odds').value),
                 valor: parseFloat(document.getElementById('valor').value),
@@ -636,62 +706,49 @@
                 selecoes: selecoes
             };
 
-            if (editId) {
-                const idx = db.apostas.findIndex(x => x.id === editId);
-                if(idx > -1) db.apostas[idx] = payload;
-            } else {
-                db.apostas.push(payload);
+            try {
+                if (editId) {
+                    payload.id = editId;
+                    await apiRequest('update', payload);
+                } else {
+                    await apiRequest('create', payload);
+                }
+                await loadData();
+            } catch (err) {
+                handleApiError(err);
             }
 
-            saveData();
             closeModal();
-            
-            // Refresh na página atual
+
+            // Refresh na pagina atual
             const activePage = document.querySelector('.nav-link.bg-indigo-600')?.dataset.page || 'dashboard';
             navigateTo(activePage);
         };
 
-        // --- 6. Persistência ---
-        const saveData = () => localStorage.setItem('gestorGeralDB', JSON.stringify(db));
-        
-        const loadData = () => {
-            const raw = localStorage.getItem('gestorGeralDB');
-            if (raw) db = JSON.parse(raw);
-            
-            // Migração rápida (caso venha do DB antigo da NBA)
-            // Se encontrar 'jogadas' mas não 'selecoes', converte
-            db.apostas.forEach(a => {
-                if (a.jogadas && !a.selecoes) {
-                    a.selecoes = a.jogadas.map(j => ({
-                        comp: j.clube || 'Legacy',
-                        desc: j.jogador || 'Legacy Bet'
-                    }));
-                }
-            });
+        // --- 6. Persistencia ---
+        const loadData = async () => {
+            try {
+                const data = await apiRequest('list');
+                db.apostas = (data.apostas || []).map(a => ({
+                    ...a,
+                    id: String(a.id),
+                    odds: parseFloat(a.odds) || 0,
+                    valor: parseFloat(a.valor) || 0,
+                    lucro: parseFloat(a.lucro) || 0,
+                    selecoes: a.selecoes || []
+                }));
+            } catch (err) {
+                db.apostas = [];
+                handleApiError(err);
+            }
         };
 
         // Boot
         initializeApp();
     </script>
-    
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>lucide.createIcons();</script>
 </body>
 </html>
-=======
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/app">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecionando...</title>
-</head>
-<body>
-    <p>App movido para <a href="/app">/app</a>.</p>
-    <script>
-        window.location.replace('/app');
-    </script>
-</body>
-</html>
 
->>>>>>> acb6554ed7ddccf626889c1c8e0487039af4b3c9

@@ -107,6 +107,53 @@ input:focus, select:focus, textarea:focus {
     text-overflow: ellipsis; 
 }
 
+/* House tasks checklist */
+.house-tasks-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.house-tasks-group {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.house-tasks-group h4 {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    color: #f8fafc;
+}
+
+.house-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.house-task input {
+    width: 18px;
+    height: 18px;
+}
+
+.house-task-subgroup {
+    display: grid;
+    gap: 6px;
+    padding: 8px 10px;
+    margin: 8px 0 10px;
+    background: rgba(2, 6, 23, 0.4);
+    border-radius: 10px;
+    border: 1px dashed rgba(148, 163, 184, 0.25);
+    color: #cbd5f5;
+    font-size: 0.85rem;
+}
+
 .mood-btn.selected { 
     transform: scale(1.2); 
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); 

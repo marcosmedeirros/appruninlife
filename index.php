@@ -2,6 +2,16 @@
 require_once __DIR__ . '/config.php';
 date_default_timezone_set('America/Sao_Paulo');
 
+// ===== ROTEAMENTO PARA /app =====
+$request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$base_path = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+$relative_path = substr($request_uri, strlen($base_path));
+
+if ($relative_path === '/app' || $relative_path === '/app/') {
+    include __DIR__ . '/app.php';
+    exit;
+}
+
 $user_id = 1;
 
 function ensureHabitRemovalsTable(PDO $pdo) {
@@ -15,7 +25,6 @@ function ensureGoalsMonthlyEnum(PDO $pdo) {
         error_log('[DB] Falha ao ajustar enum goal_type: ' . $e->getMessage());
     }
 }
-
 
 function getWeekRange(): array {
     $now = new DateTime();
@@ -83,7 +92,12 @@ if (isset($_GET['api'])) {
 
         if ($action === 'update_activity') {
             $stmt = $pdo->prepare("UPDATE activities SET title = ?, day_date = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([$data['title'] ?? '', $data['date'] ?? date('Y-m-d'), $data['id'] ?? 0, $user_id]);
+            $stmt->execute([
+                $data['title'] ?? '',
+                $data['date'] ?? date('Y-m-d'),
+                $data['id'] ?? 0,
+                $user_id
+            ]);
             json_response(['success' => true]);
         }
 
@@ -132,6 +146,17 @@ if (isset($_GET['api'])) {
             }
             $upd = $pdo->prepare("UPDATE habits SET checked_dates = ? WHERE id = ?");
             $upd->execute([json_encode($arr), $id]);
+            json_response(['success' => true]);
+        }
+
+        if ($action === 'remove_habit') {
+            $id = $data['id'] ?? null;
+            $removedFrom = $data['removed_from'] ?? date('Y-m-d');
+            if (!$id) {
+                json_response(['success' => false]);
+            }
+            $stmt = $pdo->prepare("INSERT INTO habit_removals (habit_id, removed_from) VALUES (?, ?) ON DUPLICATE KEY UPDATE removed_from = VALUES(removed_from)");
+            $stmt->execute([$id, $removedFrom]);
             json_response(['success' => true]);
         }
 
@@ -723,6 +748,13 @@ include __DIR__ . '/includes/header.php';
         white-space: normal;
         word-break: break-word;
     }
+    .habit-name-cell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .habit-name-cell .icon-btn { flex-shrink: 0; }
     .check {
         width: 26px;
         height: 26px;
@@ -1110,6 +1142,7 @@ include __DIR__ . '/includes/header.php';
     <div class="card section">
         <div class="card-header">
             <h3>Rotina do dia</h3>
+            <button class="btn" data-modal="modalRoutine">Novo acontecimento</button>
         </div>
         <div class="list" id="routineList"></div>
     </div>
@@ -1175,6 +1208,70 @@ include __DIR__ . '/includes/header.php';
                 <span class="tag" id="messageDate">Hoje</span>
             </div>
             <p id="dailyMessage" class="muted"></p>
+        </div>
+    </div>
+
+    <div class="card section" id="houseTasksSection">
+        <div class="card-header">
+            <div>
+                <h3>Responsabilidades do Marc</h3>
+                <p class="muted">Marque quando fizer. Tudo reseta automaticamente toda semana.</p>
+            </div>
+            <div class="tag" id="houseTasksWeekTag">Semana</div>
+        </div>
+        <div class="house-tasks-grid">
+            <div class="house-tasks-group">
+                <h4>Tarefas diarias</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-lavar-louca"> Lavar louca</label>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-limpar-pia-cozinha"> Limpar pia da cozinha</label>
+                <label class="house-task"><input type="checkbox" data-task-id="diaria-limpar-migalhas"> Limpar migalhas da bancada</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Tarefas semanais</h4>
+                <div class="house-task-subgroup">
+                    <span>Lavar banheiro:</span>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-vaso"> Vaso</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-ralo"> Ralo</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-pia"> Pia</label>
+                    <label class="house-task"><input type="checkbox" data-task-id="semanal-banheiro-porta-escovas"> Porta escovas</label>
+                </div>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-geladeira"> Limpar geladeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-lavar-panos"> Lavar panos da lavanderia</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-limpar-tanque"> Limpar tanque</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semanal-compras"> Compras da semana</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>2x por semana</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-varrer-apartamento"> Varrer apartamento</label>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-esvaziar-lixos"> Esvaziar lixos e levar lixeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="2x-limpar-pia-banheiro"> Limpar pia do banheiro</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Quinzenais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-armarios"> Limpar parte superior de armarios</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-pa-lixo"> Limpar pa de lixo</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-teias-teto"> Limpar teias do teto</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-air-fryer"> Limpar air fryer</label>
+                <label class="house-task"><input type="checkbox" data-task-id="quinzenal-mesa-cadeiras"> Limpar mesa e cadeiras</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Mensais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="mensal-tomadas-fios"> Limpar tomadas e fios</label>
+                <label class="house-task"><input type="checkbox" data-task-id="mensal-sacada"> Limpar sacada</label>
+            </div>
+
+            <div class="house-tasks-group">
+                <h4>Semestrais</h4>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-tv"> Limpar televisao</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-filtro-maquina"> Limpar filtro da maquina</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-topo-geladeira"> Limpar topo da geladeira</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-chuveiro"> Limpar chuveiro</label>
+                <label class="house-task"><input type="checkbox" data-task-id="semestral-ventilador"> Limpar ventilador</label>
+            </div>
         </div>
     </div>
 </main>
@@ -1320,12 +1417,12 @@ include __DIR__ . '/includes/header.php';
 <div class="modal" id="modalRoutine">
     <div class="modal-content">
         <div class="modal-header">
-            <h4>Nova rotina</h4>
+            <h4>Novo acontecimento</h4>
             <button class="modal-close" data-close>×</button>
         </div>
         <input type="hidden" id="routineId">
         <input class="input" id="routineTime" type="time">
-        <input class="input" id="routineActivity" placeholder="Atividade">
+        <input class="input" id="routineActivity" placeholder="Nome do acontecimento">
         <button class="btn btn-solid" id="saveRoutine">Salvar</button>
     </div>
 </div>
@@ -1441,7 +1538,7 @@ include __DIR__ . '/includes/header.php';
                 const routineTime = document.getElementById('routineTime');
                 const routineActivity = document.getElementById('routineActivity');
                 if (routineId) routineId.value = '';
-                if (routineTime) routineTime.value = '';
+                if (routineTime) routineTime.value = new Date().toTimeString().slice(0, 5);
                 if (routineActivity) routineActivity.value = '';
             }
             if (e.target.dataset.modal === 'modalFinanceBase') {
@@ -1550,6 +1647,103 @@ include __DIR__ . '/includes/header.php';
         return target.toISOString().slice(0, 10);
     };
 
+    const getHouseTasksWeekKey = () => {
+        const monday = getWeekDates();
+        return monday.toISOString().slice(0, 10);
+    };
+
+    const HOUSE_TASK_LONG_FREQ = new Set(['quinzenal', 'mensal', 'semestral']);
+
+    const addDays = (date, days) => {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    };
+
+    const addMonths = (date, months) => {
+        const d = new Date(date);
+        const originalDay = d.getDate();
+        d.setMonth(d.getMonth() + months);
+        while (d.getDate() < originalDay) {
+            d.setDate(d.getDate() - 1);
+        }
+        return d;
+    };
+
+    const shouldResetHouseTask = (frequency, doneAtIso, now) => {
+        if (!doneAtIso) return false;
+        const doneAt = new Date(doneAtIso);
+        let resetAt = null;
+        if (frequency === 'quinzenal') resetAt = addDays(doneAt, 10);
+        if (frequency === 'mensal') resetAt = addDays(doneAt, 20);
+        if (frequency === 'semestral') resetAt = addMonths(doneAt, 5);
+        if (!resetAt) return false;
+        return now >= resetAt;
+    };
+
+    const loadHouseTasks = () => {
+        const weekKey = getHouseTasksWeekKey();
+        const savedWeek = localStorage.getItem('houseTasksWeek');
+        const status = JSON.parse(localStorage.getItem('houseTasksStatus') || '{}');
+        const doneAt = JSON.parse(localStorage.getItem('houseTasksDoneAt') || '{}');
+        const now = new Date();
+
+        const checkboxes = document.querySelectorAll('#houseTasksSection input[type="checkbox"][data-task-id]');
+        if (savedWeek !== weekKey) {
+            localStorage.setItem('houseTasksWeek', weekKey);
+            checkboxes.forEach(cb => {
+                const frequency = cb.dataset.frequency || 'weekly';
+                if (!HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                    delete status[cb.dataset.taskId];
+                    delete doneAt[cb.dataset.taskId];
+                }
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            const frequency = cb.dataset.frequency || 'weekly';
+            const id = cb.dataset.taskId;
+            if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                if (status[id] && !doneAt[id]) {
+                    doneAt[id] = now.toISOString();
+                }
+                if (status[id] && shouldResetHouseTask(frequency, doneAt[id], now)) {
+                    delete status[id];
+                    delete doneAt[id];
+                }
+            }
+
+            cb.checked = Boolean(status[id]);
+            if (cb.dataset.bound !== 'true') {
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        status[id] = true;
+                        if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
+                            doneAt[id] = new Date().toISOString();
+                        }
+                    } else {
+                        delete status[id];
+                        delete doneAt[id];
+                    }
+                    localStorage.setItem('houseTasksStatus', JSON.stringify(status));
+                    localStorage.setItem('houseTasksDoneAt', JSON.stringify(doneAt));
+                });
+                cb.dataset.bound = 'true';
+            }
+        });
+
+        localStorage.setItem('houseTasksStatus', JSON.stringify(status));
+        localStorage.setItem('houseTasksDoneAt', JSON.stringify(doneAt));
+
+        const tag = document.getElementById('houseTasksWeekTag');
+        if (tag) {
+            const monday = getWeekDates();
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            tag.textContent = `${monday.toLocaleDateString('pt-BR')} - ${sunday.toLocaleDateString('pt-BR')}`;
+        }
+    };
+
     const loadActivities = async () => {
         const list = await api('get_week_activities', {}, 'GET');
         const container = document.getElementById('activitiesBoard');
@@ -1619,7 +1813,17 @@ include __DIR__ . '/includes/header.php';
         let body = '';
         habits.forEach(habit => {
             const checks = JSON.parse(habit.checked_dates || '[]');
-            body += `<tr><td>${habit.name}</td>`;
+            body += `
+                <tr>
+                    <td>
+                        <div class="habit-name-cell">
+                            <span>${habit.name}</span>
+                            <button class="icon-btn subtle" data-action="delete-habit" data-id="${habit.id}" aria-label="Apagar hábito">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+            `;
             for (let d = 1; d <= daysInMonth; d++) {
                 const date = `${month}-${String(d).padStart(2, '0')}`;
                 const isActive = checks.includes(date);
@@ -1930,6 +2134,12 @@ include __DIR__ . '/includes/header.php';
             await api('toggle_habit', { id: e.target.dataset.habit, date: e.target.dataset.date });
             loadHabits();
         }
+        if (e.target.closest('[data-action="delete-habit"]')) {
+            const btn = e.target.closest('[data-action="delete-habit"]');
+            if (!confirm('Apagar este hábito?')) return;
+            await api('remove_habit', { id: btn.dataset.id });
+            loadHabits();
+        }
         const workoutCell = e.target.closest('.calendar-cell[data-date]');
         if (workoutCell) {
             await api('toggle_workout_day', { date: workoutCell.dataset.date });
@@ -2190,7 +2400,10 @@ include __DIR__ . '/includes/header.php';
         const routineId = document.getElementById('routineId');
         const routineTime = document.getElementById('routineTime');
         const routineActivity = document.getElementById('routineActivity');
-        const payload = { time: routineTime ? routineTime.value : '', activity: routineActivity ? routineActivity.value : '' };
+        const timeValue = routineTime && routineTime.value
+            ? routineTime.value
+            : new Date().toTimeString().slice(0, 5);
+        const payload = { time: timeValue, activity: routineActivity ? routineActivity.value : '' };
         if (routineId && routineId.value) {
             await api('update_routine_item', { ...payload, id: routineId.value });
         } else {
@@ -2262,6 +2475,7 @@ include __DIR__ . '/includes/header.php';
         loadGoals();
         loadGoalsDone();
         loadMonthlyGoals();
+        loadHouseTasks();
     };
 
     init();

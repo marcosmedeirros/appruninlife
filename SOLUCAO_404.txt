@@ -1,0 +1,119 @@
+🔧 SOLUÇÃO PARA ERRO 404 - APP_API.PHP
+
+✅ MUDANÇAS IMPLEMENTADAS:
+
+1. **app_api.php** - Melhorado com headers CORS
+   ├─ Content-Type: application/json
+   ├─ Access-Control-Allow-Origin: *
+   └─ Suporte a CORS preflight
+
+2. **index.php** - Adicionado Roteamento
+   ├─ Detecta /app_api.php → inclui app_api.php
+   ├─ Detecta /app → inclui app.php
+   └─ Resto funciona normalmente
+
+3. **.htaccess** - Configurado para Rewrite
+   ├─ Permite acesso a arquivos reais (-f)
+   ├─ Permite acesso a diretórios reais (-d)
+   ├─ Roteia /app_api.php → index.php
+   └─ Roteia /app → index.php
+
+==========================================
+
+🧪 COMO TESTAR:
+
+PASSO 1: Verifique se tudo foi atualizado
+- .htaccess tem RewriteBase /? ✓
+- .htaccess tem RewriteRule para app_api.php? ✓
+- index.php tem roteamento para /app_api.php? ✓
+- app_api.php tem headers CORS? ✓
+
+PASSO 2: Acesse a página
+https://marcosmedeiros.page/app
+
+PASSO 3: Abra DevTools (F12)
+- Vá em Console
+- Verifique erros
+- Se ainda houver 404, cheque Network tab
+
+PASSO 4: Teste API Diretamente
+https://marcosmedeiros.page/test_api.php
+
+Deve retornar JSON como:
+{
+  "status": "complete",
+  "checks": {
+    "config": "OK - config.php carregado",
+    "database": "OK - Banco conectado",
+    "tables": {
+      "bets": "EXISTE",
+      "bet_selections": "EXISTE"
+    },
+    "api": "OK - API funcionando. Apostas no banco: 0"
+  }
+}
+
+==========================================
+
+📋 SE AINDA HOUVER ERRO 404:
+
+1. Verifique .htaccess
+   - Deve ter RewriteBase /
+   - Deve ter -f [OR] -d
+
+2. Execute test_api.php
+   - Verifique se banco está OK
+   - Verifique se tabelas existem
+
+3. Verifique Permissões
+   - chmod 644 app_api.php
+   - chmod 644 .htaccess
+   - chmod 755 .
+
+4. Teste sem .htaccess (temporário)
+   - Renomeie: .htaccess → .htaccess.bak
+   - Teste /app_api.php
+   - Se funcionar, problema está no .htaccess
+
+5. Verifique URL no Console
+   - F12 → Console
+   - Deve estar chamando: /app_api.php?action=list
+   - Não deve ser: /lifeos/app_api.php ou /app/app_api.php
+
+==========================================
+
+💾 COMANDOS SQL PARA DEBUG:
+
+USE u289267434_runlife;
+
+-- Verificar tabelas
+SHOW TABLES LIKE 'bet%';
+
+-- Contar apostas
+SELECT COUNT(*) FROM bets;
+
+-- Inserir aposta de teste
+INSERT INTO bets (bet_date, odds, stake, result, profit)
+VALUES (CURDATE(), 1.90, 50.00, 'Green', 45.00);
+
+-- Listar apostas
+SELECT * FROM bets ORDER BY id DESC LIMIT 5;
+
+-- Verificar integridade
+SELECT * FROM bet_selections WHERE bet_id NOT IN (SELECT id FROM bets);
+
+==========================================
+
+✅ PRÓXIMO PASSO:
+
+1. Acesse https://marcosmedeiros.page/app
+2. Abra F12 (Console)
+3. Recarregue (F5)
+4. Verifique se ainda há erro 404
+5. Se houver, copie exatamente a URL que está falhando
+6. Teste a URL direto no navegador
+
+Se conseguir ver um dashboard ou tabela vazia, SUCESSO! 🎉
+
+==========================================
+

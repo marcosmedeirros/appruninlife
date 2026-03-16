@@ -1,20 +1,20 @@
-# ARQUIVO: .htaccess - Configuração de URLs amigáveis
+# ARQUIVO: .htaccess
 RewriteEngine On
-
-# Detectar se está em localhost ou em produção
-# Para localhost usa /lifeos/, para produção usa /
-RewriteCond %{HTTP_HOST} ^localhost [NC]
-RewriteBase /lifeos/
-
-RewriteCond %{HTTP_HOST} marcosmedeirros\.io [NC]
 RewriteBase /
 
-# Se a requisição é para um arquivo ou diretório existente, permitir acesso direto
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Permitir acesso direto a arquivos e diretórios reais
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
 # Redirecionar /login para login.php
 RewriteRule ^login/?$ login.php [L]
 
-# Redirecionar /logout para limpar sessão e retornar ao login
+# Redirecionar /logout
 RewriteRule ^logout/?$ includes/auth.php?logout=1 [L]
+
+# Rotear /app_api.php através de index.php
+RewriteRule ^app_api\.php$ index.php [L]
+
+# Rotear /app através de index.php
+RewriteRule ^app/?$ index.php [L]
