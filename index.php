@@ -2182,8 +2182,9 @@ include __DIR__ . '/includes/header.php';
             if (routineActivity) routineActivity.value = btn.dataset.activity || '';
             openModal('modalRoutine');
         }
-        if (e.target.matches('[data-action="delete-routine"]')) {
-            await api('delete_routine_item', { id: e.target.dataset.id });
+        if (e.target.closest('[data-action="delete-routine"]')) {
+            const btn = e.target.closest('[data-action="delete-routine"]');
+            await api('delete_routine_item', { id: btn.dataset.id });
             loadRoutine();
         }
         if (e.target.matches('[data-action="delete-rule"]')) {
