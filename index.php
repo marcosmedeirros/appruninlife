@@ -26,6 +26,16 @@ function getWeekRange(): array {
     return [$monday->format('Y-m-d'), $sunday->format('Y-m-d')];
 }
 
+function getDateForWeekdayNumber(int $weekdayNumber): string {
+    $weekdayNumber = max(1, min(7, $weekdayNumber));
+    $now = new DateTime();
+    $dayOfWeek = (int)$now->format('w');
+    $daysToMonday = ($dayOfWeek === 0) ? -6 : -($dayOfWeek - 1);
+    $monday = (clone $now)->modify("$daysToMonday days");
+    $target = (clone $monday)->modify('+' . ($weekdayNumber - 1) . ' days');
+    return $target->format('Y-m-d');
+}
+
 function json_response($data) {
     header('Content-Type: application/json');
     echo json_encode($data);
@@ -48,8 +58,26 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'save_activity') {
-            $stmt = $pdo->prepare("INSERT INTO activities (user_id, title, day_date, status) VALUES (?, ?, ?, 0)");
-            $stmt->execute([$user_id, $data['title'] ?? '', $data['date'] ?? date('Y-m-d')]);
+            $title = $data['title'] ?? '';
+            $repeatDays = $data['repeat_days'] ?? [];
+            if (!is_array($repeatDays)) {
+                $repeatDays = [];
+            }
+            $repeatDays = array_values(array_filter(array_map('intval', $repeatDays), function ($d) {
+                return $d >= 1 && $d <= 7;
+            }));
+
+            if (count($repeatDays) > 0) {
+                $seriesId = bin2hex(random_bytes(8));
+                $stmt = $pdo->prepare("INSERT INTO activities (user_id, title, day_date, status, series_id) VALUES (?, ?, ?, 0, ?)");
+                foreach ($repeatDays as $weekday) {
+                    $date = getDateForWeekdayNumber($weekday);
+                    $stmt->execute([$user_id, $title, $date, $seriesId]);
+                }
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO activities (user_id, title, day_date, status) VALUES (?, ?, ?, 0)");
+                $stmt->execute([$user_id, $title, $data['date'] ?? date('Y-m-d')]);
+            }
             json_response(['success' => true]);
         }
 
@@ -66,8 +94,15 @@ if (isset($_GET['api'])) {
         }
 
         if ($action === 'delete_activity') {
-            $stmt = $pdo->prepare("DELETE FROM activities WHERE id = ? AND user_id = ?");
-            $stmt->execute([$data['id'], $user_id]);
+            $scope = $data['scope'] ?? 'single';
+            $seriesId = $data['series_id'] ?? null;
+            if ($scope === 'series' && $seriesId) {
+                $stmt = $pdo->prepare("DELETE FROM activities WHERE series_id = ? AND user_id = ?");
+                $stmt->execute([$seriesId, $user_id]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM activities WHERE id = ? AND user_id = ?");
+                $stmt->execute([$data['id'], $user_id]);
+            }
             json_response(['success' => true]);
         }
 
@@ -802,6 +837,9 @@ include __DIR__ . '/includes/header.php';
     .activity-items { display: flex; flex-direction: column; gap: 10px; }
     .activity-empty { font-size: 0.8rem; color: var(--muted); }
     .list-actions { display: inline-flex; gap: 6px; }
+    .repeat-days { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .repeat-day { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text); }
+    .repeat-day input { accent-color: #ffffff; }
     .goals-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1148,6 +1186,7 @@ include __DIR__ . '/includes/header.php';
             <button class="modal-close" data-close>×</button>
         </div>
         <input type="hidden" id="activityId">
+        <input type="hidden" id="activitySeriesId">
         <input class="input" id="activityTitle" placeholder="O que precisa fazer?">
         <select class="input" id="activityWeekday">
             <option value="1">Segunda-feira</option>
@@ -1158,6 +1197,16 @@ include __DIR__ . '/includes/header.php';
             <option value="6">Sábado</option>
             <option value="7">Domingo</option>
         </select>
+        <div class="muted" style="font-size: 0.75rem;">Repetir em outros dias (somente ao criar)</div>
+        <div class="repeat-days" id="activityRepeatDays">
+            <label class="repeat-day"><input type="checkbox" value="1">Seg</label>
+            <label class="repeat-day"><input type="checkbox" value="2">Ter</label>
+            <label class="repeat-day"><input type="checkbox" value="3">Qua</label>
+            <label class="repeat-day"><input type="checkbox" value="4">Qui</label>
+            <label class="repeat-day"><input type="checkbox" value="5">Sex</label>
+            <label class="repeat-day"><input type="checkbox" value="6">Sab</label>
+            <label class="repeat-day"><input type="checkbox" value="7">Dom</label>
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn" id="deleteActivity" style="display:none;">Apagar</button>
             <button class="btn btn-solid" id="saveActivity">Salvar</button>
@@ -1358,11 +1407,20 @@ include __DIR__ . '/includes/header.php';
                 const activityId = document.getElementById('activityId');
                 const activityTitle = document.getElementById('activityTitle');
                 const activityWeekday = document.getElementById('activityWeekday');
+                const activitySeriesId = document.getElementById('activitySeriesId');
                 const deleteBtn = document.getElementById('deleteActivity');
+                const repeatBox = document.getElementById('activityRepeatDays');
                 if (activityId) activityId.value = '';
                 if (activityTitle) activityTitle.value = '';
                 if (activityWeekday) activityWeekday.value = String(getWeekdayNumber(new Date().toISOString().slice(0, 10)));
+                if (activitySeriesId) activitySeriesId.value = '';
                 if (deleteBtn) deleteBtn.style.display = 'none';
+                if (repeatBox) {
+                    repeatBox.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.disabled = false;
+                    });
+                }
             }
             if (e.target.dataset.modal === 'modalGoalMonth') {
                 const goalMonthTitle = document.getElementById('goalMonthTitle');
@@ -1437,6 +1495,23 @@ include __DIR__ . '/includes/header.php';
         const d = new Date(dateStr + 'T00:00:00');
         const jsDay = d.getDay();
         return jsDay === 0 ? 7 : jsDay;
+    };
+
+    const getSelectedRepeatDays = () => {
+        const box = document.getElementById('activityRepeatDays');
+        if (!box) return [];
+        return Array.from(box.querySelectorAll('input[type="checkbox"]'))
+            .filter(cb => cb.checked && !cb.disabled)
+            .map(cb => cb.value);
+    };
+
+    const setRepeatDisabled = (disabled) => {
+        const box = document.getElementById('activityRepeatDays');
+        if (!box) return;
+        box.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.disabled = disabled;
+            if (disabled) cb.checked = false;
+        });
     };
 
     const getTodayWeekdayLabel = () => {
@@ -1516,7 +1591,7 @@ include __DIR__ . '/includes/header.php';
                                     <input type="checkbox" data-id="${item.id}" data-action="toggle-activity" ${isDone ? 'checked' : ''}>
                                     <span></span>
                                 </label>
-                                <button class="icon-btn subtle" data-action="edit-activity" data-id="${item.id}" data-title="${item.title}" data-weekday="${weekdayNum}" aria-label="Editar">
+                                <button class="icon-btn subtle" data-action="edit-activity" data-id="${item.id}" data-title="${item.title}" data-weekday="${weekdayNum}" data-series="${item.series_id || ''}" aria-label="Editar">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
@@ -1877,11 +1952,14 @@ include __DIR__ . '/includes/header.php';
             const activityId = document.getElementById('activityId');
             const activityTitle = document.getElementById('activityTitle');
             const activityWeekday = document.getElementById('activityWeekday');
+            const activitySeriesId = document.getElementById('activitySeriesId');
             const deleteBtn = document.getElementById('deleteActivity');
             if (activityId) activityId.value = btn.dataset.id;
             if (activityTitle) activityTitle.value = btn.dataset.title || '';
             if (activityWeekday) activityWeekday.value = btn.dataset.weekday || '1';
+            if (activitySeriesId) activitySeriesId.value = btn.dataset.series || '';
             if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+            setRepeatDisabled(true);
             openModal('modalActivity');
         }
         if (e.target.closest('[data-action="edit-routine"]')) {
@@ -1950,12 +2028,17 @@ include __DIR__ . '/includes/header.php';
         const activityTitle = document.getElementById('activityTitle');
         const activityWeekday = document.getElementById('activityWeekday');
         const deleteBtn = document.getElementById('deleteActivity');
+        const repeatDays = getSelectedRepeatDays();
         const weekday = parseInt(activityWeekday?.value || '1', 10);
         const date = getDateForWeekday(weekday);
         if (activityId && activityId.value) {
             await api('update_activity', { id: activityId.value, title: activityTitle?.value || '', date });
         } else {
-            await api('save_activity', { title: activityTitle?.value || '', date });
+            const weekdayStr = String(weekday);
+            const finalRepeatDays = repeatDays.length
+                ? Array.from(new Set([...repeatDays, weekdayStr]))
+                : [];
+            await api('save_activity', { title: activityTitle?.value || '', date, repeat_days: finalRepeatDays });
         }
         closeModals();
         if (activityTitle) activityTitle.value = '';
@@ -1966,10 +2049,21 @@ include __DIR__ . '/includes/header.php';
 
     document.getElementById('deleteActivity').addEventListener('click', async () => {
         const activityId = document.getElementById('activityId');
+        const activitySeriesId = document.getElementById('activitySeriesId');
         if (!activityId || !activityId.value) return;
-        await api('delete_activity', { id: activityId.value });
+        if (activitySeriesId && activitySeriesId.value) {
+            const deleteAll = window.confirm('Apagar todas as repeticoes desta atividade?\nOK = todas, Cancelar = somente esta.');
+            if (deleteAll) {
+                await api('delete_activity', { id: activityId.value, scope: 'series', series_id: activitySeriesId.value });
+            } else {
+                await api('delete_activity', { id: activityId.value });
+            }
+        } else {
+            await api('delete_activity', { id: activityId.value });
+        }
         closeModals();
         activityId.value = '';
+        if (activitySeriesId) activitySeriesId.value = '';
         const activityTitle = document.getElementById('activityTitle');
         if (activityTitle) activityTitle.value = '';
         const deleteBtn = document.getElementById('deleteActivity');

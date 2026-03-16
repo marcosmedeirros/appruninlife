@@ -25,7 +25,7 @@ try {
     // 1. Criação das Tabelas essenciais (executa uma a uma para compatibilidade com hosts)
     $tables = [
         "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100), email VARCHAR(100), password_hash VARCHAR(255))",
-        "CREATE TABLE IF NOT EXISTS activities (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), day_date DATE, status TINYINT DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS activities (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), day_date DATE, status TINYINT DEFAULT 0, series_id VARCHAR(36) DEFAULT NULL)",
         "CREATE TABLE IF NOT EXISTS habits (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), checked_dates TEXT)",
         "CREATE TABLE IF NOT EXISTS workouts (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, name VARCHAR(255), workout_date DATE, done TINYINT DEFAULT 0)",
         "CREATE TABLE IF NOT EXISTS goals (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), difficulty ENUM('facil','media','dificil') DEFAULT 'media', status TINYINT DEFAULT 0, goal_type ENUM('geral','anual','mensal') DEFAULT 'geral', completed_at DATETIME DEFAULT NULL)",
@@ -45,6 +45,18 @@ try {
             error_log('[DB] Erro ao criar tabela: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    // Ajustes não destrutivos para versões antigas do schema
+    try {
+        $pdo->exec("ALTER TABLE activities ADD COLUMN series_id VARCHAR(36) DEFAULT NULL");
+    } catch (Exception $e) {
+        // Coluna já existe
+    }
+    try {
+        $pdo->exec("CREATE INDEX idx_activities_series_id ON activities (series_id)");
+    } catch (Exception $e) {
+        // Índice já existe
     }
 
 
