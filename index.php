@@ -1568,28 +1568,20 @@ include __DIR__ . '/includes/header.php';
             day: '2-digit'
         }).format(date);
 
-    const formatSaoPauloTime = (date = new Date()) => {
-        const parts = new Intl.DateTimeFormat('en-CA', {
+    const formatSaoPauloTime = (date = new Date()) =>
+        new Intl.DateTimeFormat('pt-BR', {
             timeZone: SAO_PAULO_TZ,
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        }).formatToParts(date);
-        const hour = parts.find(p => p.type === 'hour')?.value || '00';
-        const minute = parts.find(p => p.type === 'minute')?.value || '00';
-        return `${hour}:${minute}`;
-    };
+        }).format(date).replace(/^24:/, '00:');
 
-    const formatSaoPauloMonth = (date = new Date()) => {
-        const parts = new Intl.DateTimeFormat('en-CA', {
+    const formatSaoPauloMonth = (date = new Date()) =>
+        new Intl.DateTimeFormat('en-CA', {
             timeZone: SAO_PAULO_TZ,
             year: 'numeric',
             month: '2-digit'
-        }).formatToParts(date);
-        const year = parts.find(p => p.type === 'year')?.value || '';
-        const month = parts.find(p => p.type === 'month')?.value || '';
-        return `${year}-${month}`;
-    };
+        }).format(date);
 
     const getSaoPauloYearMonth = (date = new Date()) => {
         const [yearStr, monthStr] = formatSaoPauloMonth(date).split('-');
