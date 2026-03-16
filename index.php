@@ -1080,7 +1080,6 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="app-actions">
             <div class="week-pill" id="weekRange">Semana atual</div>
-            <div class="week-pill" id="spClock">Horario SP</div>
             <div class="app-actions-row">
                 <button class="btn btn-solid" data-modal="modalActivity">Nova atividade</button>
                 <button class="btn" data-modal="modalGoal">Nova meta</button>
@@ -2500,16 +2499,9 @@ include __DIR__ . '/includes/header.php';
         document.getElementById('weekRange').textContent = text;
     };
 
-    const loadSaoPauloClock = () => {
-        const clock = document.getElementById('spClock');
-        if (!clock) return;
-        clock.textContent = `Horario SP: ${formatSaoPauloTime()}`;
-    };
-
     const init = () => {
         setDefaultDates();
         loadWeekRange();
-        loadSaoPauloClock();
         loadActivities();
         loadHabits();
         loadWorkoutsMonth();
@@ -2527,8 +2519,6 @@ include __DIR__ . '/includes/header.php';
     };
 
     init();
-
-    setInterval(loadSaoPauloClock, 60000);
 
     document.getElementById('prevMonth')?.addEventListener('click', () => {
         workoutMonth.setMonth(workoutMonth.getMonth() - 1);
