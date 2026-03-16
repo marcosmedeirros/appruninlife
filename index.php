@@ -1080,6 +1080,7 @@ include __DIR__ . '/includes/header.php';
         </div>
         <div class="app-actions">
             <div class="week-pill" id="weekRange">Semana atual</div>
+            <div class="week-pill" id="spClock">Horario SP</div>
             <div class="app-actions-row">
                 <button class="btn btn-solid" data-modal="modalActivity">Nova atividade</button>
                 <button class="btn" data-modal="modalGoal">Nova meta</button>
@@ -1494,7 +1495,7 @@ include __DIR__ . '/includes/header.php';
                 const eventDate = document.getElementById('eventDate');
                 if (eventId) eventId.value = '';
                 if (eventTitle) eventTitle.value = '';
-                if (eventDate) eventDate.value = new Date().toISOString().slice(0, 10);
+                if (eventDate) eventDate.value = formatSaoPauloDate();
             }
             if (e.target.dataset.modal === 'modalActivity') {
                 const activityId = document.getElementById('activityId');
@@ -1505,7 +1506,7 @@ include __DIR__ . '/includes/header.php';
                 const repeatBox = document.getElementById('activityRepeatDays');
                 if (activityId) activityId.value = '';
                 if (activityTitle) activityTitle.value = '';
-                if (activityWeekday) activityWeekday.value = String(getWeekdayNumber(new Date().toISOString().slice(0, 10)));
+                if (activityWeekday) activityWeekday.value = String(getWeekdayNumber(formatSaoPauloDate()));
                 if (activitySeriesId) activitySeriesId.value = '';
                 if (deleteBtn) deleteBtn.style.display = 'none';
                 if (repeatBox) {
@@ -1534,7 +1535,7 @@ include __DIR__ . '/includes/header.php';
                 const routineTime = document.getElementById('routineTime');
                 const routineActivity = document.getElementById('routineActivity');
                 if (routineId) routineId.value = '';
-                if (routineTime) routineTime.value = new Date().toTimeString().slice(0, 5);
+                if (routineTime) routineTime.value = formatSaoPauloTime();
                 if (routineActivity) routineActivity.value = '';
             }
             if (e.target.dataset.modal === 'modalFinanceBase') {
@@ -1557,14 +1558,63 @@ include __DIR__ . '/includes/header.php';
         }
     });
 
+    const SAO_PAULO_TZ = 'America/Sao_Paulo';
+
+    const formatSaoPauloDate = (date = new Date()) =>
+        new Intl.DateTimeFormat('en-CA', {
+            timeZone: SAO_PAULO_TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(date);
+
+    const formatSaoPauloTime = (date = new Date()) => {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: SAO_PAULO_TZ,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).formatToParts(date);
+        const hour = parts.find(p => p.type === 'hour')?.value || '00';
+        const minute = parts.find(p => p.type === 'minute')?.value || '00';
+        return `${hour}:${minute}`;
+    };
+
+    const formatSaoPauloMonth = (date = new Date()) => {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: SAO_PAULO_TZ,
+            year: 'numeric',
+            month: '2-digit'
+        }).formatToParts(date);
+        const year = parts.find(p => p.type === 'year')?.value || '';
+        const month = parts.find(p => p.type === 'month')?.value || '';
+        return `${year}-${month}`;
+    };
+
+    const getSaoPauloYearMonth = (date = new Date()) => {
+        const [yearStr, monthStr] = formatSaoPauloMonth(date).split('-');
+        return { year: Number(yearStr), month: Number(monthStr) };
+    };
+
+    const parseSaoPauloDate = (dateStr) => new Date(`${dateStr}T00:00:00-03:00`);
+
     const formatDate = (dateStr) => {
-        const d = new Date(dateStr + 'T00:00:00');
-        return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        const d = parseSaoPauloDate(dateStr);
+        return d.toLocaleDateString('pt-BR', {
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
+            timeZone: SAO_PAULO_TZ
+        });
     };
 
     const formatShortDate = (dateStr) => {
-        const d = new Date(dateStr + 'T00:00:00');
-        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const d = parseSaoPauloDate(dateStr);
+        return d.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            timeZone: SAO_PAULO_TZ
+        });
     };
 
     const resolveImageUrl = (path) => {
@@ -1579,13 +1629,13 @@ include __DIR__ . '/includes/header.php';
     };
 
     const formatWeekdayLabel = (dateStr) => {
-        const d = new Date(dateStr + 'T00:00:00');
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+        const d = parseSaoPauloDate(dateStr);
+        const label = d.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: SAO_PAULO_TZ });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
     const getWeekdayNumber = (dateStr) => {
-        const d = new Date(dateStr + 'T00:00:00');
+        const d = parseSaoPauloDate(dateStr);
         const jsDay = d.getDay();
         return jsDay === 0 ? 7 : jsDay;
     };
@@ -1609,26 +1659,27 @@ include __DIR__ . '/includes/header.php';
 
     const getTodayWeekdayLabel = () => {
         const d = new Date();
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+        const label = d.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: SAO_PAULO_TZ });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
     const setDefaultDates = () => {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = formatSaoPauloDate();
         ['workoutDate','runDate','photoDate','financeDate','eventDate'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = today;
         });
         const weekdaySelect = document.getElementById('activityWeekday');
         if (weekdaySelect) {
-            const jsDay = new Date().getDay();
+            const jsDay = parseSaoPauloDate(today).getDay();
             const weekday = jsDay === 0 ? 7 : jsDay;
             weekdaySelect.value = String(weekday);
         }
     };
 
     const getWeekDates = () => {
-        const now = new Date();
+        const todayKey = formatSaoPauloDate();
+        const now = parseSaoPauloDate(todayKey);
         const day = now.getDay();
         const diffToMonday = day === 0 ? -6 : 1 - day;
         const monday = new Date(now);
@@ -1640,12 +1691,12 @@ include __DIR__ . '/includes/header.php';
         const monday = getWeekDates();
         const target = new Date(monday);
         target.setDate(monday.getDate() + (weekdayNumber - 1));
-        return target.toISOString().slice(0, 10);
+        return formatSaoPauloDate(target);
     };
 
     const getHouseTasksWeekKey = () => {
         const monday = getWeekDates();
-        return monday.toISOString().slice(0, 10);
+        return formatSaoPauloDate(monday);
     };
 
     const HOUSE_TASK_LONG_FREQ = new Set(['quinzenal', 'mensal', 'semestral']);
@@ -1682,7 +1733,7 @@ include __DIR__ . '/includes/header.php';
         const savedWeek = localStorage.getItem('houseTasksWeek');
         const status = JSON.parse(localStorage.getItem('houseTasksStatus') || '{}');
         const doneAt = JSON.parse(localStorage.getItem('houseTasksDoneAt') || '{}');
-        const now = new Date();
+        const now = new Date(`${formatSaoPauloDate()}T${formatSaoPauloTime()}:00-03:00`);
 
         const checkboxes = document.querySelectorAll('#houseTasksSection input[type="checkbox"][data-task-id]');
         if (savedWeek !== weekKey) {
@@ -1701,7 +1752,7 @@ include __DIR__ . '/includes/header.php';
             const id = cb.dataset.taskId;
             if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
                 if (status[id] && !doneAt[id]) {
-                    doneAt[id] = now.toISOString();
+                    doneAt[id] = `${formatSaoPauloDate()}T${formatSaoPauloTime()}:00-03:00`;
                 }
                 if (status[id] && shouldResetHouseTask(frequency, doneAt[id], now)) {
                     delete status[id];
@@ -1715,7 +1766,7 @@ include __DIR__ . '/includes/header.php';
                     if (cb.checked) {
                         status[id] = true;
                         if (HOUSE_TASK_LONG_FREQ.has(frequency)) {
-                            doneAt[id] = new Date().toISOString();
+                            doneAt[id] = `${formatSaoPauloDate()}T${formatSaoPauloTime()}:00-03:00`;
                         }
                     } else {
                         delete status[id];
@@ -1736,7 +1787,7 @@ include __DIR__ . '/includes/header.php';
             const monday = getWeekDates();
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
-            tag.textContent = `${monday.toLocaleDateString('pt-BR')} - ${sunday.toLocaleDateString('pt-BR')}`;
+            tag.textContent = `${monday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })} - ${sunday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })}`;
         }
     };
 
@@ -1799,10 +1850,11 @@ include __DIR__ . '/includes/header.php';
     };
 
     const loadHabits = async () => {
-        const month = new Date().toISOString().slice(0, 7);
+        const month = formatSaoPauloMonth();
         const habits = await fetch(`?api=get_habits&month=${month}`).then(r => r.json());
         const table = document.getElementById('habitTable');
-        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const { year, month } = getSaoPauloYearMonth();
+        const daysInMonth = new Date(year, month, 0).getDate();
         let header = '<tr><th>Hábito</th>';
         for (let d = 1; d <= daysInMonth; d++) header += `<th>${d}</th>`;
         header += '</tr>';
@@ -1830,12 +1882,16 @@ include __DIR__ . '/includes/header.php';
         table.innerHTML = header + body;
     };
 
-    let workoutMonth = new Date();
+    let workoutMonth = parseSaoPauloDate(formatSaoPauloDate());
 
-    const getMonthKey = (date) => date.toISOString().slice(0, 7);
+    const getMonthKey = (date) => formatSaoPauloMonth(date);
 
     const formatMonthLabel = (date) => {
-        const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const label = date.toLocaleDateString('pt-BR', {
+            month: 'long',
+            year: 'numeric',
+            timeZone: SAO_PAULO_TZ
+        });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
@@ -1858,7 +1914,7 @@ include __DIR__ . '/includes/header.php';
             workoutsMap.set(item.workout_date, item);
         });
 
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = formatSaoPauloDate();
         const monthKey = getMonthKey(current);
         calendar.innerHTML = '';
 
@@ -1957,7 +2013,7 @@ include __DIR__ . '/includes/header.php';
     const loadMessage = async () => {
         const data = await api('get_daily_message', {}, 'GET');
         document.getElementById('dailyMessage').textContent = data.text || 'Sem mensagem disponível.';
-        document.getElementById('messageDate').textContent = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        document.getElementById('messageDate').textContent = new Date().toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ });
     };
 
     const loadFinance = async () => {
@@ -2344,7 +2400,7 @@ include __DIR__ . '/includes/header.php';
     });
 
     document.getElementById('deletePhoto')?.addEventListener('click', async () => {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = formatSaoPauloDate();
         await api('delete_daily_photo', { date: today });
         loadPhoto();
     });
@@ -2399,7 +2455,7 @@ include __DIR__ . '/includes/header.php';
         const routineActivity = document.getElementById('routineActivity');
         const timeValue = routineTime && routineTime.value
             ? routineTime.value
-            : new Date().toTimeString().slice(0, 5);
+            : formatSaoPauloTime();
         const payload = { time: timeValue, activity: routineActivity ? routineActivity.value : '' };
         if (routineId && routineId.value) {
             await api('update_routine_item', { ...payload, id: routineId.value });
@@ -2445,20 +2501,23 @@ include __DIR__ . '/includes/header.php';
     });
 
     const loadWeekRange = () => {
-        const now = new Date();
-        const day = now.getDay();
-        const diffToMonday = day === 0 ? -6 : 1 - day;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() + diffToMonday);
+        const monday = getWeekDates();
         const sunday = new Date(monday);
         sunday.setDate(monday.getDate() + 6);
-        const text = `${monday.toLocaleDateString('pt-BR')} - ${sunday.toLocaleDateString('pt-BR')}`;
+        const text = `${monday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })} - ${sunday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })}`;
         document.getElementById('weekRange').textContent = text;
+    };
+
+    const loadSaoPauloClock = () => {
+        const clock = document.getElementById('spClock');
+        if (!clock) return;
+        clock.textContent = `Horario SP: ${formatSaoPauloTime()}`;
     };
 
     const init = () => {
         setDefaultDates();
         loadWeekRange();
+        loadSaoPauloClock();
         loadActivities();
         loadHabits();
         loadWorkoutsMonth();
@@ -2476,6 +2535,8 @@ include __DIR__ . '/includes/header.php';
     };
 
     init();
+
+    setInterval(loadSaoPauloClock, 60000);
 
     document.getElementById('prevMonth')?.addEventListener('click', () => {
         workoutMonth.setMonth(workoutMonth.getMonth() - 1);

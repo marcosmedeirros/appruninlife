@@ -340,8 +340,19 @@ require_once __DIR__ . '/includes/paths.php';
         });
 
         // --- 2. Funcoes Utilitarias ---
+        const SAO_PAULO_TZ = 'America/Sao_Paulo';
         const formatCurrency = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-';
+        const formatSaoPauloDate = (date = new Date()) =>
+            new Intl.DateTimeFormat('en-CA', {
+                timeZone: SAO_PAULO_TZ,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(date);
+        const parseSaoPauloDate = (dateStr) => new Date(`${dateStr}T00:00:00-03:00`);
+        const formatDate = (iso) => iso
+            ? parseSaoPauloDate(iso).toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })
+            : '-';
 
         const apiRequest = async (action, payload = null) => {
             const opts = payload ? {
@@ -440,7 +451,7 @@ require_once __DIR__ . '/includes/paths.php';
                 return acc;
             }, {});
 
-            const days = Object.keys(daily).sort((a,b) => new Date(a) - new Date(b));
+            const days = Object.keys(daily).sort((a,b) => parseSaoPauloDate(a) - parseSaoPauloDate(b));
 
             if (days.length < 2) {
                 document.getElementById('bankrollChart').classList.add('hidden');
@@ -492,7 +503,7 @@ require_once __DIR__ . '/includes/paths.php';
             }
             document.getElementById('entradas-empty').classList.add('hidden');
 
-            const sorted = [...db.apostas].sort((a,b) => new Date(b.data) - new Date(a.data));
+            const sorted = [...db.apostas].sort((a,b) => parseSaoPauloDate(b.data) - parseSaoPauloDate(a.data));
 
             sorted.forEach(a => {
                 // Monta descricao visual das selecoes
@@ -577,7 +588,7 @@ require_once __DIR__ . '/includes/paths.php';
                 return acc;
             }, {});
 
-            const list = Object.entries(stats).sort((a,b) => new Date(b[0]) - new Date(a[0]));
+            const list = Object.entries(stats).sort((a,b) => parseSaoPauloDate(b[0]) - parseSaoPauloDate(a[0]));
 
             if(!list.length) {
                 document.getElementById('caixa-empty').classList.remove('hidden');
@@ -656,7 +667,7 @@ require_once __DIR__ . '/includes/paths.php';
 
                 document.getElementById('modal-title').innerText = 'Editar Aposta';
             } else {
-                document.getElementById('data').value = new Date().toISOString().split('T')[0];
+                document.getElementById('data').value = formatSaoPauloDate();
                 document.getElementById('num-selecoes').value = '1';
                 toggleLegFields();
                 document.getElementById('modal-title').innerText = 'Nova Aposta';
