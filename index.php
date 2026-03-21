@@ -1559,28 +1559,41 @@ include __DIR__ . '/includes/header.php';
 
     const SAO_PAULO_TZ = 'America/Sao_Paulo';
 
+    const formatWithTimeZone = (date, locale, options) => {
+        try {
+            return new Intl.DateTimeFormat(locale, { ...options, timeZone: SAO_PAULO_TZ }).format(date);
+        } catch (error) {
+            return new Intl.DateTimeFormat(locale, options).format(date);
+        }
+    };
+
+    const formatLocaleDate = (date, locale, options) => {
+        try {
+            return date.toLocaleDateString(locale, { ...options, timeZone: SAO_PAULO_TZ });
+        } catch (error) {
+            return date.toLocaleDateString(locale, options);
+        }
+    };
+
     const formatSaoPauloDate = (date = new Date()) =>
-        new Intl.DateTimeFormat('en-CA', {
-            timeZone: SAO_PAULO_TZ,
+        formatWithTimeZone(date, 'en-CA', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit'
-        }).format(date);
+        });
 
     const formatSaoPauloTime = (date = new Date()) =>
-        new Intl.DateTimeFormat('pt-BR', {
-            timeZone: SAO_PAULO_TZ,
+        formatWithTimeZone(date, 'pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        }).format(date).replace(/^24:/, '00:');
+        }).replace(/^24:/, '00:');
 
     const formatSaoPauloMonth = (date = new Date()) =>
-        new Intl.DateTimeFormat('en-CA', {
-            timeZone: SAO_PAULO_TZ,
+        formatWithTimeZone(date, 'en-CA', {
             year: 'numeric',
             month: '2-digit'
-        }).format(date);
+        });
 
     const getSaoPauloYearMonth = (date = new Date()) => {
         const [yearStr, monthStr] = formatSaoPauloMonth(date).split('-');
@@ -1591,20 +1604,18 @@ include __DIR__ . '/includes/header.php';
 
     const formatDate = (dateStr) => {
         const d = parseSaoPauloDate(dateStr);
-        return d.toLocaleDateString('pt-BR', {
+        return formatLocaleDate(d, 'pt-BR', {
             weekday: 'short',
             day: '2-digit',
-            month: '2-digit',
-            timeZone: SAO_PAULO_TZ
+            month: '2-digit'
         });
     };
 
     const formatShortDate = (dateStr) => {
         const d = parseSaoPauloDate(dateStr);
-        return d.toLocaleDateString('pt-BR', {
+        return formatLocaleDate(d, 'pt-BR', {
             day: '2-digit',
-            month: '2-digit',
-            timeZone: SAO_PAULO_TZ
+            month: '2-digit'
         });
     };
 
@@ -1621,7 +1632,7 @@ include __DIR__ . '/includes/header.php';
 
     const formatWeekdayLabel = (dateStr) => {
         const d = parseSaoPauloDate(dateStr);
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: SAO_PAULO_TZ });
+        const label = formatLocaleDate(d, 'pt-BR', { weekday: 'long' });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
@@ -1650,7 +1661,7 @@ include __DIR__ . '/includes/header.php';
 
     const getTodayWeekdayLabel = () => {
         const d = new Date();
-        const label = d.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: SAO_PAULO_TZ });
+        const label = formatLocaleDate(d, 'pt-BR', { weekday: 'long' });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
 
@@ -1778,7 +1789,7 @@ include __DIR__ . '/includes/header.php';
             const monday = getWeekDates();
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
-            tag.textContent = `${monday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })} - ${sunday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })}`;
+            tag.textContent = `${formatLocaleDate(monday, 'pt-BR', {})} - ${formatLocaleDate(sunday, 'pt-BR', {})}`;
         }
     };
 
@@ -1878,10 +1889,9 @@ include __DIR__ . '/includes/header.php';
     const getMonthKey = (date) => formatSaoPauloMonth(date);
 
     const formatMonthLabel = (date) => {
-        const label = date.toLocaleDateString('pt-BR', {
+        const label = formatLocaleDate(date, 'pt-BR', {
             month: 'long',
-            year: 'numeric',
-            timeZone: SAO_PAULO_TZ
+            year: 'numeric'
         });
         return label.charAt(0).toUpperCase() + label.slice(1);
     };
@@ -2004,7 +2014,7 @@ include __DIR__ . '/includes/header.php';
     const loadMessage = async () => {
         const data = await api('get_daily_message', {}, 'GET');
         document.getElementById('dailyMessage').textContent = data.text || 'Sem mensagem disponível.';
-        document.getElementById('messageDate').textContent = new Date().toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ });
+        document.getElementById('messageDate').textContent = formatLocaleDate(new Date(), 'pt-BR', {});
     };
 
     const loadFinance = async () => {
@@ -2495,7 +2505,7 @@ include __DIR__ . '/includes/header.php';
         const monday = getWeekDates();
         const sunday = new Date(monday);
         sunday.setDate(monday.getDate() + 6);
-        const text = `${monday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })} - ${sunday.toLocaleDateString('pt-BR', { timeZone: SAO_PAULO_TZ })}`;
+        const text = `${formatLocaleDate(monday, 'pt-BR', {})} - ${formatLocaleDate(sunday, 'pt-BR', {})}`;
         document.getElementById('weekRange').textContent = text;
     };
 
