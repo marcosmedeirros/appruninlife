@@ -50,6 +50,10 @@ try {
             deadline DATE DEFAULT NULL,
             color VARCHAR(7) DEFAULT '#10b981',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )",
+        "CREATE TABLE IF NOT EXISTS fin_settings (
+          user_id INT PRIMARY KEY,
+          initial_balance DECIMAL(10,2) DEFAULT 0
         )"
     ];
     foreach ($extra_tables as $sql) {
@@ -118,12 +122,17 @@ if (isset($_GET['api'])) {
         // ---- FINANCES ----
         if ($action === 'fin_summary') {
             $month = $_GET['month'] ?? date('Y-m');
+          $s0 = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id=?");
+          $s0->execute([$uid]);
+          $row0 = $s0->fetch(PDO::FETCH_ASSOC);
+          $initial_balance = $row0 ? (float)$row0['initial_balance'] : 0.0;
             $s = $pdo->prepare("SELECT type, SUM(amount) as total FROM fin_transactions WHERE user_id=? AND DATE_FORMAT(transaction_date,'%Y-%m')=? GROUP BY type");
             $s->execute([$uid,$month]);
             $rows = $s->fetchAll(PDO::FETCH_ASSOC);
             $summary = ['income'=>0,'expense'=>0];
             foreach($rows as $r) $summary[$r['type']] = (float)$r['total'];
-            $summary['balance'] = $summary['income'] - $summary['expense'];
+          $summary['initial_balance'] = $initial_balance;
+          $summary['balance'] = $summary['income'] - $summary['expense'] + $initial_balance;
             // by category
             $s2 = $pdo->prepare("SELECT fc.name, fc.color, fc.icon, ft.type, SUM(ft.amount) as total 
                 FROM fin_transactions ft 
@@ -134,6 +143,22 @@ if (isset($_GET['api'])) {
             $summary['by_category'] = $s2->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['ok'=>true,'data'=>$summary]);
             exit;
+        }
+        if ($action === 'fin_settings_get') {
+          $s0 = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id=?");
+          $s0->execute([$uid]);
+          $row0 = $s0->fetch(PDO::FETCH_ASSOC);
+          $initial_balance = $row0 ? (float)$row0['initial_balance'] : 0.0;
+          echo json_encode(['ok'=>true,'data'=>['initial_balance'=>$initial_balance]]);
+          exit;
+        }
+        if ($action === 'fin_settings_save') {
+          $d = json_decode(file_get_contents('php://input'), true);
+          $val = isset($d['initial_balance']) ? (float)$d['initial_balance'] : 0.0;
+          $s0 = $pdo->prepare("INSERT INTO fin_settings (user_id, initial_balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE initial_balance=VALUES(initial_balance)");
+          $s0->execute([$uid, $val]);
+          echo json_encode(['ok'=>true]);
+          exit;
         }
         if ($action === 'fin_transactions') {
             $month = $_GET['month'] ?? date('Y-m');
@@ -819,6 +844,7 @@ header {
           <button onclick="changeMonth(1)">›</button>
         </div>
         <button class="btn btn-primary" onclick="openTxnModal()">+ Lançamento</button>
+        <button class="btn btn-ghost btn-sm" onclick="openInitialBalanceModal()">Saldo inicial</button>
         <button class="btn btn-ghost btn-sm" onclick="openCatModal()">⚙ Categorias</button>
       </div>
     </div>
@@ -835,6 +861,7 @@ header {
       <div class="stat-card blue">
         <div class="stat-label">Saldo</div>
         <div class="stat-value blue" id="fin-balance">R$ 0,00</div>
+        <div class="stat-sub" id="fin-initial">saldo inicial: R$ 0,00</div>
       </div>
     </div>
 
@@ -887,6 +914,13 @@ header {
     </div>
     <div class="form-row">
       <div class="form-group">
+        <label class="form-label">RECORRÊNCIA</label>
+        <select id="task-recurrence" class="form-control" onchange="toggleRecurrenceDay()">
+          <option value="weekly">Toda semana</option>
+          <option value="monthly">Todo mês</option>
+        </select>
+      </div>
+      <div class="form-group" id="rec-day-group">
         <label class="form-label">DIA DA SEMANA</label>
         <select id="task-rec-day" class="form-control"></select>
       </div>
@@ -1031,6 +1065,21 @@ header {
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('depositModal')">Cancelar</button>
       <button class="btn btn-green" onclick="doDeposit()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: INITIAL BALANCE ===== -->
+<div class="modal-overlay" id="initialBalanceModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">Saldo Inicial</div>
+    <div class="form-group">
+      <label class="form-label">VALOR (R$)</label>
+      <input type="number" id="initial-balance" class="form-control" placeholder="0,00" step="0.01">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('initialBalanceModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveInitialBalance()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1230,20 +1279,32 @@ async function toggleTask(id) {
 function openTaskModal(editData=null) {
   document.getElementById('task-id').value = editData?.id || '';
   document.getElementById('task-title').value = editData?.title || '';
+  document.getElementById('task-recurrence').value = editData?.recurrence || 'weekly';
   document.getElementById('task-category').value = editData?.category || '';
   selectedTaskColor = editData?.color || '#6366f1';
   buildColorRow('taskColorRow', selectedTaskColor, c => selectedTaskColor = c);
-  buildWeekdaySelect(editData?.recurrence_day);
+  toggleRecurrenceDay(editData?.recurrence_day);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
   openModal('taskModal');
 }
 
-function buildWeekdaySelect(selected=null) {
+function toggleRecurrenceDay(selected=null) {
+  const rec = document.getElementById('task-recurrence').value;
   const sel = document.getElementById('task-rec-day');
-  const fallback = dayIndexFromDate(new Date());
-  const pick = selected || fallback;
-  sel.innerHTML = DAYS_WEEK.map((d,i) => i===0?'':
-    `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
+  const label = document.querySelector('#rec-day-group .form-label');
+  if (rec === 'monthly') {
+    label.textContent = 'DIA DO MÊS';
+    const fallback = new Date().getDate();
+    const pick = selected || fallback;
+    sel.innerHTML = Array.from({length:31},(_,i) =>
+      `<option value="${i+1}" ${pick==i+1?'selected':''}>${i+1}</option>`).join('');
+  } else {
+    label.textContent = 'DIA DA SEMANA';
+    const fallback = dayIndexFromDate(new Date());
+    const pick = selected || fallback;
+    sel.innerHTML = DAYS_WEEK.map((d,i) => i===0?'':
+      `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
+  }
 }
 
 function editTask(id) {
@@ -1254,12 +1315,13 @@ function editTask(id) {
 async function saveTask() {
   const title = document.getElementById('task-title').value.trim();
   if (!title) { toast('Informe o título', 'err'); return; }
+  const rec = document.getElementById('task-recurrence').value;
   const recDay = document.getElementById('task-rec-day').value;
-  if (!recDay) { toast('Informe o dia da semana', 'err'); return; }
+  if (!recDay) { toast('Informe o dia', 'err'); return; }
   const body = {
     id: document.getElementById('task-id').value,
     title,
-    recurrence: 'weekly',
+    recurrence: rec,
     recurrence_day: recDay,
     category: document.getElementById('task-category').value || 'geral',
     color: selectedTaskColor
@@ -1302,6 +1364,7 @@ async function loadFinance() {
     const balEl = document.getElementById('fin-balance');
     balEl.textContent = fmtBRL(bal);
     balEl.className = 'stat-value ' + (bal >= 0 ? 'green' : 'red');
+    document.getElementById('fin-initial').textContent = `saldo inicial: ${fmtBRL(s.initial_balance || 0)}`;
     // Overview stats
     document.getElementById('ov-income').textContent = fmtBRL(s.income);
     document.getElementById('ov-expense').textContent = fmtBRL(s.expense);
@@ -1596,6 +1659,25 @@ async function doDeposit() {
   const id = document.getElementById('deposit-goal-id').value;
   const res = await api('goal_deposit','POST',{id,amount});
   if (res.ok) { toast('Valor adicionado!'); closeModal('depositModal'); loadGoals(); }
+  else toast(res.error||'Erro','err');
+}
+
+function openInitialBalanceModal() {
+  api('fin_settings_get').then(res => {
+    if (res.ok) {
+      document.getElementById('initial-balance').value = res.data.initial_balance || 0;
+    } else {
+      document.getElementById('initial-balance').value = 0;
+    }
+    openModal('initialBalanceModal');
+  });
+}
+
+async function saveInitialBalance() {
+  const val = parseFloat(document.getElementById('initial-balance').value);
+  if (Number.isNaN(val)) { toast('Informe um valor válido','err'); return; }
+  const res = await api('fin_settings_save','POST',{initial_balance: val});
+  if (res.ok) { toast('Saldo inicial salvo!'); closeModal('initialBalanceModal'); loadFinance(); }
   else toast(res.error||'Erro','err');
 }
 
