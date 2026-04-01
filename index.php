@@ -473,6 +473,12 @@ header {
   gap: 10px;
   min-height: 220px;
 }
+.day-column.today {
+  border-color: rgba(124,92,252,0.6);
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.25), 0 10px 24px rgba(124,92,252,0.12);
+  background: linear-gradient(180deg, rgba(124,92,252,0.08), transparent 35%), var(--surface2);
+}
+.day-column.today .day-header strong { color: var(--accent2); }
 .day-header {
   display: flex;
   align-items: baseline;
@@ -502,8 +508,6 @@ header {
   cursor: pointer;
 }
 .task-item:hover { border-color: var(--border2); transform: translateX(2px); }
-.task-item.done { opacity: 0.5; }
-.task-item.done .task-title { text-decoration: line-through; }
 
 .task-info { flex: 1; min-width: 0; }
 .task-title { font-size: 14px; font-weight: 500; }
@@ -1199,16 +1203,18 @@ function renderTasks() {
   const weekDates = getWeekDates(new Date());
   const start = weekDates[0];
   const end = weekDates[6];
+  const todayIso = toISODate(new Date());
   document.getElementById('tasks-week-label').textContent = `Semana ${fmtShortDate(start)} – ${fmtShortDate(end)}`;
 
   board.innerHTML = weekDates.map((d, idx) => {
     const dayIdx = idx + 1; // 1=Mon..7=Sun
     const dayName = DAYS_WEEK[dayIdx];
     const items = allTasks.filter(t => taskAppliesToDate(t, d));
+    const isToday = toISODate(d) === todayIso;
     const itemsHtml = items.length
       ? items.map(t => taskItemHTML(t)).join('')
       : '<div class="empty"><div class="empty-text">Sem atividades.</div></div>';
-    return `<div class="day-column">
+    return `<div class="day-column${isToday ? ' today' : ''}">
       <div class="day-header"><strong>${dayName}</strong><span>${fmtShortDate(d)}</span></div>
       <div class="day-list">${itemsHtml}</div>
     </div>`;
@@ -1227,8 +1233,7 @@ function renderOverviewTasks() {
 }
 
 function taskItemHTML(t, compact=false) {
-  const done = t.done_today == 1;
-  return `<div class="task-item${done?' done':''}" id="task-item-${t.id}">
+  return `<div class="task-item" id="task-item-${t.id}">
     <div class="task-info">
       <div class="task-title">${esc(t.title)}</div>
     </div>
