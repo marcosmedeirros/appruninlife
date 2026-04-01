@@ -871,7 +871,7 @@ header {
   <!-- ===== PANEL: GOALS ===== -->
   <div class="panel" id="panel-goals">
     <div class="section-header">
-      <div class="section-title">Metas Financeiras</div>
+      <div class="section-title">Metas</div>
       <button class="btn btn-primary" onclick="openGoalModal()">+ Nova Meta</button>
     </div>
     <div id="goalsList" class="cards-grid">
