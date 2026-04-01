@@ -1,25 +1,6 @@
 <?php
 // ===== INCLUDES =====
-// Descomente quando usar no seu servidor:
-// require_once __DIR__ . '/config.php';
-
-// ===== MOCK PDO PARA PREVIEW =====
-// Remova este bloco e descomente o require acima no seu servidor
-class MockPDO {
-    public function query($sql) { return new MockStmt(); }
-    public function prepare($sql) { return new MockStmt(); }
-    public function lastInsertId() { return rand(1,999); }
-    public function exec($sql) { return 0; }
-    public function getAttribute($a) { return ''; }
-}
-class MockStmt {
-    public function execute($p=[]) { return true; }
-    public function fetchAll($m=null) { return []; }
-    public function fetch($m=null) { return null; }
-    public function rowCount() { return 0; }
-}
-$pdo = new MockPDO();
-// ===== FIM MOCK =====
+require_once __DIR__ . '/config.php';
 
 // ===== SETUP TABELAS EXTRAS =====
 try {
@@ -85,28 +66,14 @@ if (isset($_GET['api'])) {
     try {
         // ---- TASKS ----
         if ($action === 'tasks_list') {
-            $today = date('Y-m-d');
-            $dow = (int)date('N'); // 1=Mon..7=Sun
-            $dom = (int)date('j');
-            $stmt = $pdo->prepare("SELECT t.*, 
-                (SELECT COUNT(*) FROM task_completions tc WHERE tc.task_id=t.id AND tc.completed_date=?) as done_today
-                FROM tasks t WHERE t.user_id=? ORDER BY t.created_at DESC");
-            $stmt->execute([$today, $uid]);
-            $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            // Filter by recurrence
-            $result = [];
-            foreach($tasks as $t) {
-                $show = false;
-                if ($t['recurrence'] === 'daily') $show = true;
-                elseif ($t['recurrence'] === 'once') $show = (!$t['status'] || $t['due_date'] >= $today);
-                elseif ($t['recurrence'] === 'weekly' && $t['recurrence_day'] == $dow) $show = true;
-                elseif ($t['recurrence'] === 'weekly' && !$t['recurrence_day']) $show = true;
-                elseif ($t['recurrence'] === 'monthly' && $t['recurrence_day'] == $dom) $show = true;
-                elseif ($t['recurrence'] === 'monthly' && !$t['recurrence_day']) $show = true;
-                if ($show || $t['recurrence'] !== 'daily') $result[] = $t;
-            }
-            echo json_encode(['ok'=>true,'data'=>$result]);
-            exit;
+          $today = date('Y-m-d');
+          $stmt = $pdo->prepare("SELECT t.*, 
+            (SELECT COUNT(*) FROM task_completions tc WHERE tc.task_id=t.id AND tc.completed_date=?) as done_today
+            FROM tasks t WHERE t.user_id=? ORDER BY t.created_at DESC");
+          $stmt->execute([$today, $uid]);
+          $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          echo json_encode(['ok'=>true,'data'=>$tasks]);
+          exit;
         }
         if ($action === 'task_save') {
             $d = json_decode(file_get_contents('php://input'), true);
@@ -180,11 +147,17 @@ if (isset($_GET['api'])) {
             exit;
         }
         if ($action === 'fin_save') {
-            $d = json_decode(file_get_contents('php://input'), true);
+          $d = json_decode(file_get_contents('php://input'), true);
+          if (!empty($d['id'])) {
+            $s = $pdo->prepare("UPDATE fin_transactions SET category_id=?, type=?, amount=?, description=?, transaction_date=? WHERE id=? AND user_id=?");
+            $s->execute([$d['category_id']??null,$d['type'],$d['amount'],$d['description']??'',$d['date']??date('Y-m-d'),$d['id'],$uid]);
+            echo json_encode(['ok'=>true]);
+          } else {
             $s = $pdo->prepare("INSERT INTO fin_transactions (user_id,category_id,type,amount,description,transaction_date) VALUES (?,?,?,?,?,?)");
             $s->execute([$uid,$d['category_id']??null,$d['type'],$d['amount'],$d['description']??'',$d['date']??date('Y-m-d')]);
             echo json_encode(['ok'=>true,'id'=>$pdo->lastInsertId()]);
-            exit;
+          }
+          exit;
         }
         if ($action === 'fin_delete') {
             $d = json_decode(file_get_contents('php://input'), true);
@@ -459,6 +432,41 @@ header {
 /* TASK ITEMS */
 .task-list { display: flex; flex-direction: column; gap: 10px; }
 
+/* WEEK BOARD */
+.week-board {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(170px, 1fr));
+  gap: 12px;
+}
+.day-column {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+}
+.day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.day-header strong {
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.day-list { display: flex; flex-direction: column; gap: 8px; }
+
 .task-item {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -469,6 +477,8 @@ header {
   cursor: pointer;
 }
 .task-item:hover { border-color: var(--border2); transform: translateX(2px); }
+.task-item.locked { cursor: default; opacity: 0.85; }
+.task-item.locked:hover { border-color: var(--border); transform: none; }
 .task-item.done { opacity: 0.5; }
 .task-item.done .task-title { text-decoration: line-through; }
 
@@ -657,10 +667,12 @@ header {
   .stat-cards { grid-template-columns: 1fr 1fr; }
   .nav-tabs { overflow-x: auto; width: 100%; }
   .cards-grid { grid-template-columns: 1fr; }
+  .week-board { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
 }
 @media(max-width:480px) {
   .stat-cards { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
+  .week-board { grid-template-columns: 1fr; }
 }
 
 /* CHART BARS */
@@ -787,20 +799,12 @@ header {
   <!-- ===== PANEL: TASKS ===== -->
   <div class="panel" id="panel-tasks">
     <div class="section-header">
-      <div class="section-title">Atividades <span id="tasks-count">0 hoje</span></div>
+      <div class="section-title">Atividades <span id="tasks-week-label">Semana</span></div>
       <button class="btn btn-primary" onclick="openTaskModal()">+ Nova Atividade</button>
     </div>
 
-    <div class="filter-chips" id="taskFilters">
-      <button class="chip active" data-filter="all" onclick="setTaskFilter('all',this)">Todas</button>
-      <button class="chip" data-filter="daily" onclick="setTaskFilter('daily',this)">🔁 Diárias</button>
-      <button class="chip" data-filter="weekly" onclick="setTaskFilter('weekly',this)">📅 Semanais</button>
-      <button class="chip" data-filter="monthly" onclick="setTaskFilter('monthly',this)">🗓 Mensais</button>
-      <button class="chip" data-filter="once" onclick="setTaskFilter('once',this)">1️⃣ Únicas</button>
-    </div>
-
-    <div id="taskList" class="task-list">
-      <div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Nenhuma atividade ainda.</div></div>
+    <div id="taskBoard" class="week-board">
+      <div class="empty" style="grid-column:1/-1"><div class="empty-icon">✅</div><div class="empty-text">Nenhuma atividade ainda.</div></div>
     </div>
   </div>
 
@@ -883,16 +887,7 @@ header {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">RECORRÊNCIA</label>
-        <select id="task-recurrence" class="form-control" onchange="toggleRecurrenceDay()">
-          <option value="daily">Diária</option>
-          <option value="weekly">Semanal</option>
-          <option value="monthly">Mensal</option>
-          <option value="once">Única vez</option>
-        </select>
-      </div>
-      <div class="form-group" id="rec-day-group" style="display:none">
-        <label class="form-label" id="rec-day-label">DIA</label>
+        <label class="form-label">DIA DA SEMANA</label>
         <select id="task-rec-day" class="form-control"></select>
       </div>
     </div>
@@ -900,10 +895,6 @@ header {
       <div class="form-group">
         <label class="form-label">CATEGORIA</label>
         <input type="text" id="task-category" class="form-control" placeholder="saúde, trabalho…">
-      </div>
-      <div class="form-group" id="due-group">
-        <label class="form-label">DATA LIMITE (única)</label>
-        <input type="date" id="task-due" class="form-control">
       </div>
     </div>
     <div class="form-group">
@@ -951,6 +942,7 @@ header {
         <input type="date" id="txn-date" class="form-control">
       </div>
     </div>
+    <input type="hidden" id="txn-id">
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('txnModal')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTxn()">Salvar</button>
@@ -1054,7 +1046,6 @@ let allTasks = [];
 let allTxns = [];
 let allCats = [];
 let allGoals = [];
-let taskFilter = 'all';
 let finFilter = 'all';
 let currentMonth = new Date();
 let selectedTaskColor = '#6366f1';
@@ -1109,6 +1100,46 @@ function initDate() {
   document.getElementById('todayDay').textContent = days[now.getDay()];
 }
 
+function getWeekStartDate(baseDate = new Date()) {
+  const d = new Date(baseDate);
+  const day = (d.getDay() + 6) % 7; // 0=Mon
+  d.setDate(d.getDate() - day);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function getWeekDates(baseDate = new Date()) {
+  const start = getWeekStartDate(baseDate);
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
+function toISODate(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function dayIndexFromDate(d) {
+  const jsDay = d.getDay();
+  return jsDay === 0 ? 7 : jsDay; // 1=Mon..7=Sun
+}
+
+function fmtShortDate(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function taskAppliesToDate(t, dateObj) {
+  const rec = t.recurrence || 'weekly';
+  const dayIdx = dayIndexFromDate(dateObj);
+  if (rec === 'daily') return true;
+  if (rec === 'weekly') return parseInt(t.recurrence_day || 0, 10) === dayIdx;
+  if (rec === 'once') return t.due_date && toISODate(dateObj) === t.due_date;
+  if (rec === 'monthly') return parseInt(t.recurrence_day || 0, 10) === dateObj.getDate();
+  return false;
+}
+
 // ===== COLOR PICKERS =====
 function buildColorRow(rowId, selectedVal, onSelect) {
   const row = document.getElementById(rowId);
@@ -1135,47 +1166,53 @@ async function loadTasks() {
   updateOverviewStats();
 }
 
-function setTaskFilter(f, el) {
-  taskFilter = f;
-  document.querySelectorAll('#taskFilters .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderTasks();
-}
-
 function renderTasks() {
-  const list = document.getElementById('taskList');
-  let tasks = allTasks;
-  if (taskFilter !== 'all') tasks = tasks.filter(t => t.recurrence === taskFilter);
-  if (!tasks.length) {
-    list.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Nenhuma atividade nessa categoria.</div></div>';
-    return;
-  }
-  list.innerHTML = tasks.map(t => taskItemHTML(t)).join('');
-  document.getElementById('tasks-count').textContent = tasks.length + ' tarefa' + (tasks.length!==1?'s':'');
+  const board = document.getElementById('taskBoard');
+  const weekDates = getWeekDates(new Date());
+  const start = weekDates[0];
+  const end = weekDates[6];
+  const todayIso = toISODate(new Date());
+  document.getElementById('tasks-week-label').textContent = `Semana ${fmtShortDate(start)} – ${fmtShortDate(end)}`;
+
+  board.innerHTML = weekDates.map((d, idx) => {
+    const dayIdx = idx + 1; // 1=Mon..7=Sun
+    const dayName = DAYS_WEEK[dayIdx];
+    const items = allTasks.filter(t => taskAppliesToDate(t, d));
+    const canToggle = toISODate(d) === todayIso;
+    const itemsHtml = items.length
+      ? items.map(t => taskItemHTML(t, false, canToggle)).join('')
+      : '<div class="empty"><div class="empty-text">Sem atividades.</div></div>';
+    return `<div class="day-column">
+      <div class="day-header"><strong>${dayName}</strong><span>${fmtShortDate(d)}</span></div>
+      <div class="day-list">${itemsHtml}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderOverviewTasks() {
   const el = document.getElementById('ov-task-list');
-  const today = allTasks.filter(t => t.recurrence === 'daily' || t.recurrence === 'once');
-  if (!today.length) {
+  const today = new Date();
+  const items = allTasks.filter(t => taskAppliesToDate(t, today));
+  if (!items.length) {
     el.innerHTML = '<div class="empty"><div class="empty-text">Sem atividades hoje.</div></div>';
     return;
   }
-  el.innerHTML = today.slice(0,6).map(t => taskItemHTML(t, true)).join('');
+  el.innerHTML = items.slice(0,6).map(t => taskItemHTML(t, true)).join('');
 }
 
-function taskItemHTML(t, compact=false) {
+function taskItemHTML(t, compact=false, canToggle=true) {
   const done = t.done_today == 1;
   const recLabels = { daily:'diária', weekly:'semanal', monthly:'mensal', once:'única' };
-  return `<div class="task-item${done?' done':''}" id="task-item-${t.id}" onclick="toggleTask(${t.id})">
+  const clickAttr = canToggle ? `onclick="toggleTask(${t.id})"` : '';
+  const extraClass = canToggle ? '' : ' locked';
+  return `<div class="task-item${done?' done':''}${extraClass}" id="task-item-${t.id}" ${clickAttr}>
     <div class="task-check"></div>
     <div class="task-info">
       <div class="task-title">${esc(t.title)}</div>
       <div class="task-meta">
         <div class="task-cat-dot" style="background:${t.color||'#6366f1'}"></div>
         <span>${esc(t.category||'geral')}</span>
-        <span class="recurrence-badge">${recLabels[t.recurrence]||t.recurrence}</span>
-        ${t.due_date ? `<span>até ${fmtDate(t.due_date)}</span>` : ''}
+        <span class="recurrence-badge">${recLabels[t.recurrence]||'semanal'}</span>
       </div>
     </div>
     ${!compact ? `<div class="task-actions">
@@ -1193,35 +1230,20 @@ async function toggleTask(id) {
 function openTaskModal(editData=null) {
   document.getElementById('task-id').value = editData?.id || '';
   document.getElementById('task-title').value = editData?.title || '';
-  document.getElementById('task-recurrence').value = editData?.recurrence || 'daily';
   document.getElementById('task-category').value = editData?.category || '';
-  document.getElementById('task-due').value = editData?.due_date || '';
   selectedTaskColor = editData?.color || '#6366f1';
   buildColorRow('taskColorRow', selectedTaskColor, c => selectedTaskColor = c);
-  toggleRecurrenceDay(editData?.recurrence_day);
+  buildWeekdaySelect(editData?.recurrence_day);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
   openModal('taskModal');
 }
 
-function toggleRecurrenceDay(selected=null) {
-  const rec = document.getElementById('task-recurrence').value;
-  const grp = document.getElementById('rec-day-group');
+function buildWeekdaySelect(selected=null) {
   const sel = document.getElementById('task-rec-day');
-  const lbl = document.getElementById('rec-day-label');
-  if (rec === 'weekly') {
-    grp.style.display = '';
-    lbl.textContent = 'DIA DA SEMANA';
-    sel.innerHTML = DAYS_WEEK.map((d,i) => i===0?'':
-      `<option value="${i}" ${selected==i?'selected':''}>${d}</option>`).join('');
-  } else if (rec === 'monthly') {
-    grp.style.display = '';
-    lbl.textContent = 'DIA DO MÊS';
-    sel.innerHTML = Array.from({length:31},(_,i) =>
-      `<option value="${i+1}" ${selected==i+1?'selected':''}>${i+1}</option>`).join('');
-  } else {
-    grp.style.display = 'none';
-  }
-  document.getElementById('due-group').style.display = rec === 'once' ? '' : 'none';
+  const fallback = dayIndexFromDate(new Date());
+  const pick = selected || fallback;
+  sel.innerHTML = DAYS_WEEK.map((d,i) => i===0?'':
+    `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
 }
 
 function editTask(id) {
@@ -1232,15 +1254,15 @@ function editTask(id) {
 async function saveTask() {
   const title = document.getElementById('task-title').value.trim();
   if (!title) { toast('Informe o título', 'err'); return; }
-  const rec = document.getElementById('task-recurrence').value;
+  const recDay = document.getElementById('task-rec-day').value;
+  if (!recDay) { toast('Informe o dia da semana', 'err'); return; }
   const body = {
     id: document.getElementById('task-id').value,
     title,
-    recurrence: rec,
-    recurrence_day: (rec==='weekly'||rec==='monthly') ? document.getElementById('task-rec-day').value : null,
+    recurrence: 'weekly',
+    recurrence_day: recDay,
     category: document.getElementById('task-category').value || 'geral',
-    color: selectedTaskColor,
-    due_date: rec==='once' ? document.getElementById('task-due').value||null : null
+    color: selectedTaskColor
   };
   const res = await api('task_save','POST',body);
   if (res.ok) { toast('Salvo!'); closeModal('taskModal'); loadTasks(); }
@@ -1331,7 +1353,10 @@ function txnItemHTML(t, compact=false) {
     <div>
       <div class="txn-amount ${t.type}">${sign}${fmtBRL(t.amount)}</div>
     </div>
-    ${!compact ? `<button class="btn btn-danger btn-icon btn-sm txn-del" onclick="deleteTxn(${t.id})" title="Excluir">✕</button>` : ''}
+    ${!compact ? `
+      <button class="btn btn-ghost btn-icon btn-sm txn-del" onclick="editTxn(${t.id})" title="Editar">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm txn-del" onclick="deleteTxn(${t.id})" title="Excluir">✕</button>
+    ` : ''}
   </div>`;
 }
 
@@ -1358,10 +1383,25 @@ function renderCatBreakdown(cats) {
 }
 
 function openTxnModal() {
+  document.getElementById('txn-id').value = '';
   document.getElementById('txn-amount').value = '';
   document.getElementById('txn-desc').value = '';
   document.getElementById('txn-date').value = new Date().toISOString().split('T')[0];
   loadCatsInModal();
+  openModal('txnModal');
+}
+
+function editTxn(id) {
+  const t = allTxns.find(x => x.id == id);
+  if (!t) return;
+  document.getElementById('txn-id').value = t.id;
+  document.getElementById('txn-type').value = t.type;
+  document.getElementById('txn-amount').value = t.amount;
+  document.getElementById('txn-desc').value = t.description || '';
+  document.getElementById('txn-date').value = t.transaction_date;
+  loadCatsInModal().then(() => {
+    document.getElementById('txn-cat').value = t.category_id || '';
+  });
   openModal('txnModal');
 }
 
@@ -1381,6 +1421,7 @@ async function saveTxn() {
   const amount = parseFloat(document.getElementById('txn-amount').value);
   if (!amount || amount <= 0) { toast('Informe um valor válido','err'); return; }
   const body = {
+    id: document.getElementById('txn-id').value,
     type: document.getElementById('txn-type').value,
     amount,
     description: document.getElementById('txn-desc').value,
@@ -1560,8 +1601,10 @@ async function doDeposit() {
 
 // ===== OVERVIEW STATS =====
 function updateOverviewStats() {
-  const done = allTasks.filter(t => t.done_today == 1).length;
-  const total = allTasks.length;
+  const today = new Date();
+  const todayTasks = allTasks.filter(t => taskAppliesToDate(t, today));
+  const done = todayTasks.filter(t => t.done_today == 1).length;
+  const total = todayTasks.length;
   document.getElementById('ov-tasks-done').textContent = `${done}/${total}`;
   document.getElementById('ov-tasks-sub').textContent = `de ${total} total`;
 }
