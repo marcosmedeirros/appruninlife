@@ -502,30 +502,8 @@ header {
   cursor: pointer;
 }
 .task-item:hover { border-color: var(--border2); transform: translateX(2px); }
-.task-item.locked { cursor: default; opacity: 0.85; }
-.task-item.locked:hover { border-color: var(--border); transform: none; }
 .task-item.done { opacity: 0.5; }
 .task-item.done .task-title { text-decoration: line-through; }
-
-.task-check {
-  width: 22px; height: 22px; border-radius: 6px;
-  border: 2px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-.task-item.done .task-check {
-  background: var(--green);
-  border-color: var(--green);
-}
-.task-check::after {
-  content: '';
-  width: 6px; height: 10px;
-  border: 2px solid transparent;
-  border-top: none; border-left: none;
-  transform: rotate(45deg) translateY(-1px);
-}
-.task-item.done .task-check::after { border-color: #fff; }
 
 .task-info { flex: 1; min-width: 0; }
 .task-title { font-size: 14px; font-weight: 500; }
@@ -1225,16 +1203,14 @@ function renderTasks() {
   const weekDates = getWeekDates(new Date());
   const start = weekDates[0];
   const end = weekDates[6];
-  const todayIso = toISODate(new Date());
   document.getElementById('tasks-week-label').textContent = `Semana ${fmtShortDate(start)} – ${fmtShortDate(end)}`;
 
   board.innerHTML = weekDates.map((d, idx) => {
     const dayIdx = idx + 1; // 1=Mon..7=Sun
     const dayName = DAYS_WEEK[dayIdx];
     const items = allTasks.filter(t => taskAppliesToDate(t, d));
-    const canToggle = toISODate(d) === todayIso;
     const itemsHtml = items.length
-      ? items.map(t => taskItemHTML(t, false, canToggle)).join('')
+      ? items.map(t => taskItemHTML(t)).join('')
       : '<div class="empty"><div class="empty-text">Sem atividades.</div></div>';
     return `<div class="day-column">
       <div class="day-header"><strong>${dayName}</strong><span>${fmtShortDate(d)}</span></div>
@@ -1254,13 +1230,10 @@ function renderOverviewTasks() {
   el.innerHTML = items.slice(0,6).map(t => taskItemHTML(t, true)).join('');
 }
 
-function taskItemHTML(t, compact=false, canToggle=true) {
+function taskItemHTML(t, compact=false) {
   const done = t.done_today == 1;
   const recLabels = { daily:'diária', weekly:'semanal', monthly:'mensal', once:'única' };
-  const clickAttr = canToggle ? `onclick="toggleTask(${t.id})"` : '';
-  const extraClass = canToggle ? '' : ' locked';
-  return `<div class="task-item${done?' done':''}${extraClass}" id="task-item-${t.id}" ${clickAttr}>
-    <div class="task-check"></div>
+  return `<div class="task-item${done?' done':''}" id="task-item-${t.id}">
     <div class="task-info">
       <div class="task-title">${esc(t.title)}</div>
       <div class="task-meta">
