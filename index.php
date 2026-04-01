@@ -918,6 +918,7 @@ header {
         <select id="task-recurrence" class="form-control" onchange="toggleRecurrenceDay()">
           <option value="weekly">Toda semana</option>
           <option value="monthly">Todo mês</option>
+          <option value="once">Não repetir</option>
         </select>
       </div>
       <div class="form-group" id="rec-day-group">
@@ -929,6 +930,10 @@ header {
       <div class="form-group">
         <label class="form-label">CATEGORIA</label>
         <input type="text" id="task-category" class="form-control" placeholder="saúde, trabalho…">
+      </div>
+      <div class="form-group" id="due-group" style="display:none">
+        <label class="form-label">DATA</label>
+        <input type="date" id="task-due" class="form-control">
       </div>
     </div>
     <div class="form-group">
@@ -1262,6 +1267,7 @@ function taskItemHTML(t, compact=false, canToggle=true) {
         <div class="task-cat-dot" style="background:${t.color||'#6366f1'}"></div>
         <span>${esc(t.category||'geral')}</span>
         <span class="recurrence-badge">${recLabels[t.recurrence]||'semanal'}</span>
+        ${t.recurrence === 'once' && t.due_date ? `<span>${fmtDate(t.due_date)}</span>` : ''}
       </div>
     </div>
     ${!compact ? `<div class="task-actions">
@@ -1281,6 +1287,7 @@ function openTaskModal(editData=null) {
   document.getElementById('task-title').value = editData?.title || '';
   document.getElementById('task-recurrence').value = editData?.recurrence || 'weekly';
   document.getElementById('task-category').value = editData?.category || '';
+  document.getElementById('task-due').value = editData?.due_date || '';
   selectedTaskColor = editData?.color || '#6366f1';
   buildColorRow('taskColorRow', selectedTaskColor, c => selectedTaskColor = c);
   toggleRecurrenceDay(editData?.recurrence_day);
@@ -1292,6 +1299,13 @@ function toggleRecurrenceDay(selected=null) {
   const rec = document.getElementById('task-recurrence').value;
   const sel = document.getElementById('task-rec-day');
   const label = document.querySelector('#rec-day-group .form-label');
+  if (rec === 'once') {
+    document.getElementById('rec-day-group').style.display = 'none';
+    document.getElementById('due-group').style.display = '';
+    return;
+  }
+  document.getElementById('rec-day-group').style.display = '';
+  document.getElementById('due-group').style.display = 'none';
   if (rec === 'monthly') {
     label.textContent = 'DIA DO MÊS';
     const fallback = new Date().getDate();
@@ -1317,14 +1331,17 @@ async function saveTask() {
   if (!title) { toast('Informe o título', 'err'); return; }
   const rec = document.getElementById('task-recurrence').value;
   const recDay = document.getElementById('task-rec-day').value;
-  if (!recDay) { toast('Informe o dia', 'err'); return; }
+  const dueDate = document.getElementById('task-due').value || null;
+  if (rec === 'once' && !dueDate) { toast('Informe a data', 'err'); return; }
+  if (rec !== 'once' && !recDay) { toast('Informe o dia', 'err'); return; }
   const body = {
     id: document.getElementById('task-id').value,
     title,
     recurrence: rec,
-    recurrence_day: recDay,
+    recurrence_day: rec === 'once' ? null : recDay,
     category: document.getElementById('task-category').value || 'geral',
-    color: selectedTaskColor
+    color: selectedTaskColor,
+    due_date: rec === 'once' ? dueDate : null
   };
   const res = await api('task_save','POST',body);
   if (res.ok) { toast('Salvo!'); closeModal('taskModal'); loadTasks(); }
