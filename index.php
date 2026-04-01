@@ -904,12 +904,6 @@ header {
         <select id="task-rec-day" class="form-control"></select>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">CATEGORIA</label>
-        <input type="text" id="task-category" class="form-control" placeholder="saúde, trabalho…">
-      </div>
-    </div>
     <div class="form-group">
       <label class="form-label">COR</label>
       <div class="color-row" id="taskColorRow"></div>
@@ -1234,16 +1228,9 @@ function renderOverviewTasks() {
 
 function taskItemHTML(t, compact=false) {
   const done = t.done_today == 1;
-  const recLabels = { daily:'diária', weekly:'semanal', monthly:'mensal', once:'única' };
   return `<div class="task-item${done?' done':''}" id="task-item-${t.id}">
     <div class="task-info">
       <div class="task-title">${esc(t.title)}</div>
-      <div class="task-meta">
-        <div class="task-cat-dot" style="background:${t.color||'#6366f1'}"></div>
-        <span>${esc(t.category||'geral')}</span>
-        <span class="recurrence-badge">${recLabels[t.recurrence]||'semanal'}</span>
-        ${t.recurrence === 'once' && t.due_date ? `<span>${fmtDate(t.due_date)}</span>` : ''}
-      </div>
     </div>
     ${!compact ? `<div class="task-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})" title="Editar">✏</button>
@@ -1262,7 +1249,6 @@ function openTaskModal(editData=null) {
   document.getElementById('task-title').value = editData?.title || '';
   const recValue = editData?.recurrence || 'weekly';
   document.getElementById('task-recurrence').value = recValue;
-  document.getElementById('task-category').value = editData?.category || '';
   selectedTaskColor = editData?.color || '#6366f1';
   buildColorRow('taskColorRow', selectedTaskColor, c => selectedTaskColor = c);
   const selectedDay = recValue === 'once' ? dayIndexFromISO(editData?.due_date) : editData?.recurrence_day;
@@ -1314,7 +1300,6 @@ async function saveTask() {
     title,
     recurrence: rec,
     recurrence_day: rec === 'once' ? null : recDay,
-    category: document.getElementById('task-category').value || 'geral',
     color: selectedTaskColor,
     due_date: rec === 'once' ? dueDate : null
   };
