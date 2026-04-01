@@ -551,11 +551,7 @@ header {
   transition: all 0.2s;
 }
 .txn-item:hover { border-color: var(--border2); }
-.txn-icon {
-  width: 36px; height: 36px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
+.txn-icon { display: none; }
 .txn-info { flex: 1; min-width: 0; }
 .txn-desc { font-size: 14px; font-weight: 500; }
 .txn-cat { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
@@ -1387,10 +1383,7 @@ function renderOverviewTxns() {
 
 function txnItemHTML(t, compact=false) {
   const sign = t.type === 'income' ? '+' : '-';
-  const icon = t.cat_icon || (t.type === 'income' ? '💵' : '💳');
-  const color = t.cat_color || (t.type === 'income' ? 'var(--green)' : 'var(--red)');
   return `<div class="txn-item">
-    <div class="txn-icon" style="background:${color}20">${icon}</div>
     <div class="txn-info">
       <div class="txn-desc">${esc(t.description||'—')}</div>
       <div class="txn-cat">${esc(t.cat_name||'sem categoria')} · ${fmtDate(t.transaction_date)}</div>
