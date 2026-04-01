@@ -909,10 +909,6 @@ header {
         <label class="form-label">CATEGORIA</label>
         <input type="text" id="task-category" class="form-control" placeholder="saúde, trabalho…">
       </div>
-      <div class="form-group" id="due-group" style="display:none">
-        <label class="form-label">DATA</label>
-        <input type="date" id="task-due" class="form-control">
-      </div>
     </div>
     <div class="form-group">
       <label class="form-label">COR</label>
@@ -1158,6 +1154,12 @@ function dayIndexFromDate(d) {
   return jsDay === 0 ? 7 : jsDay; // 1=Mon..7=Sun
 }
 
+function dayIndexFromISO(iso) {
+  if (!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  return dayIndexFromDate(d);
+}
+
 function fmtShortDate(d) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
 }
@@ -1258,12 +1260,13 @@ async function toggleTask(id) {
 function openTaskModal(editData=null) {
   document.getElementById('task-id').value = editData?.id || '';
   document.getElementById('task-title').value = editData?.title || '';
-  document.getElementById('task-recurrence').value = editData?.recurrence || 'weekly';
+  const recValue = editData?.recurrence || 'weekly';
+  document.getElementById('task-recurrence').value = recValue;
   document.getElementById('task-category').value = editData?.category || '';
-  document.getElementById('task-due').value = editData?.due_date || '';
   selectedTaskColor = editData?.color || '#6366f1';
   buildColorRow('taskColorRow', selectedTaskColor, c => selectedTaskColor = c);
-  toggleRecurrenceDay(editData?.recurrence_day);
+  const selectedDay = recValue === 'once' ? dayIndexFromISO(editData?.due_date) : editData?.recurrence_day;
+  toggleRecurrenceDay(selectedDay);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
   openModal('taskModal');
 }
@@ -1272,13 +1275,7 @@ function toggleRecurrenceDay(selected=null) {
   const rec = document.getElementById('task-recurrence').value;
   const sel = document.getElementById('task-rec-day');
   const label = document.querySelector('#rec-day-group .form-label');
-  if (rec === 'once') {
-    document.getElementById('rec-day-group').style.display = 'none';
-    document.getElementById('due-group').style.display = '';
-    return;
-  }
   document.getElementById('rec-day-group').style.display = '';
-  document.getElementById('due-group').style.display = 'none';
   if (rec === 'monthly') {
     label.textContent = 'DIA DO MÊS';
     const fallback = new Date().getDate();
@@ -1304,9 +1301,14 @@ async function saveTask() {
   if (!title) { toast('Informe o título', 'err'); return; }
   const rec = document.getElementById('task-recurrence').value;
   const recDay = document.getElementById('task-rec-day').value;
-  const dueDate = document.getElementById('task-due').value || null;
-  if (rec === 'once' && !dueDate) { toast('Informe a data', 'err'); return; }
-  if (rec !== 'once' && !recDay) { toast('Informe o dia', 'err'); return; }
+  if (!recDay) { toast('Informe o dia', 'err'); return; }
+  let dueDate = null;
+  if (rec === 'once') {
+    const start = getWeekStartDate(new Date());
+    const d = new Date(start);
+    d.setDate(start.getDate() + (parseInt(recDay,10) - 1));
+    dueDate = toISODate(d);
+  }
   const body = {
     id: document.getElementById('task-id').value,
     title,
