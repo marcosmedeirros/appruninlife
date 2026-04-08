@@ -934,10 +934,6 @@ body {
           </div>
         </div>
         <div class="streak-info">
-          <div class="streak-toggle">
-            <button class="streak-btn active" id="sbHoje" onclick="setStreakView('hoje')">HOJE</button>
-            <button class="streak-btn" id="sbSemana" onclick="setStreakView('semana')">SEMANA</button>
-          </div>
           <div class="streak-headline" id="streakHeadline">HOJE: <span>0/0 HÁBITOS</span></div>
           <div class="streak-sub" id="streakSub">Se faltar 1, zera.</div>
           <div class="streak-quote" id="streakQuote">"Hoje você vai se trair de novo?"</div>
@@ -960,10 +956,6 @@ body {
         <div class="streak-headline" id="streakHeadlineMob" style="font-size:28px;margin-bottom:6px">HOJE: 0/0 HÁBITOS</div>
         <div style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px">Se faltar 1, zera.</div>
         <div style="font-size:13px;color:var(--muted2);font-style:italic">"Hoje você vai se trair de novo?"</div>
-        <div class="streak-toggle" style="margin-top:20px">
-          <button class="streak-btn active" onclick="setStreakView('hoje')">HOJE</button>
-          <button class="streak-btn" onclick="setStreakView('semana')">SEMANA</button>
-        </div>
       </div>
 
       <div class="card">
@@ -1349,6 +1341,7 @@ function switchTab(tab) {
   if (nv) nv.classList.add('active');
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
+  if (tab==='habitos') loadHabits();
   if (tab==='financas') loadFinance();
   if (tab==='metas') loadGoals();
 }
@@ -1924,7 +1917,7 @@ async function init() {
   initDates();
   await loadCats();
   await Promise.all([loadTasks(), loadFinance(), loadGoals()]);
-  loadHabits();
+  await loadHabits();
 }
 init();
 </script>
