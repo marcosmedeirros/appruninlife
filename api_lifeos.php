@@ -440,5 +440,7 @@ try {
     json_response(['ok' => false, 'error' => 'Rota nao encontrada.'], 404);
 } catch (Exception $e) {
     error_log('[API_LIFEOS] ' . $e->getMessage());
-    json_response(['ok' => false, 'error' => 'Erro no servidor.'], 500);
+    $debug = isset($_GET['debug']) && $_GET['debug'] === '1';
+    $msg = $debug ? $e->getMessage() : 'Erro no servidor.';
+    json_response(['ok' => false, 'error' => $msg], 500);
 }
