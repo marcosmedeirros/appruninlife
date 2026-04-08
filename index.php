@@ -111,12 +111,7 @@ body {
 .nav-icon { font-size: 18px; width: 24px; text-align: center; }
 .nav-label { flex: 1; }
 .nav-badge {
-  background: var(--surface3);
-  color: var(--muted2);
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  padding: 2px 8px;
-  border-radius: 20px;
+  display: none;
 }
 .nav-item.active .nav-badge {
   background: rgba(0,0,0,0.2);
@@ -829,7 +824,7 @@ body {
   .sidebar { display: none; }
   .main {
     margin-left: 0;
-    padding: 80px 20px calc(var(--bottomnav) + 20px);
+    padding: 70px 16px calc(var(--bottomnav) + 16px);
   }
   .bottom-nav { display: flex; }
   .mobile-header { display: flex; }
@@ -841,6 +836,10 @@ body {
   .fin-grid { grid-template-columns: 1fr; }
   .fin-section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .task-week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .section-header { flex-direction: column; align-items: flex-start; }
+  .section-header .btn { width: 100%; justify-content: center; }
+  .card { padding: 18px; }
+  .modal { max-width: 100%; padding: 22px; }
 }
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -851,6 +850,16 @@ body {
     padding-bottom: 6px;
   }
   .task-day { min-width: 240px; }
+  .btn { width: 100%; justify-content: center; }
+  .btn-icon { width: 32px; height: 32px; }
+  .task-row { padding: 10px; }
+  .task-actions { gap: 4px; }
+  .filter-row { flex-wrap: wrap; }
+  .txn-full-item, .txn-item { flex-wrap: wrap; }
+  .txn-actions { width: 100%; justify-content: flex-end; }
+  .goal-row { gap: 10px; }
+  .modal { border-radius: 16px; }
+  .bottom-nav { height: 64px; }
 }
 @media (min-width: 901px) {
   .main { padding-bottom: 80px; }
