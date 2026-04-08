@@ -62,16 +62,17 @@ function ensure_tables(PDO $pdo): void {
         }
     }
 
-    $pdo->exec("CREATE TABLE IF NOT EXISTS finance_categories (
+    $pdo->exec("CREATE TABLE IF NOT EXISTS fin_categories (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT DEFAULT 1,
         name VARCHAR(100) NOT NULL,
         type ENUM('income','expense') NOT NULL,
         color VARCHAR(20) DEFAULT '#10d9a0',
+        icon VARCHAR(50) DEFAULT 'circle',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-    $pdo->exec("CREATE TABLE IF NOT EXISTS finance_transactions (
+    $pdo->exec("CREATE TABLE IF NOT EXISTS fin_transactions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT DEFAULT 1,
         type ENUM('income','expense') NOT NULL,
@@ -82,19 +83,19 @@ function ensure_tables(PDO $pdo): void {
         legacy_id INT DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         KEY idx_txn_user_date (user_id, transaction_date),
-        CONSTRAINT fk_fin_cat FOREIGN KEY (category_id) REFERENCES finance_categories(id) ON DELETE SET NULL
+        CONSTRAINT fk_fin_cat FOREIGN KEY (category_id) REFERENCES fin_categories(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-    if (!column_exists($pdo, 'finance_transactions', 'legacy_id')) {
-        $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN legacy_id INT DEFAULT NULL AFTER transaction_date");
+    if (!column_exists($pdo, 'fin_transactions', 'legacy_id')) {
+        $pdo->exec("ALTER TABLE fin_transactions ADD COLUMN legacy_id INT DEFAULT NULL AFTER transaction_date");
     }
     try {
-        $pdo->exec("ALTER TABLE finance_transactions ADD UNIQUE KEY uniq_legacy_id (legacy_id)");
+        $pdo->exec("ALTER TABLE fin_transactions ADD UNIQUE KEY uniq_legacy_id (legacy_id)");
     } catch (Exception $e) {
         // Ignore if index already exists.
     }
 
-    $pdo->exec("CREATE TABLE IF NOT EXISTS finance_settings (
+    $pdo->exec("CREATE TABLE IF NOT EXISTS fin_settings (
         user_id INT PRIMARY KEY,
         initial_balance DECIMAL(10,2) DEFAULT 0
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -156,7 +157,7 @@ function migrate_legacy_activities(PDO $pdo, int $userId): void {
 }
 
 function migrate_legacy_finances(PDO $pdo, int $userId, string $start, string $end): void {
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM fin_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ?");
     $stmt->execute([$userId, $start, $end]);
     $hasNew = (int)$stmt->fetchColumn() > 0;
     if ($hasNew) {
@@ -171,7 +172,7 @@ function migrate_legacy_finances(PDO $pdo, int $userId, string $start, string $e
         return;
     }
 
-    $ins = $pdo->prepare("INSERT IGNORE INTO finance_transactions (user_id, type, amount, description, category_id, transaction_date, created_at, legacy_id)
+    $ins = $pdo->prepare("INSERT IGNORE INTO fin_transactions (user_id, type, amount, description, category_id, transaction_date, created_at, legacy_id)
         VALUES (?, ?, ?, ?, NULL, ?, ?, ?)");
     foreach ($rows as $row) {
         $ins->execute([
@@ -272,7 +273,7 @@ try {
     }
 
     if ($action === 'cats_list') {
-        $stmt = $pdo->prepare("SELECT id, name, type, color FROM finance_categories WHERE user_id = ? ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT id, name, type, color, icon FROM fin_categories WHERE user_id = ? ORDER BY id DESC");
         $stmt->execute([$userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
@@ -284,8 +285,8 @@ try {
         if ($name === '') {
             json_response(['ok' => false, 'error' => 'Nome obrigatorio.'], 400);
         }
-        $stmt = $pdo->prepare("INSERT INTO finance_categories (user_id, name, type, color) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$userId, $name, $type, $color]);
+        $stmt = $pdo->prepare("INSERT INTO fin_categories (user_id, name, type, color, icon) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $name, $type, $color, 'circle']);
         json_response(['ok' => true]);
     }
 
@@ -296,8 +297,8 @@ try {
         migrate_legacy_finances($pdo, $userId, $start, $end);
         $stmt = $pdo->prepare("SELECT t.id, t.type, t.amount, t.description, t.category_id, t.transaction_date,
             c.name AS cat_name, c.color AS cat_color
-            FROM finance_transactions t
-            LEFT JOIN finance_categories c ON c.id = t.category_id
+            FROM fin_transactions t
+            LEFT JOIN fin_categories c ON c.id = t.category_id
             WHERE t.user_id = ? AND t.transaction_date BETWEEN ? AND ?
             ORDER BY t.transaction_date DESC, t.id DESC");
         $stmt->execute([$userId, $start, $end]);
@@ -316,10 +317,10 @@ try {
         }
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE finance_transactions SET type = ?, amount = ?, description = ?, category_id = ?, transaction_date = ? WHERE id = ? AND user_id = ?");
+            $stmt = $pdo->prepare("UPDATE fin_transactions SET type = ?, amount = ?, description = ?, category_id = ?, transaction_date = ? WHERE id = ? AND user_id = ?");
             $stmt->execute([$type, $amount, $description, $categoryId ?: null, $date, $id, $userId]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO finance_transactions (user_id, type, amount, description, category_id, transaction_date) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO fin_transactions (user_id, type, amount, description, category_id, transaction_date) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$userId, $type, $amount, $description, $categoryId ?: null, $date]);
         }
 
@@ -331,7 +332,7 @@ try {
         if ($id <= 0) {
             json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
         }
-        $stmt = $pdo->prepare("DELETE FROM finance_transactions WHERE id = ? AND user_id = ?");
+        $stmt = $pdo->prepare("DELETE FROM fin_transactions WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $userId]);
         json_response(['ok' => true]);
     }
@@ -342,7 +343,7 @@ try {
         $end = (new DateTime($start))->modify('last day of this month')->format('Y-m-d');
         migrate_legacy_finances($pdo, $userId, $start, $end);
 
-        $stmt = $pdo->prepare("SELECT type, SUM(amount) AS total FROM finance_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ? GROUP BY type");
+        $stmt = $pdo->prepare("SELECT type, SUM(amount) AS total FROM fin_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ? GROUP BY type");
         $stmt->execute([$userId, $start, $end]);
         $income = 0;
         $expense = 0;
@@ -354,14 +355,14 @@ try {
             }
         }
 
-        $stmt = $pdo->prepare("SELECT initial_balance FROM finance_settings WHERE user_id = ?");
+        $stmt = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id = ?");
         $stmt->execute([$userId]);
         $settings = $stmt->fetch();
         $initial = $settings ? (float)$settings['initial_balance'] : 0.0;
 
         $stmt = $pdo->prepare("SELECT c.id, c.name, c.color, t.type, SUM(t.amount) AS total
-            FROM finance_transactions t
-            LEFT JOIN finance_categories c ON c.id = t.category_id
+            FROM fin_transactions t
+            LEFT JOIN fin_categories c ON c.id = t.category_id
             WHERE t.user_id = ? AND t.transaction_date BETWEEN ? AND ?
             GROUP BY c.id, c.name, c.color, t.type
             ORDER BY total DESC");
@@ -379,7 +380,7 @@ try {
     }
 
     if ($action === 'fin_settings_get') {
-        $stmt = $pdo->prepare("SELECT initial_balance FROM finance_settings WHERE user_id = ?");
+        $stmt = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id = ?");
         $stmt->execute([$userId]);
         $row = $stmt->fetch();
         $initial = $row ? (float)$row['initial_balance'] : 0.0;
@@ -388,7 +389,7 @@ try {
 
     if ($action === 'fin_settings_save') {
         $val = isset($input['initial_balance']) ? (float)$input['initial_balance'] : 0.0;
-        $stmt = $pdo->prepare("INSERT INTO finance_settings (user_id, initial_balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE initial_balance = VALUES(initial_balance)");
+        $stmt = $pdo->prepare("INSERT INTO fin_settings (user_id, initial_balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE initial_balance = VALUES(initial_balance)");
         $stmt->execute([$userId, $val]);
         json_response(['ok' => true]);
     }

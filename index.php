@@ -877,11 +877,7 @@ body {
       <div class="logo-sub">painel pessoal</div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="switchTab('home')" id="nav-home">
-        <span class="nav-icon">H</span>
-        <span class="nav-label">Home</span>
-      </div>
-      <div class="nav-item" onclick="switchTab('habitos')" id="nav-habitos">
+      <div class="nav-item active" onclick="switchTab('habitos')" id="nav-habitos">
         <span class="nav-icon">⊙</span>
         <span class="nav-label">Hábitos</span>
         <span class="nav-badge" id="nb-habitos">—</span>
@@ -912,55 +908,8 @@ body {
   <!-- MAIN -->
   <main class="main">
 
-    <!-- ===== HOME ===== -->
-    <div class="panel active" id="panel-home">
-      <div class="section-header">
-        <div class="section-title">HOME</div>
-      </div>
-
-      <!-- Stat cards -->
-      <div class="stat-grid" style="margin-bottom:32px">
-        <div class="stat-card purple">
-          <div class="stat-label">Hábitos Hoje</div>
-          <div class="stat-value purple" id="hStatHoje">0/0</div>
-          <div class="stat-sub">completados</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-label">Streak Atual</div>
-          <div class="stat-value green" id="hStatStreak">0</div>
-          <div class="stat-sub">dias seguidos</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-label">Esta Semana</div>
-          <div class="stat-value blue" id="hStatSemana">0%</div>
-          <div class="stat-sub">taxa de conclusão</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-label">Tarefas Vencidas</div>
-          <div class="stat-value red" id="hStatVencidas">0</div>
-          <div class="stat-sub">pendentes</div>
-        </div>
-      </div>
-
-      <!-- Content grid -->
-      <div class="content-grid">
-        <div class="card">
-          <div class="card-title">ÚLTIMAS TRANSAÇÕES</div>
-          <div class="txn-list" id="ovTxnList">
-            <div class="empty-state">Sem transações.</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">PROGRESSO DAS METAS</div>
-          <div class="goal-items" id="ovGoalList">
-            <div class="empty-state">Sem metas.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ===== HÁBITOS ===== -->
-    <div class="panel" id="panel-habitos">
+    <div class="panel active" id="panel-habitos">
 
       <!-- Desktop streak -->
       <div class="streak-section">
@@ -1100,18 +1049,10 @@ body {
   </main>
 </div>
 
-<!-- COMMENT BAR (desktop) -->
-<div class="comment-bar">
-  <input type="text" class="comment-input" placeholder="Faça um comentário…">
-</div>
 
 <!-- BOTTOM NAV (mobile) -->
 <nav class="bottom-nav">
-  <button class="bottom-nav-item active" onclick="switchTab('home')" id="bn-home">
-    <span class="bottom-nav-icon">H</span>
-    <span class="bottom-nav-label">Home</span>
-  </button>
-  <button class="bottom-nav-item" onclick="switchTab('habitos')" id="bn-habitos">
+  <button class="bottom-nav-item active" onclick="switchTab('habitos')" id="bn-habitos">
     <span class="bottom-nav-icon">⊙</span>
     <span class="bottom-nav-label">Hábitos</span>
   </button>
@@ -1585,14 +1526,7 @@ function renderTasks() {
       <div class="task-day-list">${items}</div>
     </div>`;
   }).join('')}</div></div>`;
-
-  const allList = allTasks.length ? allTasks.map(t => taskRowHTML(t, null, todayISO, true)).join('') : '';
-  const extra = `<div class="task-section" style="margin-top:20px">
-    <div class="task-section-label">TODAS AS TAREFAS</div>
-    <div class="task-items">${allList || '<div class="empty-state">Nenhuma tarefa cadastrada.</div>'}</div>
-  </div>`;
-
-  el.innerHTML = grid + extra;
+  el.innerHTML = grid;
 }
 
 function taskRowHTML(t, dateObj, todayISO, compact=false) {
@@ -1605,15 +1539,12 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
     t.recurrence === 'weekly' ? 'Semanal' :
     t.recurrence === 'monthly' ? 'Mensal' :
     t.recurrence === 'once' ? 'Sem repetir' : 'Semanal';
-  const meta = compact ? `<div class="task-row-meta">${recLabel}</div>` : '';
-  return `<div class="${compact ? 'task-item' : 'task-row'}${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
-    <div class="task-check" onclick="toggleTask(${t.id})">${isDone ? '✓' : ''}</div>
-    <div class="${compact ? 'task-info' : 'task-title'}">
+  const meta = `<div class="task-row-meta">${recLabel}</div>`;
+  return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
+    <div class="task-title">
       <div>${esc(t.title)}</div>
       ${meta}
     </div>
-    ${compact ? '' : ''}
-    ${isOverdue && compact ? '<span class="badge-vencida">VENCIDA</span>' : ''}
     <div class="task-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
       <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
@@ -1882,7 +1813,13 @@ async function loadGoals() {
 function renderGoals() {
   const el = document.getElementById('goalsGrid');
   if (!allGoals.length) { el.innerHTML='<div class="empty-state">Nenhuma meta cadastrada.</div>'; return; }
-  el.innerHTML = allGoals.map(g=>{
+  const ordered = [...allGoals].sort((a,b)=>{
+    const ad = parseInt(a.status || 0, 10);
+    const bd = parseInt(b.status || 0, 10);
+    if (ad !== bd) return ad - bd;
+    return b.id - a.id;
+  });
+  el.innerHTML = ordered.map(g=>{
     const done = parseInt(g.status || 0, 10) === 1;
     return `<div class="goal-row${done ? ' done' : ''}">
       <div class="goal-check" onclick="toggleGoal(${g.id})">${done ? '✓' : ''}</div>
