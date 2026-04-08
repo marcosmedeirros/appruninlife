@@ -1361,7 +1361,7 @@ function api(action, method='GET', body=null, params='') {
   const url = `${API_URL}?api=${action}${params}`;
   const opts = { method, headers: {'Content-Type':'application/json'} };
   if (body) opts.body = JSON.stringify(body);
-  return fetch(url, opts).then(r=>r.json());
+  return fetch(url, opts).then(r=>r.json().catch(() => ({ ok:false, error:'Resposta invalida da API.' })));
 }
 function toast(msg, type='ok') {
   const w = document.getElementById('toastWrap');
@@ -1511,6 +1511,10 @@ function deleteHabit(id) {
 // ===== TASKS =====
 async function loadTasks() {
   const res = await api('tasks_list');
+  if (!res.ok) {
+    toast(res.error || 'Erro ao carregar tarefas.', 'err');
+    return;
+  }
   allTasks = res.data || [];
   renderTasks();
   const overdue = allTasks.filter(t => t.due_date && t.due_date < toISODate(new Date()) && t.recurrence==='once' && !t.status).length;
