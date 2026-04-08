@@ -1087,10 +1087,6 @@ body {
       <label class="form-label">NOME</label>
       <input type="text" id="h-title" class="form-control" placeholder="Ex: Tomar remédio, Meditar…">
     </div>
-    <div class="form-group">
-      <label class="form-label">NOME</label>
-      <input type="text" id="h-title" class="form-control" placeholder="Ex: Tomar remédio, Meditar…">
-    </div>
     <input type="hidden" id="h-id">
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('habitModal')">Cancelar</button>
@@ -1394,6 +1390,10 @@ function renderStreak() {
 async function loadHabits() {
   const res = await api('habits_list');
   if (!res.ok) {
+    const el = document.getElementById('habitList');
+    if (el) {
+      el.innerHTML = '<div class="empty-state">Erro ao carregar hábitos.</div>';
+    }
     toast(res.error || 'Erro ao carregar hábitos.', 'err');
     return;
   }
