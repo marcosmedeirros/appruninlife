@@ -55,10 +55,20 @@ function ensure_tables(PDO $pdo): void {
         description VARCHAR(255) DEFAULT NULL,
         category_id INT DEFAULT NULL,
         transaction_date DATE NOT NULL,
+        legacy_id INT DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         KEY idx_txn_user_date (user_id, transaction_date),
         CONSTRAINT fk_fin_cat FOREIGN KEY (category_id) REFERENCES finance_categories(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    if (!column_exists($pdo, 'finance_transactions', 'legacy_id')) {
+        $pdo->exec("ALTER TABLE finance_transactions ADD COLUMN legacy_id INT DEFAULT NULL AFTER transaction_date");
+    }
+    try {
+        $pdo->exec("ALTER TABLE finance_transactions ADD UNIQUE KEY uniq_legacy_id (legacy_id)");
+    } catch (Exception $e) {
+        // Ignore if index already exists.
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS finance_settings (
         user_id INT PRIMARY KEY,
@@ -87,6 +97,37 @@ function ensure_tables(PDO $pdo): void {
     }
     if (!column_exists($pdo, 'goals', 'color')) {
         $pdo->exec("ALTER TABLE goals ADD COLUMN color VARCHAR(20) DEFAULT '#10d9a0'");
+    }
+}
+
+function migrate_legacy_finances(PDO $pdo, int $userId, string $start, string $end): void {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ?");
+    $stmt->execute([$userId, $start, $end]);
+    $hasNew = (int)$stmt->fetchColumn() > 0;
+    if ($hasNew) {
+        return;
+    }
+
+    $stmt = $pdo->prepare("SELECT id, type, amount, description, DATE(created_at) AS txn_date, created_at
+        FROM finances WHERE user_id = ? AND DATE(created_at) BETWEEN ? AND ? ORDER BY id ASC");
+    $stmt->execute([$userId, $start, $end]);
+    $rows = $stmt->fetchAll();
+    if (!$rows) {
+        return;
+    }
+
+    $ins = $pdo->prepare("INSERT IGNORE INTO finance_transactions (user_id, type, amount, description, category_id, transaction_date, created_at, legacy_id)
+        VALUES (?, ?, ?, ?, NULL, ?, ?, ?)");
+    foreach ($rows as $row) {
+        $ins->execute([
+            $userId,
+            $row['type'],
+            $row['amount'],
+            $row['description'],
+            $row['txn_date'],
+            $row['created_at'],
+            $row['id']
+        ]);
     }
 }
 
@@ -196,6 +237,7 @@ try {
         $month = $_GET['month'] ?? date('Y-m');
         $start = $month . '-01';
         $end = (new DateTime($start))->modify('last day of this month')->format('Y-m-d');
+        migrate_legacy_finances($pdo, $userId, $start, $end);
         $stmt = $pdo->prepare("SELECT t.id, t.type, t.amount, t.description, t.category_id, t.transaction_date,
             c.name AS cat_name, c.color AS cat_color
             FROM finance_transactions t
@@ -242,6 +284,7 @@ try {
         $month = $_GET['month'] ?? date('Y-m');
         $start = $month . '-01';
         $end = (new DateTime($start))->modify('last day of this month')->format('Y-m-d');
+        migrate_legacy_finances($pdo, $userId, $start, $end);
 
         $stmt = $pdo->prepare("SELECT type, SUM(amount) AS total FROM finance_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ? GROUP BY type");
         $stmt->execute([$userId, $start, $end]);

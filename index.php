@@ -818,7 +818,11 @@ body {
       <div class="logo-sub">painel pessoal</div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="switchTab('habitos')" id="nav-habitos">
+      <div class="nav-item active" onclick="switchTab('home')" id="nav-home">
+        <span class="nav-icon">H</span>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('habitos')" id="nav-habitos">
         <span class="nav-icon">⊙</span>
         <span class="nav-label">Hábitos</span>
         <span class="nav-badge" id="nb-habitos">—</span>
@@ -849,8 +853,55 @@ body {
   <!-- MAIN -->
   <main class="main">
 
+    <!-- ===== HOME ===== -->
+    <div class="panel active" id="panel-home">
+      <div class="section-header">
+        <div class="section-title">HOME</div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-grid" style="margin-bottom:32px">
+        <div class="stat-card purple">
+          <div class="stat-label">Hábitos Hoje</div>
+          <div class="stat-value purple" id="hStatHoje">0/0</div>
+          <div class="stat-sub">completados</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Streak Atual</div>
+          <div class="stat-value green" id="hStatStreak">0</div>
+          <div class="stat-sub">dias seguidos</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Esta Semana</div>
+          <div class="stat-value blue" id="hStatSemana">0%</div>
+          <div class="stat-sub">taxa de conclusão</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Tarefas Vencidas</div>
+          <div class="stat-value red" id="hStatVencidas">0</div>
+          <div class="stat-sub">pendentes</div>
+        </div>
+      </div>
+
+      <!-- Content grid -->
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-title">ÚLTIMAS TRANSAÇÕES</div>
+          <div class="txn-list" id="ovTxnList">
+            <div class="empty-state">Sem transações.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">PROGRESSO DAS METAS</div>
+          <div class="goal-items" id="ovGoalList">
+            <div class="empty-state">Sem metas.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== HÁBITOS ===== -->
-    <div class="panel active" id="panel-habitos">
+    <div class="panel" id="panel-habitos">
 
       <!-- Desktop streak -->
       <div class="streak-section">
@@ -898,64 +949,18 @@ body {
         </div>
       </div>
 
-      <!-- Stat cards -->
-      <div class="stat-grid" style="margin-bottom:32px">
-        <div class="stat-card purple">
-          <div class="stat-label">Hábitos Hoje</div>
-          <div class="stat-value purple" id="hStatHoje">0/0</div>
-          <div class="stat-sub">completados</div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div class="card-title" style="margin:0">HÁBITOS</div>
+          <button class="btn btn-ghost btn-sm" onclick="openHabitModal()">✏</button>
         </div>
-        <div class="stat-card green">
-          <div class="stat-label">Streak Atual</div>
-          <div class="stat-value green" id="hStatStreak">0</div>
-          <div class="stat-sub">dias seguidos</div>
+        <div class="habit-list" id="habitList">
+          <div class="empty-state">Nenhum hábito cadastrado.</div>
         </div>
-        <div class="stat-card blue">
-          <div class="stat-label">Esta Semana</div>
-          <div class="stat-value blue" id="hStatSemana">0%</div>
-          <div class="stat-sub">taxa de conclusão</div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-label">Tarefas Vencidas</div>
-          <div class="stat-value red" id="hStatVencidas">0</div>
-          <div class="stat-sub">pendentes</div>
-        </div>
-      </div>
-
-      <!-- Content grid -->
-      <div class="content-grid">
-        <!-- Habits -->
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div class="card-title" style="margin:0">HÁBITOS</div>
-            <button class="btn btn-ghost btn-sm" onclick="openHabitModal()">✏</button>
-          </div>
-          <div class="habit-list" id="habitList">
-            <div class="empty-state">Nenhum hábito cadastrado.</div>
-          </div>
-          <button class="add-habit-btn" style="margin-top:10px" onclick="openHabitModal()">
-            <div class="add-plus">+</div>
-            Adicionar hábito
-          </button>
-        </div>
-
-        <!-- Right col -->
-        <div style="display:flex;flex-direction:column;gap:16px">
-          <!-- Recent txns -->
-          <div class="card">
-            <div class="card-title">ÚLTIMAS TRANSAÇÕES</div>
-            <div class="txn-list" id="ovTxnList">
-              <div class="empty-state">Sem transações.</div>
-            </div>
-          </div>
-          <!-- Goals progress -->
-          <div class="card">
-            <div class="card-title">PROGRESSO DAS METAS</div>
-            <div class="goal-items" id="ovGoalList">
-              <div class="empty-state">Sem metas.</div>
-            </div>
-          </div>
-        </div>
+        <button class="add-habit-btn" style="margin-top:10px" onclick="openHabitModal()">
+          <div class="add-plus">+</div>
+          Adicionar hábito
+        </button>
       </div>
     </div>
 
@@ -1043,7 +1048,11 @@ body {
 
 <!-- BOTTOM NAV (mobile) -->
 <nav class="bottom-nav">
-  <button class="bottom-nav-item active" onclick="switchTab('habitos')" id="bn-habitos">
+  <button class="bottom-nav-item active" onclick="switchTab('home')" id="bn-home">
+    <span class="bottom-nav-icon">H</span>
+    <span class="bottom-nav-label">Home</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchTab('habitos')" id="bn-habitos">
     <span class="bottom-nav-icon">⊙</span>
     <span class="bottom-nav-label">Hábitos</span>
   </button>
@@ -1749,8 +1758,10 @@ function renderGoals() {
   const el = document.getElementById('goalsGrid');
   if (!allGoals.length) { el.innerHTML='<div class="empty-state">Nenhuma meta cadastrada.</div>'; return; }
   el.innerHTML = allGoals.map(g=>{
-    const pct = Math.min(100,Math.round(parseFloat(g.current_amount)/parseFloat(g.target_amount)*100)||0);
-    const left = Math.max(0,parseFloat(g.target_amount)-parseFloat(g.current_amount));
+    const target = parseFloat(g.target_amount) || 0;
+    const current = parseFloat(g.current_amount) || 0;
+    const pct = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
+    const left = Math.max(0, target - current);
     return `<div class="goal-card" style="--gc:${g.color||'#10d9a0'}">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${g.color||'#10d9a0'}"></div>
       <div class="goal-card-title">${esc(g.title)}</div>
@@ -1760,8 +1771,8 @@ function renderGoals() {
         <div class="progress-fill" style="width:${pct}%;background:${g.color||'#10d9a0'}"></div>
       </div>
       <div class="goal-card-amounts">
-        <span>${fmtBRL(g.current_amount)} acumulado</span>
-        <span>Meta: ${fmtBRL(g.target_amount)}</span>
+        <span>${fmtBRL(current)} acumulado</span>
+        <span>Meta: ${fmtBRL(target)}</span>
       </div>
       ${left>0?`<div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace">Faltam ${fmtBRL(left)}</div>`:`<div style="font-size:11px;color:var(--green);margin-top:8px">🎉 Meta atingida!</div>`}
       <div class="goal-card-actions">
@@ -1776,7 +1787,9 @@ function renderOvGoals() {
   const el = document.getElementById('ovGoalList');
   if (!allGoals.length) { el.innerHTML='<div class="empty-state">Sem metas.</div>'; return; }
   el.innerHTML = allGoals.slice(0,3).map(g=>{
-    const pct=Math.min(100,Math.round(parseFloat(g.current_amount)/parseFloat(g.target_amount)*100)||0);
+    const target = parseFloat(g.target_amount) || 0;
+    const current = parseFloat(g.current_amount) || 0;
+    const pct = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
     return `<div class="goal-item">
       <div class="goal-header">
         <div class="goal-name">${esc(g.title)}</div>
