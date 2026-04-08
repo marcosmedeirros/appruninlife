@@ -482,6 +482,10 @@ body {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
+.task-week-wrap {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
 .task-day {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -835,7 +839,12 @@ body {
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .form-row { grid-template-columns: 1fr; }
-  .task-week-grid { grid-template-columns: 1fr; }
+  .task-week-grid {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 6px;
+  }
+  .task-day { min-width: 240px; }
 }
 @media (min-width: 901px) {
   .main { padding-bottom: 80px; }
@@ -1548,7 +1557,7 @@ function renderTasks() {
     }
   });
 
-  const grid = `<div class="task-week-grid">${weekDates.map((d, i) => {
+  const grid = `<div class="task-week-wrap"><div class="task-week-grid">${weekDates.map((d, i) => {
     const dayLabel = DAYS_WEEK[i + 1] || '';
     const list = dayBuckets[i];
     const items = list.length ? list.map(entry => taskRowHTML(entry.task, entry.date, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
@@ -1556,7 +1565,7 @@ function renderTasks() {
       <div class="task-day-header"><strong>${dayLabel}</strong><span>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</span></div>
       <div class="task-day-list">${items}</div>
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div></div>`;
 
   let extra = '';
   if (outOfWeek.length) {
