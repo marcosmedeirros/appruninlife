@@ -48,6 +48,16 @@ function ensure_tables(PDO $pdo): void {
         CONSTRAINT fk_task_completion FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+    if (!column_exists($pdo, 'task_completions', 'done_date')) {
+        $pdo->exec("ALTER TABLE task_completions ADD COLUMN done_date DATE NOT NULL AFTER task_id");
+        $pdo->exec("UPDATE task_completions SET done_date = DATE(created_at) WHERE done_date IS NULL OR done_date = '0000-00-00'");
+        try {
+            $pdo->exec("ALTER TABLE task_completions ADD UNIQUE KEY uniq_task_date (task_id, done_date)");
+        } catch (Exception $e) {
+            // Ignore if index already exists.
+        }
+    }
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS finance_categories (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT DEFAULT 1,
