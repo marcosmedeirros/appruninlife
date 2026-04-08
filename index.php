@@ -1517,6 +1517,14 @@ function renderTasks() {
   const today = new Date();
   const todayISO = toISODate(today);
 
+  function getRecurrenceDay(t) {
+    const raw = parseInt(t.recurrence_day || 0, 10);
+    if (raw > 0) return raw;
+    if (t.recurrence === 'weekly') return dayIndexFromDate(today);
+    if (t.recurrence === 'monthly') return today.getDate();
+    return null;
+  }
+
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -1535,12 +1543,12 @@ function renderTasks() {
       return;
     }
     if (rec === 'weekly') {
-      const idx = Math.max(1, parseInt(t.recurrence_day || 0, 10)) - 1;
+      const idx = Math.max(1, getRecurrenceDay(t) || 1) - 1;
       if (idx >= 0 && idx < 7) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
       return;
     }
     if (rec === 'monthly') {
-      const dayNum = parseInt(t.recurrence_day || 0, 10);
+      const dayNum = getRecurrenceDay(t) || today.getDate();
       const idx = weekDates.findIndex(d => d.getDate() === dayNum);
       if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
       else outOfWeek.push(t);
@@ -1552,7 +1560,8 @@ function renderTasks() {
         if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
         else outOfWeek.push(t);
       } else {
-        outOfWeek.push(t);
+        const idx = dayIndexFromDate(today) - 1;
+        dayBuckets[idx].push({ task: t, date: weekDates[idx] });
       }
     }
   });
