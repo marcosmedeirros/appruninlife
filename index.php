@@ -518,6 +518,12 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
+.task-row-meta {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  margin-top: 4px;
+}
 .task-row.done { opacity: 0.5; }
 .task-row.overdue { border-color: rgba(255,77,109,0.2); }
 .task-title { flex: 1; font-size: 13px; }
@@ -1571,18 +1577,16 @@ function renderTasks() {
     const list = dayBuckets[i];
     const items = list.length ? list.map(entry => taskRowHTML(entry.task, entry.date, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
     return `<div class="task-day">
-      <div class="task-day-header"><strong>${dayLabel}</strong><span>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</span></div>
+      <div class="task-day-header"><strong>${dayLabel}</strong></div>
       <div class="task-day-list">${items}</div>
     </div>`;
   }).join('')}</div></div>`;
 
-  let extra = '';
-  if (outOfWeek.length) {
-    extra = `<div class="task-section" style="margin-top:20px">
-      <div class="task-section-label">OUTRAS TAREFAS</div>
-      <div class="task-items">${outOfWeek.map(t => taskRowHTML(t, null, todayISO, true)).join('')}</div>
-    </div>`;
-  }
+  const allList = allTasks.length ? allTasks.map(t => taskRowHTML(t, null, todayISO, true)).join('') : '';
+  const extra = `<div class="task-section" style="margin-top:20px">
+    <div class="task-section-label">TODAS AS TAREFAS</div>
+    <div class="task-items">${allList || '<div class="empty-state">Nenhuma tarefa cadastrada.</div>'}</div>
+  </div>`;
 
   el.innerHTML = grid + extra;
 }
@@ -1593,10 +1597,18 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
   const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
   const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
+  const recLabel = t.recurrence === 'daily' ? 'Diaria' :
+    t.recurrence === 'weekly' ? 'Semanal' :
+    t.recurrence === 'monthly' ? 'Mensal' :
+    t.recurrence === 'once' ? 'Sem repetir' : 'Semanal';
+  const meta = compact ? `<div class="task-row-meta">${recLabel}</div>` : '';
   return `<div class="${compact ? 'task-item' : 'task-row'}${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
     <div class="task-check" onclick="toggleTask(${t.id})">${isDone ? '✓' : ''}</div>
-    <div class="${compact ? 'task-info' : 'task-title'}">${esc(t.title)}${compact ? '' : ''}</div>
-    ${compact ? dateLabel : ''}
+    <div class="${compact ? 'task-info' : 'task-title'}">
+      <div>${esc(t.title)}</div>
+      ${meta}
+    </div>
+    ${compact ? '' : ''}
     ${isOverdue && compact ? '<span class="badge-vencida">VENCIDA</span>' : ''}
     <div class="task-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
