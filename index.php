@@ -885,7 +885,11 @@ body {
     padding-bottom: 6px;
   }
   .task-day { min-width: 240px; }
-  .fin-stats { grid-template-columns: 1fr; }
+  .fin-stats { grid-template-columns: 1fr; gap: 10px; }
+  .fin-stats .stat-card { padding: 16px; border-radius: 14px; }
+  .fin-stats .stat-label { font-size: 9px; letter-spacing: 1.5px; }
+  .fin-stats .stat-value { font-size: 26px; }
+  .fin-stats .stat-sub { font-size: 10px; margin-top: 4px; }
   .btn { width: 100%; justify-content: center; }
   .btn-icon { width: 32px; height: 32px; }
   .task-row { padding: 10px; }
