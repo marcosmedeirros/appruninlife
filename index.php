@@ -477,6 +477,50 @@ body {
 }
 .task-more:hover { background: var(--surface2); color: var(--text); }
 
+.task-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+.task-day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.task-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.task-day-header strong { color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13px; }
+.task-day-list { display: flex; flex-direction: column; gap: 8px; }
+.task-day-empty { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; padding: 4px 0; }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.task-row.done { opacity: 0.5; }
+.task-row.overdue { border-color: rgba(255,77,109,0.2); }
+.task-title { flex: 1; font-size: 13px; }
+.task-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+.task-row:hover .task-actions { opacity: 1; }
+.task-item:hover .task-actions { opacity: 1; }
+
 /* ===== TRANSACTIONS ===== */
 .txn-list { display: flex; flex-direction: column; gap: 6px; }
 .txn-item {
@@ -585,30 +629,29 @@ body {
 .cat-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--red); }
 
 /* ===== GOALS PANEL ===== */
-.goals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.goal-card {
+.goals-list { display: flex; flex-direction: column; gap: 10px; }
+.goal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px;
-  position: relative;
-  overflow: hidden;
+  border-radius: var(--radius-sm);
 }
-.goal-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 3px;
+.goal-row.done { opacity: 0.55; text-decoration: line-through; }
+.goal-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--surface3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
 }
-.goal-card-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.goal-card-deadline { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 16px; }
-.goal-card-pct { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; margin-bottom: 10px; }
-.goal-card-amounts { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 10px; }
-.goal-card-actions { display: flex; gap: 8px; margin-top: 16px; }
+.goal-row.done .goal-check { background: var(--text); border-color: var(--text); color: var(--bg); }
+.goal-title { flex: 1; font-size: 14px; font-weight: 500; }
+.goal-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+.goal-row:hover .goal-actions { opacity: 1; }
 
 /* ===== BUTTONS ===== */
 .btn {
@@ -787,11 +830,12 @@ body {
   .content-grid { grid-template-columns: 1fr; }
   .fin-grid { grid-template-columns: 1fr; }
   .fin-section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .task-week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .form-row { grid-template-columns: 1fr; }
-  .goals-grid { grid-template-columns: 1fr; }
+  .task-week-grid { grid-template-columns: 1fr; }
 }
 @media (min-width: 901px) {
   .main { padding-bottom: 80px; }
@@ -972,7 +1016,7 @@ body {
       </div>
 
       <div id="taskSections">
-        <div class="empty-state">Carregando tarefas…</div>
+          <div class="empty-state">Carregando tarefas…</div>
       </div>
     </div>
 
@@ -1033,7 +1077,7 @@ body {
         <div class="section-title">METAS</div>
         <button class="btn btn-primary" onclick="openGoalModal()">+ Nova Meta</button>
       </div>
-      <div class="goals-grid" id="goalsGrid">
+      <div class="goals-list" id="goalsGrid">
         <div class="empty-state">Nenhuma meta cadastrada.</div>
       </div>
     </div>
@@ -1111,6 +1155,7 @@ body {
       <div class="form-group">
         <label class="form-label">RECORRÊNCIA</label>
         <select id="t-recurrence" class="form-control" onchange="toggleRecDay()">
+            <option value="daily">Todo dia</option>
           <option value="weekly">Toda semana</option>
           <option value="monthly">Todo mês</option>
           <option value="once">Não repetir</option>
@@ -1121,6 +1166,10 @@ body {
         <select id="t-recday" class="form-control"></select>
       </div>
     </div>
+      <div class="form-group" id="t-once-group" style="display:none">
+        <label class="form-label">DATA</label>
+        <input type="date" id="t-once-date" class="form-control">
+      </div>
     <input type="hidden" id="t-id">
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('taskModal')">Cancelar</button>
@@ -1459,48 +1508,81 @@ function renderTasks() {
   const today = new Date();
   const todayISO = toISODate(today);
 
-  const overdue = allTasks.filter(t => t.due_date && t.due_date < todayISO && t.recurrence==='once' && !t.status);
-  const doneToday = allTasks.filter(t => parseInt(t.done_today)===1 && taskAppliesToDate(t,today));
-  const pending = allTasks.filter(t => !overdue.includes(t) && !doneToday.includes(t) && taskAppliesToDate(t,today));
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
 
-  let html = '';
+  const dayBuckets = weekDates.map(() => []);
+  const outOfWeek = [];
 
-  if (overdue.length) {
-    html += `<div class="task-section">
-      <div class="task-section-label"><span class="warn">⚠</span> VENCIDAS</div>
-      <div class="task-items">${overdue.map(t=>taskItemHTML(t,'overdue')).join('')}</div>
+  allTasks.forEach(t => {
+    const rec = t.recurrence || 'weekly';
+    if (rec === 'daily') {
+      dayBuckets.forEach((list, i) => list.push({ task: t, date: weekDates[i] }));
+      return;
+    }
+    if (rec === 'weekly') {
+      const idx = Math.max(1, parseInt(t.recurrence_day || 0, 10)) - 1;
+      if (idx >= 0 && idx < 7) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+      return;
+    }
+    if (rec === 'monthly') {
+      const dayNum = parseInt(t.recurrence_day || 0, 10);
+      const idx = weekDates.findIndex(d => d.getDate() === dayNum);
+      if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+      else outOfWeek.push(t);
+      return;
+    }
+    if (rec === 'once') {
+      if (t.due_date) {
+        const idx = weekDates.findIndex(d => toISODate(d) === t.due_date);
+        if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+        else outOfWeek.push(t);
+      } else {
+        outOfWeek.push(t);
+      }
+    }
+  });
+
+  const grid = `<div class="task-week-grid">${weekDates.map((d, i) => {
+    const dayLabel = DAYS_WEEK[i + 1] || '';
+    const list = dayBuckets[i];
+    const items = list.length ? list.map(entry => taskRowHTML(entry.task, entry.date, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+    return `<div class="task-day">
+      <div class="task-day-header"><strong>${dayLabel}</strong><span>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</span></div>
+      <div class="task-day-list">${items}</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  let extra = '';
+  if (outOfWeek.length) {
+    extra = `<div class="task-section" style="margin-top:20px">
+      <div class="task-section-label">OUTRAS TAREFAS</div>
+      <div class="task-items">${outOfWeek.map(t => taskRowHTML(t, null, todayISO, true)).join('')}</div>
     </div>`;
   }
 
-  if (pending.length) {
-    html += `<div class="task-section">
-      <div class="task-section-label">HOJE</div>
-      <div class="task-items">${pending.map(t=>taskItemHTML(t,'pending')).join('')}</div>
-    </div>`;
-  }
-
-  if (doneToday.length) {
-    html += `<div class="task-section">
-      <div class="task-section-label">CONCLUÍDAS (HOJE)</div>
-      <div class="task-items">${doneToday.map(t=>taskItemHTML(t,'done')).join('')}</div>
-    </div>`;
-  }
-
-  el.innerHTML = html || '<div class="empty-state">Nenhuma tarefa para hoje. Crie uma acima.</div>';
+  el.innerHTML = grid + extra;
 }
 
-function taskItemHTML(t, state) {
-  const isDone = state==='done';
-  const isOverdue = state==='overdue';
-  const dateLabel = t.due_date ? (isOverdue ? `<span class="task-date overdue">⊙ ${fmtDate(t.due_date)}</span>` : `<span class="task-date">⊙ ${fmtDate(t.due_date)}</span>`) : '';
-  return `<div class="task-item${isDone?' done':''}${isOverdue?' overdue':''}">
-    <div class="task-check" onclick="toggleTask(${t.id})">${isDone?'✓':''}</div>
-    <div class="task-info">
-      <div class="task-name">${esc(t.title)}</div>
-      ${dateLabel}
+function taskRowHTML(t, dateObj, todayISO, compact=false) {
+  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
+  const isDone = isToday && parseInt(t.done_today || 0, 10) === 1;
+  const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
+  const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
+  return `<div class="${compact ? 'task-item' : 'task-row'}${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
+    <div class="task-check" onclick="toggleTask(${t.id})">${isDone ? '✓' : ''}</div>
+    <div class="${compact ? 'task-info' : 'task-title'}">${esc(t.title)}${compact ? '' : ''}</div>
+    ${compact ? dateLabel : ''}
+    ${isOverdue && compact ? '<span class="badge-vencida">VENCIDA</span>' : ''}
+    <div class="task-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
     </div>
-    ${isOverdue ? '<span class="badge-vencida">VENCIDA</span>' : ''}
-    <button class="task-more" onclick="editTask(${t.id})">⋯</button>
   </div>`;
 }
 
@@ -1514,6 +1596,7 @@ function openTaskModal(editData=null) {
   document.getElementById('t-title').value = editData?.title||'';
   const rec = editData?.recurrence||'weekly';
   document.getElementById('t-recurrence').value = rec;
+  document.getElementById('t-once-date').value = editData?.due_date || '';
   toggleRecDay(editData?.recurrence_day);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Tarefa' : 'Nova Tarefa';
   openModal('taskModal');
@@ -1523,6 +1606,12 @@ function toggleRecDay(selected=null) {
   const rec = document.getElementById('t-recurrence').value;
   const sel = document.getElementById('t-recday');
   const label = document.getElementById('t-recday-label');
+  const recGroup = document.getElementById('t-recday-group');
+  const onceGroup = document.getElementById('t-once-group');
+  recGroup.style.display = (rec === 'weekly' || rec === 'monthly') ? 'block' : 'none';
+  onceGroup.style.display = rec === 'once' ? 'block' : 'none';
+  if (rec === 'daily') return;
+  if (rec === 'once') return;
   if (rec==='monthly') {
     label.textContent = 'DIA DO MÊS';
     const pick = selected || new Date().getDate();
@@ -1539,14 +1628,15 @@ async function saveTask() {
   if (!title) { toast('Informe o título','err'); return; }
   const rec = document.getElementById('t-recurrence').value;
   const recDay = document.getElementById('t-recday').value;
-  let dueDate = null;
-  if (rec==='once') {
-    const now = new Date();
-    const start = new Date(now); start.setDate(now.getDate()-((now.getDay()+6)%7));
-    const d = new Date(start); d.setDate(start.getDate()+(parseInt(recDay)-1));
-    dueDate = toISODate(d);
-  }
-  const body = { id: document.getElementById('t-id').value, title, recurrence:rec, recurrence_day:rec==='once'?null:recDay, color:'#ffffff', due_date:rec==='once'?dueDate:null };
+  const dueDate = rec === 'once' ? document.getElementById('t-once-date').value : null;
+  const body = {
+    id: document.getElementById('t-id').value,
+    title,
+    recurrence: rec,
+    recurrence_day: (rec === 'weekly' || rec === 'monthly') ? recDay : null,
+    color: '#ffffff',
+    due_date: rec === 'once' ? dueDate : null
+  };
   const res = await api('task_save','POST',body);
   if (res.ok) { toast('Salvo!'); closeModal('taskModal'); loadTasks(); }
   else toast(res.error||'Erro','err');
@@ -1758,27 +1848,13 @@ function renderGoals() {
   const el = document.getElementById('goalsGrid');
   if (!allGoals.length) { el.innerHTML='<div class="empty-state">Nenhuma meta cadastrada.</div>'; return; }
   el.innerHTML = allGoals.map(g=>{
-    const target = parseFloat(g.target_amount) || 0;
-    const current = parseFloat(g.current_amount) || 0;
-    const pct = target > 0 ? Math.min(100, Math.round(current / target * 100)) : 0;
-    const left = Math.max(0, target - current);
-    return `<div class="goal-card" style="--gc:${g.color||'#10d9a0'}">
-      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${g.color||'#10d9a0'}"></div>
-      <div class="goal-card-title">${esc(g.title)}</div>
-      ${g.deadline?`<div class="goal-card-deadline">⊙ Prazo: ${fmtDate(g.deadline)}</div>`:'<div class="goal-card-deadline"> </div>'}
-      <div class="goal-card-pct" style="color:${g.color||'#10d9a0'}">${pct}%</div>
-      <div class="progress-track" style="height:6px">
-        <div class="progress-fill" style="width:${pct}%;background:${g.color||'#10d9a0'}"></div>
-      </div>
-      <div class="goal-card-amounts">
-        <span>${fmtBRL(current)} acumulado</span>
-        <span>Meta: ${fmtBRL(target)}</span>
-      </div>
-      ${left>0?`<div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace">Faltam ${fmtBRL(left)}</div>`:`<div style="font-size:11px;color:var(--green);margin-top:8px">🎉 Meta atingida!</div>`}
-      <div class="goal-card-actions">
-        <button class="btn btn-green btn-sm" onclick="openDeposit(${g.id})">+ Depositar</button>
-        <button class="btn btn-ghost btn-sm" onclick="editGoal(${g.id})">✏</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteGoal(${g.id})">✕</button>
+    const done = parseInt(g.status || 0, 10) === 1;
+    return `<div class="goal-row${done ? ' done' : ''}">
+      <div class="goal-check" onclick="toggleGoal(${g.id})">${done ? '✓' : ''}</div>
+      <div class="goal-title">${esc(g.title)}</div>
+      <div class="goal-actions">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="editGoal(${g.id})">✏</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="deleteGoal(${g.id})">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -1814,6 +1890,10 @@ function openGoalModal(editData=null) {
   openModal('goalModal');
 }
 function editGoal(id) { const g=allGoals.find(x=>x.id==id); if(g) openGoalModal(g); }
+async function toggleGoal(id) {
+  await api('goal_toggle','POST',{id});
+  loadGoals();
+}
 async function saveGoal() {
   const title=document.getElementById('g-title').value.trim();
   const target=parseFloat(document.getElementById('g-target').value);

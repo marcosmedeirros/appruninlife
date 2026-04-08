@@ -82,6 +82,7 @@ function ensure_tables(PDO $pdo): void {
         target_amount DECIMAL(10,2) DEFAULT 0,
         current_amount DECIMAL(10,2) DEFAULT 0,
         deadline DATE DEFAULT NULL,
+        status TINYINT DEFAULT 0,
         color VARCHAR(20) DEFAULT '#10d9a0',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -97,6 +98,9 @@ function ensure_tables(PDO $pdo): void {
     }
     if (!column_exists($pdo, 'goals', 'color')) {
         $pdo->exec("ALTER TABLE goals ADD COLUMN color VARCHAR(20) DEFAULT '#10d9a0'");
+    }
+    if (!column_exists($pdo, 'goals', 'status')) {
+        $pdo->exec("ALTER TABLE goals ADD COLUMN status TINYINT DEFAULT 0");
     }
 }
 
@@ -338,7 +342,7 @@ try {
     }
 
     if ($action === 'goals_list') {
-        $stmt = $pdo->prepare("SELECT id, title, target_amount, current_amount, deadline, color FROM goals WHERE user_id = ? ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT id, title, target_amount, current_amount, deadline, status, color FROM goals WHERE user_id = ? ORDER BY id DESC");
         $stmt->execute([$userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
@@ -370,6 +374,16 @@ try {
             json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
         }
         $stmt = $pdo->prepare("DELETE FROM goals WHERE id = ? AND user_id = ?");
+        $stmt->execute([$id, $userId]);
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'goal_toggle') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        if ($id <= 0) {
+            json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
+        }
+        $stmt = $pdo->prepare("UPDATE goals SET status = 1 - status WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $userId]);
         json_response(['ok' => true]);
     }
