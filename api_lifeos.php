@@ -23,10 +23,20 @@ function ensure_tables(PDO $pdo): void {
         recurrence ENUM('daily','weekly','monthly','once') DEFAULT 'weekly',
         recurrence_day INT DEFAULT NULL,
         due_date DATE DEFAULT NULL,
+        legacy_id INT DEFAULT NULL,
         color VARCHAR(20) DEFAULT '#ffffff',
         status TINYINT DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    if (!column_exists($pdo, 'tasks', 'legacy_id')) {
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN legacy_id INT DEFAULT NULL AFTER due_date");
+    }
+    try {
+        $pdo->exec("ALTER TABLE tasks ADD UNIQUE KEY uniq_task_legacy_id (legacy_id)");
+    } catch (Exception $e) {
+        // Ignore if index already exists.
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS task_completions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -104,6 +114,33 @@ function ensure_tables(PDO $pdo): void {
     }
 }
 
+function migrate_legacy_activities(PDO $pdo, int $userId): void {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    if ((int)$stmt->fetchColumn() > 0) {
+        return;
+    }
+
+    $stmt = $pdo->prepare("SELECT id, title, day_date, status FROM activities WHERE user_id = ? ORDER BY id ASC");
+    $stmt->execute([$userId]);
+    $rows = $stmt->fetchAll();
+    if (!$rows) {
+        return;
+    }
+
+    $ins = $pdo->prepare("INSERT IGNORE INTO tasks (user_id, title, recurrence, recurrence_day, due_date, legacy_id, color, status)
+        VALUES (?, ?, 'once', NULL, ?, ?, '#ffffff', ?)");
+    foreach ($rows as $row) {
+        $ins->execute([
+            $userId,
+            $row['title'],
+            $row['day_date'],
+            $row['id'],
+            (int)$row['status']
+        ]);
+    }
+}
+
 function migrate_legacy_finances(PDO $pdo, int $userId, string $start, string $end): void {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM finance_transactions WHERE user_id = ? AND transaction_date BETWEEN ? AND ?");
     $stmt->execute([$userId, $start, $end]);
@@ -147,6 +184,7 @@ try {
     $userId = 1;
 
     if ($action === 'tasks_list') {
+        migrate_legacy_activities($pdo, $userId);
         $stmt = $pdo->prepare("SELECT t.*, 
             CASE 
                 WHEN t.recurrence = 'once' THEN t.status

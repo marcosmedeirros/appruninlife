@@ -1589,7 +1589,8 @@ function renderTasks() {
 
 function taskRowHTML(t, dateObj, todayISO, compact=false) {
   const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
-  const isDone = isToday && parseInt(t.done_today || 0, 10) === 1;
+  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
+  const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
   const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
   return `<div class="${compact ? 'task-item' : 'task-row'}${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
