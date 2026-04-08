@@ -193,6 +193,30 @@ function migrate_legacy_finances(PDO $pdo, int $userId, string $start, string $e
     }
 }
 
+function calc_month_start_balance(PDO $pdo, int $userId, string $start): float {
+    $stmt = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $settings = $stmt->fetch();
+    $base = $settings ? (float)$settings['initial_balance'] : 0.0;
+
+    $stmt = $pdo->prepare("SELECT type, SUM(amount) AS total
+        FROM fin_transactions
+        WHERE user_id = ? AND transaction_date < ?
+        GROUP BY type");
+    $stmt->execute([$userId, $start]);
+    $income = 0.0;
+    $expense = 0.0;
+    foreach ($stmt->fetchAll() as $row) {
+        if ($row['type'] === 'income') {
+            $income = (float)$row['total'];
+        } elseif ($row['type'] === 'expense') {
+            $expense = (float)$row['total'];
+        }
+    }
+
+    return $base + $income - $expense;
+}
+
 $action = $_GET['api'] ?? '';
 $input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
@@ -409,10 +433,7 @@ try {
             }
         }
 
-        $stmt = $pdo->prepare("SELECT initial_balance FROM fin_settings WHERE user_id = ?");
-        $stmt->execute([$userId]);
-        $settings = $stmt->fetch();
-        $initial = $settings ? (float)$settings['initial_balance'] : 0.0;
+        $initial = calc_month_start_balance($pdo, $userId, $start);
 
         $stmt = $pdo->prepare("SELECT c.id, c.name, c.color, t.type, SUM(t.amount) AS total
             FROM fin_transactions t

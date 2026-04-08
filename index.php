@@ -519,6 +519,41 @@ body {
   font-family: 'DM Mono', monospace;
   margin-top: 4px;
 }
+.task-mobile-list { display: flex; flex-direction: column; gap: 10px; }
+.task-mobile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.task-mobile-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.task-mobile-count {
+  background: var(--surface2);
+  color: var(--muted2);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.task-mobile-items { display: flex; flex-direction: column; gap: 8px; }
+.task-mobile-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.task-mobile-item-title { font-size: 13px; }
+.task-mobile-actions { display: flex; gap: 6px; }
 .task-row.done { opacity: 0.5; }
 .task-row.overdue { border-color: rgba(255,77,109,0.2); }
 .task-title { flex: 1; font-size: 13px; }
@@ -850,10 +885,12 @@ body {
     padding-bottom: 6px;
   }
   .task-day { min-width: 240px; }
+  .fin-stats { grid-template-columns: 1fr; }
   .btn { width: 100%; justify-content: center; }
   .btn-icon { width: 32px; height: 32px; }
   .task-row { padding: 10px; }
   .task-actions { gap: 4px; }
+  .task-mobile-item { padding: 8px 10px; }
   .filter-row { flex-wrap: wrap; }
   .txn-full-item, .txn-item { flex-wrap: wrap; }
   .txn-actions { width: 100%; justify-content: flex-end; }
@@ -1000,7 +1037,7 @@ body {
         </div>
       </div>
 
-      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px">
+      <div class="stat-grid fin-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px">
         <div class="stat-card green">
           <div class="stat-label">Receitas</div>
           <div class="stat-value green" id="finIncome">R$ 0</div>
@@ -1525,7 +1562,30 @@ function renderTasks() {
       <div class="task-day-list">${items}</div>
     </div>`;
   }).join('')}</div></div>`;
-  el.innerHTML = grid;
+  if (window.innerWidth <= 600) {
+    const mobile = `<div class="task-mobile-list">${weekDates.map((d, i) => {
+      const dayLabel = DAYS_WEEK[i + 1] || '';
+      const list = dayBuckets[i];
+      const items = list.length ? list.map(entry => taskMobileItemHTML(entry.task)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+      return `<div class="task-mobile-card">
+        <div class="task-mobile-title">${dayLabel}<span class="task-mobile-count">${list.length}</span></div>
+        <div class="task-mobile-items">${items}</div>
+      </div>`;
+    }).join('')}</div>`;
+    el.innerHTML = mobile;
+  } else {
+    el.innerHTML = grid;
+  }
+}
+
+function taskMobileItemHTML(t) {
+  return `<div class="task-mobile-item">
+    <div class="task-mobile-item-title">${esc(t.title)}</div>
+    <div class="task-mobile-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
+    </div>
+  </div>`;
 }
 
 function taskRowHTML(t, dateObj, todayISO, compact=false) {
