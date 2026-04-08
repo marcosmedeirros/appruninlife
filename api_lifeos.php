@@ -112,6 +112,12 @@ function ensure_tables(PDO $pdo): void {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS habits (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        checked_dates TEXT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
     if (!column_exists($pdo, 'goals', 'target_amount')) {
         $pdo->exec("ALTER TABLE goals ADD COLUMN target_amount DECIMAL(10,2) DEFAULT 0");
     }
@@ -208,6 +214,54 @@ try {
             FROM tasks t WHERE t.user_id = ? ORDER BY t.id DESC");
         $stmt->execute([$userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($action === 'habits_list') {
+        $stmt = $pdo->query("SELECT id, name, checked_dates FROM habits ORDER BY id DESC");
+        json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($action === 'habit_save') {
+        $name = trim((string)($input['name'] ?? ''));
+        if ($name === '') {
+            json_response(['ok' => false, 'error' => 'Nome obrigatorio.'], 400);
+        }
+        $stmt = $pdo->prepare("INSERT INTO habits (name, checked_dates) VALUES (?, '[]')");
+        $stmt->execute([$name]);
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'habit_toggle') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        $date = $input['date'] ?? date('Y-m-d');
+        if ($id <= 0) {
+            json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
+        }
+        $stmt = $pdo->prepare("SELECT checked_dates FROM habits WHERE id = ?");
+        $stmt->execute([$id]);
+        $raw = $stmt->fetchColumn();
+        $arr = json_decode($raw ?: '[]', true);
+        if (!is_array($arr)) {
+            $arr = [];
+        }
+        if (in_array($date, $arr, true)) {
+            $arr = array_values(array_diff($arr, [$date]));
+        } else {
+            $arr[] = $date;
+        }
+        $upd = $pdo->prepare("UPDATE habits SET checked_dates = ? WHERE id = ?");
+        $upd->execute([json_encode($arr), $id]);
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'habit_delete') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        if ($id <= 0) {
+            json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
+        }
+        $stmt = $pdo->prepare("DELETE FROM habits WHERE id = ?");
+        $stmt->execute([$id]);
+        json_response(['ok' => true]);
     }
 
     if ($action === 'task_save') {

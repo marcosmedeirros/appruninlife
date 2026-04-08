@@ -1087,18 +1087,9 @@ body {
       <label class="form-label">NOME</label>
       <input type="text" id="h-title" class="form-control" placeholder="Ex: Tomar remédio, Meditar…">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">EMOJI</label>
-        <input type="text" id="h-emoji" class="form-control" placeholder="☕" maxlength="4">
-      </div>
-      <div class="form-group">
-        <label class="form-label">RECORRÊNCIA</label>
-        <select id="h-recurrence" class="form-control">
-          <option value="daily">Diário</option>
-          <option value="weekly">Semanal</option>
-        </select>
-      </div>
+    <div class="form-group">
+      <label class="form-label">NOME</label>
+      <input type="text" id="h-title" class="form-control" placeholder="Ex: Tomar remédio, Meditar…">
     </div>
     <input type="hidden" id="h-id">
     <div class="form-actions">
@@ -1290,7 +1281,7 @@ const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 const STREAK_DAYS = 7; // configurable
 
 let allTasks = [], allTxns = [], allCats = [], allGoals = [];
-let allHabits = []; // local habits (no API yet)
+let allHabits = [];
 let finFilter = 'all';
 let currentMonth = new Date();
 
@@ -1400,8 +1391,22 @@ function renderStreak() {
 }
 
 // ===== HABITS =====
-function loadHabits() {
-  // Local for now — same pattern as tasks but simpler
+async function loadHabits() {
+  const res = await api('habits_list');
+  if (!res.ok) {
+    toast(res.error || 'Erro ao carregar hábitos.', 'err');
+    return;
+  }
+  const today = toISODate(new Date());
+  allHabits = (res.data || []).map(h => {
+    let dates = [];
+    try { dates = JSON.parse(h.checked_dates || '[]'); } catch (e) { dates = []; }
+    return {
+      id: h.id,
+      title: h.name,
+      _done: Array.isArray(dates) && dates.includes(today)
+    };
+  });
   renderHabits();
   renderStreak();
 }
@@ -1413,49 +1418,41 @@ function renderHabits() {
     return;
   }
   el.innerHTML = allHabits.map(h => `
-    <div class="habit-item${h._done?' done':''}" onclick="toggleHabit(${h._localId})">
+    <div class="habit-item${h._done?' done':''}" onclick="toggleHabit(${h.id})">
       <div class="habit-check">${h._done?'✓':''}</div>
-      <span class="habit-emoji">${h.emoji||'○'}</span>
       <div class="habit-info">
         <div class="habit-name">${esc(h.title)}</div>
-        <div class="habit-meta">${h.recurrence==='daily'?'diário':'semanal'}</div>
       </div>
       <div class="habit-actions">
-        <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h._localId})">✕</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h.id})">✕</button>
       </div>
     </div>
   `).join('');
 }
 
-let _habitId = 0;
 function openHabitModal() {
   document.getElementById('h-id').value = '';
   document.getElementById('h-title').value = '';
-  document.getElementById('h-emoji').value = '';
   openModal('habitModal');
 }
-function saveHabit() {
+async function saveHabit() {
   const title = document.getElementById('h-title').value.trim();
   if (!title) { toast('Informe o nome','err'); return; }
-  const h = {
-    _localId: ++_habitId,
-    title,
-    emoji: document.getElementById('h-emoji').value || '○',
-    recurrence: document.getElementById('h-recurrence').value,
-    _done: false
-  };
-  allHabits.push(h);
-  toast('Hábito adicionado!');
-  closeModal('habitModal');
-  loadHabits();
+  const res = await api('habit_save','POST',{name:title});
+  if (res.ok) { toast('Hábito adicionado!'); closeModal('habitModal'); loadHabits(); }
+  else toast(res.error||'Erro','err');
 }
-function toggleHabit(id) {
-  const h = allHabits.find(x=>x._localId===id);
-  if (h) { h._done = !h._done; renderHabits(); renderStreak(); }
+async function toggleHabit(id) {
+  const today = toISODate(new Date());
+  const res = await api('habit_toggle','POST',{id, date: today});
+  if (res.ok) { loadHabits(); }
+  else toast(res.error||'Erro','err');
 }
-function deleteHabit(id) {
-  allHabits = allHabits.filter(x=>x._localId!==id);
-  loadHabits();
+async function deleteHabit(id) {
+  if (!confirm('Excluir?')) return;
+  const res = await api('habit_delete','POST',{id});
+  if (res.ok) { loadHabits(); }
+  else toast(res.error||'Erro','err');
 }
 
 // ===== TASKS =====
