@@ -930,7 +930,7 @@ body {
           </svg>
           <div class="streak-number">
             <span class="streak-num" id="streakNum">0</span>
-            <span class="streak-label">DIAS</span>
+            <span class="streak-label">HABITOS</span>
           </div>
         </div>
         <div class="streak-info">
