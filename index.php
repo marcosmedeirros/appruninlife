@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vida em Controle — Marcos</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230a0a0a' width='192' height='192'/%3E%3Crect x='28' y='36' width='136' height='128' rx='18' stroke='%23ffffff' stroke-width='8' fill='none'/%3E%3Crect x='28' y='56' width='136' height='26' fill='%231a1a1a'/%3E%3Cpath d='M56 28v20M136 28v20' stroke='%23ffffff' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M56 104l14 14L98 90' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M106 104l14 14L148 90' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
