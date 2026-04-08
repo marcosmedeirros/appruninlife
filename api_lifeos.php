@@ -48,6 +48,10 @@ function ensure_tables(PDO $pdo): void {
         CONSTRAINT fk_task_completion FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+    if (!column_exists($pdo, 'task_completions', 'created_at')) {
+        $pdo->exec("ALTER TABLE task_completions ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP AFTER done_date");
+    }
+
     if (!column_exists($pdo, 'task_completions', 'done_date')) {
         $pdo->exec("ALTER TABLE task_completions ADD COLUMN done_date DATE NOT NULL AFTER task_id");
         $pdo->exec("UPDATE task_completions SET done_date = DATE(created_at) WHERE done_date IS NULL OR done_date = '0000-00-00'");
