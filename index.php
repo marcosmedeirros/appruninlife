@@ -1685,6 +1685,7 @@ function renderTxnFull() {
 
 function renderOvTxns(txns) {
   const el = document.getElementById('ovTxnList');
+  if (!el) return;
   const recent = txns.slice(0,4);
   if (!recent.length) { el.innerHTML = '<div class="empty-state">Sem transações.</div>'; return; }
   el.innerHTML = recent.map(t=>{
@@ -1813,7 +1814,6 @@ async function loadGoals() {
   const res = await api('goals_list');
   allGoals = res.data||[];
   renderGoals();
-  renderOvGoals();
   document.getElementById('nb-metas').textContent = allGoals.length;
 }
 function renderGoals() {
@@ -1839,6 +1839,7 @@ function renderGoals() {
 }
 function renderOvGoals() {
   const el = document.getElementById('ovGoalList');
+  if (!el) return;
   if (!allGoals.length) { el.innerHTML='<div class="empty-state">Sem metas.</div>'; return; }
   el.innerHTML = allGoals.slice(0,3).map(g=>{
     const target = parseFloat(g.target_amount) || 0;
