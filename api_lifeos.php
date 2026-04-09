@@ -109,13 +109,17 @@ function ensure_tables(PDO $pdo): void {
         deadline DATE DEFAULT NULL,
         status TINYINT DEFAULT 0,
         color VARCHAR(20) DEFAULT '#10d9a0',
+        goal_term ENUM('short','long') DEFAULT 'short',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS habits (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        checked_dates TEXT
+        checked_dates TEXT,
+        recurrence ENUM('daily','weekly') DEFAULT 'daily',
+        recurrence_day INT DEFAULT NULL,
+        show_in_tasks TINYINT DEFAULT 0
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     if (!column_exists($pdo, 'goals', 'target_amount')) {
@@ -132,6 +136,18 @@ function ensure_tables(PDO $pdo): void {
     }
     if (!column_exists($pdo, 'goals', 'status')) {
         $pdo->exec("ALTER TABLE goals ADD COLUMN status TINYINT DEFAULT 0");
+    }
+    if (!column_exists($pdo, 'goals', 'goal_term')) {
+        $pdo->exec("ALTER TABLE goals ADD COLUMN goal_term ENUM('short','long') DEFAULT 'short'");
+    }
+    if (!column_exists($pdo, 'habits', 'recurrence')) {
+        $pdo->exec("ALTER TABLE habits ADD COLUMN recurrence ENUM('daily','weekly') DEFAULT 'daily'");
+    }
+    if (!column_exists($pdo, 'habits', 'recurrence_day')) {
+        $pdo->exec("ALTER TABLE habits ADD COLUMN recurrence_day INT DEFAULT NULL");
+    }
+    if (!column_exists($pdo, 'habits', 'show_in_tasks')) {
+        $pdo->exec("ALTER TABLE habits ADD COLUMN show_in_tasks TINYINT DEFAULT 0");
     }
 }
 
@@ -241,17 +257,37 @@ try {
     }
 
     if ($action === 'habits_list') {
-        $stmt = $pdo->query("SELECT id, name, checked_dates FROM habits ORDER BY id DESC");
+        $stmt = $pdo->query("SELECT id, name, checked_dates, recurrence, recurrence_day, show_in_tasks FROM habits ORDER BY id DESC");
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
 
     if ($action === 'habit_save') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
         $name = trim((string)($input['name'] ?? ''));
+        $recurrence = $input['recurrence'] ?? 'daily';
+        $recurrenceDay = isset($input['recurrence_day']) ? (int)$input['recurrence_day'] : null;
+        $showInTasks = !empty($input['show_in_tasks']) ? 1 : 0;
         if ($name === '') {
             json_response(['ok' => false, 'error' => 'Nome obrigatorio.'], 400);
         }
-        $stmt = $pdo->prepare("INSERT INTO habits (name, checked_dates) VALUES (?, '[]')");
-        $stmt->execute([$name]);
+        if (!in_array($recurrence, ['daily', 'weekly'], true)) {
+            $recurrence = 'daily';
+        }
+        if ($recurrence !== 'weekly') {
+            $recurrenceDay = null;
+        } else {
+            if ($recurrenceDay === null || $recurrenceDay < 1 || $recurrenceDay > 7) {
+                $recurrenceDay = 1;
+            }
+        }
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare("UPDATE habits SET name = ?, recurrence = ?, recurrence_day = ?, show_in_tasks = ? WHERE id = ?");
+            $stmt->execute([$name, $recurrence, $recurrenceDay, $showInTasks, $id]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO habits (name, checked_dates, recurrence, recurrence_day, show_in_tasks) VALUES (?, '[]', ?, ?, ?)");
+            $stmt->execute([$name, $recurrence, $recurrenceDay, $showInTasks]);
+        }
         json_response(['ok' => true]);
     }
 
@@ -470,7 +506,7 @@ try {
     }
 
     if ($action === 'goals_list') {
-        $stmt = $pdo->prepare("SELECT id, title, target_amount, current_amount, deadline, status, color FROM goals WHERE user_id = ? ORDER BY id DESC");
+        $stmt = $pdo->prepare("SELECT id, title, target_amount, current_amount, deadline, status, color, goal_term FROM goals WHERE user_id = ? ORDER BY id DESC");
         $stmt->execute([$userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
@@ -482,16 +518,20 @@ try {
         $current = isset($input['current_amount']) ? (float)$input['current_amount'] : 0;
         $deadline = $input['deadline'] ?? null;
         $color = $input['color'] ?? '#10d9a0';
+        $goalTerm = $input['goal_term'] ?? 'short';
         if ($title === '' || $target <= 0) {
             json_response(['ok' => false, 'error' => 'Campos invalidos.'], 400);
         }
+        if (!in_array($goalTerm, ['short', 'long'], true)) {
+            $goalTerm = 'short';
+        }
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE goals SET title = ?, target_amount = ?, current_amount = ?, deadline = ?, color = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([$title, $target, $current, $deadline ?: null, $color, $id, $userId]);
+            $stmt = $pdo->prepare("UPDATE goals SET title = ?, target_amount = ?, current_amount = ?, deadline = ?, color = ?, goal_term = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$title, $target, $current, $deadline ?: null, $color, $goalTerm, $id, $userId]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO goals (user_id, title, target_amount, current_amount, deadline, color) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$userId, $title, $target, $current, $deadline ?: null, $color]);
+            $stmt = $pdo->prepare("INSERT INTO goals (user_id, title, target_amount, current_amount, deadline, color, goal_term) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$userId, $title, $target, $current, $deadline ?: null, $color, $goalTerm]);
         }
         json_response(['ok' => true]);
     }

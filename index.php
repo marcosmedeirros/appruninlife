@@ -492,6 +492,16 @@ body {
   flex-direction: column;
   gap: 8px;
 }
+.task-day.is-today {
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+}
+.task-day.is-today .task-day-header {
+  background: var(--surface3);
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: var(--text);
+}
 .task-day-header {
   display: flex;
   align-items: center;
@@ -514,6 +524,12 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
+.task-row.habit {
+  border-style: dashed;
+}
+.task-row.habit .task-row-meta {
+  color: var(--yellow);
+}
 .task-row-meta {
   font-size: 10px;
   color: var(--muted);
@@ -526,6 +542,13 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 12px;
+}
+.task-mobile-card.is-today {
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+}
+.task-mobile-card.is-today .task-mobile-title {
+  color: var(--text);
 }
 .task-mobile-title {
   font-family: 'DM Mono', monospace;
@@ -693,6 +716,22 @@ body {
 .goal-title { flex: 1; font-size: 14px; font-weight: 500; }
 .goal-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
 .goal-row:hover .goal-actions { opacity: 1; }
+.goals-split-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .goals-split-grid { grid-template-columns: 1fr; }
+}
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted2);
+}
+.form-check input { width: 16px; height: 16px; }
 
 /* ===== BUTTONS ===== */
 .btn {
@@ -1084,8 +1123,19 @@ body {
         <div class="section-title">METAS</div>
         <button class="btn btn-primary" onclick="openGoalModal()">+ Nova Meta</button>
       </div>
-      <div class="goals-list" id="goalsGrid">
-        <div class="empty-state">Nenhuma meta cadastrada.</div>
+      <div class="goals-split-grid">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">CURTO PRAZO</div>
+          <div class="goals-list" id="goalsShort">
+            <div class="empty-state">Sem metas de curto prazo.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px">LONGO PRAZO</div>
+          <div class="goals-list" id="goalsLong">
+            <div class="empty-state">Sem metas de longo prazo.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1116,10 +1166,29 @@ body {
 <!-- ===== MODAL: HABIT ===== -->
 <div class="modal-overlay" id="habitModal">
   <div class="modal">
-    <div class="modal-title">Novo Hábito</div>
+    <div class="modal-title" id="habitModalTitle">Novo Hábito</div>
     <div class="form-group">
       <label class="form-label">NOME</label>
       <input type="text" id="h-title" class="form-control" placeholder="Ex: Tomar remédio, Meditar…">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">FREQUÊNCIA</label>
+        <select id="h-recurrence" class="form-control" onchange="toggleHabitRecurrence()">
+          <option value="daily">Diário</option>
+          <option value="weekly">Semanal</option>
+        </select>
+      </div>
+      <div class="form-group" id="h-recday-group" style="display:none">
+        <label class="form-label">DIA DA SEMANA</label>
+        <select id="h-recday" class="form-control"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-check">
+        <input type="checkbox" id="h-show-tasks">
+        Mostrar em tarefas
+      </label>
     </div>
     <input type="hidden" id="h-id">
     <div class="form-actions">
@@ -1256,6 +1325,13 @@ body {
       <div class="form-group">
         <label class="form-label">PRAZO</label>
         <input type="date" id="g-deadline" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">TIPO</label>
+        <select id="g-term" class="form-control">
+          <option value="short">Curto prazo</option>
+          <option value="long">Longo prazo</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">COR</label>
@@ -1436,14 +1512,22 @@ async function loadHabits() {
   allHabits = (res.data || []).map(h => {
     let dates = [];
     try { dates = JSON.parse(h.checked_dates || '[]'); } catch (e) { dates = []; }
+    const rec = h.recurrence || 'daily';
+    const recDay = parseInt(h.recurrence_day || 0, 10) || null;
+    const showInTasks = parseInt(h.show_in_tasks || 0, 10) === 1;
     return {
       id: h.id,
       title: h.name,
-      _done: Array.isArray(dates) && dates.includes(today)
+      _done: Array.isArray(dates) && dates.includes(today),
+      _dates: Array.isArray(dates) ? dates : [],
+      _recurrence: rec,
+      _recurrence_day: recDay,
+      _show_in_tasks: showInTasks
     };
   });
   renderHabits();
   renderStreak();
+  renderTasks();
 }
 
 function renderHabits() {
@@ -1457,24 +1541,50 @@ function renderHabits() {
       <div class="habit-check">${h._done?'✓':''}</div>
       <div class="habit-info">
         <div class="habit-name">${esc(h.title)}</div>
+        <div class="habit-meta">${habitRecLabel(h)}${h._show_in_tasks ? ' · Em tarefas' : ''}</div>
       </div>
       <div class="habit-actions">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editHabit(${h.id})">✏</button>
         <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h.id})">✕</button>
       </div>
     </div>
   `).join('');
 }
 
-function openHabitModal() {
-  document.getElementById('h-id').value = '';
-  document.getElementById('h-title').value = '';
+function openHabitModal(editData=null) {
+  document.getElementById('h-id').value = editData?.id || '';
+  document.getElementById('h-title').value = editData?.title || '';
+  document.getElementById('h-recurrence').value = editData?._recurrence || 'daily';
+  document.getElementById('h-show-tasks').checked = !!editData?._show_in_tasks;
+  toggleHabitRecurrence(editData?._recurrence_day || null);
+  document.getElementById('habitModalTitle').textContent = editData ? 'Editar Hábito' : 'Novo Hábito';
   openModal('habitModal');
+}
+function editHabit(id) { const h = allHabits.find(x=>x.id==id); if (h) openHabitModal(h); }
+function toggleHabitRecurrence(selected=null) {
+  const rec = document.getElementById('h-recurrence').value;
+  const group = document.getElementById('h-recday-group');
+  const sel = document.getElementById('h-recday');
+  group.style.display = rec === 'weekly' ? 'block' : 'none';
+  if (rec !== 'weekly') return;
+  const pick = selected || dayIndexFromDate(new Date());
+  sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
+    `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
 }
 async function saveHabit() {
   const title = document.getElementById('h-title').value.trim();
   if (!title) { toast('Informe o nome','err'); return; }
-  const res = await api('habit_save','POST',{name:title});
-  if (res.ok) { toast('Hábito adicionado!'); closeModal('habitModal'); loadHabits(); }
+  const rec = document.getElementById('h-recurrence').value;
+  const recDay = document.getElementById('h-recday').value;
+  const body = {
+    id: document.getElementById('h-id').value,
+    name: title,
+    recurrence: rec,
+    recurrence_day: rec === 'weekly' ? recDay : null,
+    show_in_tasks: document.getElementById('h-show-tasks').checked ? 1 : 0
+  };
+  const res = await api('habit_save','POST',body);
+  if (res.ok) { toast('Hábito salvo!'); closeModal('habitModal'); loadHabits(); }
   else toast(res.error||'Erro','err');
 }
 async function toggleHabit(id) {
@@ -1504,6 +1614,38 @@ async function loadTasks() {
   document.getElementById('nb-tarefas').textContent = allTasks.length;
 }
 
+function habitAppliesToDate(h, dateObj) {
+  if (!h) return false;
+  if (h._recurrence === 'daily') return true;
+  if (h._recurrence === 'weekly') {
+    return parseInt(h._recurrence_day || 0, 10) === dayIndexFromDate(dateObj);
+  }
+  return false;
+}
+
+function habitDoneOnDate(h, dateObj) {
+  const iso = toISODate(dateObj);
+  return Array.isArray(h._dates) && h._dates.includes(iso);
+}
+
+function habitRecLabel(h) {
+  if (h._recurrence === 'weekly') {
+    const dayLabel = DAYS_WEEK[h._recurrence_day] || '—';
+    return `Semanal · ${dayLabel}`;
+  }
+  return 'Diário';
+}
+
+function renderDayEntry(entry, todayISO) {
+  if (entry.kind === 'habit') return habitRowHTML(entry.habit, entry.date, todayISO);
+  return taskRowHTML(entry.task, entry.date, todayISO);
+}
+
+function renderMobileEntry(entry) {
+  if (entry.kind === 'habit') return habitMobileItemHTML(entry.habit, entry.date);
+  return taskMobileItemHTML(entry.task);
+}
+
 function renderTasks() {
   const el = document.getElementById('taskSections');
   const today = new Date();
@@ -1528,32 +1670,41 @@ function renderTasks() {
   const dayBuckets = weekDates.map(() => []);
   const outOfWeek = [];
 
+  const habitsForTasks = allHabits.filter(h => h._show_in_tasks);
+  habitsForTasks.forEach(h => {
+    weekDates.forEach((d, i) => {
+      if (habitAppliesToDate(h, d)) {
+        dayBuckets[i].push({ kind: 'habit', habit: h, date: d });
+      }
+    });
+  });
+
   allTasks.forEach(t => {
     const rec = t.recurrence || 'weekly';
     if (rec === 'daily') {
-      dayBuckets.forEach((list, i) => list.push({ task: t, date: weekDates[i] }));
+      dayBuckets.forEach((list, i) => list.push({ kind: 'task', task: t, date: weekDates[i] }));
       return;
     }
     if (rec === 'weekly') {
       const idx = Math.max(1, getRecurrenceDay(t) || 1) - 1;
-      if (idx >= 0 && idx < 7) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+      if (idx >= 0 && idx < 7) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
       return;
     }
     if (rec === 'monthly') {
       const dayNum = getRecurrenceDay(t) || today.getDate();
       const idx = weekDates.findIndex(d => d.getDate() === dayNum);
-      if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+      if (idx >= 0) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
       else outOfWeek.push(t);
       return;
     }
     if (rec === 'once') {
       if (t.due_date) {
         const idx = weekDates.findIndex(d => toISODate(d) === t.due_date);
-        if (idx >= 0) dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+        if (idx >= 0) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
         else outOfWeek.push(t);
       } else {
         const idx = dayIndexFromDate(today) - 1;
-        dayBuckets[idx].push({ task: t, date: weekDates[idx] });
+        dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
       }
     }
   });
@@ -1561,8 +1712,9 @@ function renderTasks() {
   const grid = `<div class="task-week-wrap"><div class="task-week-grid">${weekDates.map((d, i) => {
     const dayLabel = DAYS_WEEK[i + 1] || '';
     const list = dayBuckets[i];
-    const items = list.length ? list.map(entry => taskRowHTML(entry.task, entry.date, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
-    return `<div class="task-day">
+    const items = list.length ? list.map(entry => renderDayEntry(entry, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+    const isToday = toISODate(d) === todayISO;
+    return `<div class="task-day${isToday ? ' is-today' : ''}">
       <div class="task-day-header"><strong>${dayLabel}</strong></div>
       <div class="task-day-list">${items}</div>
     </div>`;
@@ -1571,8 +1723,9 @@ function renderTasks() {
     const mobile = `<div class="task-mobile-list">${weekDates.map((d, i) => {
       const dayLabel = DAYS_WEEK[i + 1] || '';
       const list = dayBuckets[i];
-      const items = list.length ? list.map(entry => taskMobileItemHTML(entry.task)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
-      return `<div class="task-mobile-card">
+      const items = list.length ? list.map(entry => renderMobileEntry(entry)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+      const isToday = toISODate(d) === todayISO;
+      return `<div class="task-mobile-card${isToday ? ' is-today' : ''}">
         <div class="task-mobile-title">${dayLabel}<span class="task-mobile-count">${list.length}</span></div>
         <div class="task-mobile-items">${items}</div>
       </div>`;
@@ -1589,6 +1742,17 @@ function taskMobileItemHTML(t) {
     <div class="task-mobile-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
       <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
+    </div>
+  </div>`;
+}
+
+function habitMobileItemHTML(h, dateObj) {
+  const iso = toISODate(dateObj);
+  const done = habitDoneOnDate(h, dateObj);
+  return `<div class="task-mobile-item habit${done ? ' done' : ''}">
+    <div class="task-mobile-item-title">${esc(h.title)}</div>
+    <div class="task-mobile-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="toggleHabitForDate(${h.id}, '${iso}')">${done ? '✓' : '○'}</button>
     </div>
   </div>`;
 }
@@ -1614,6 +1778,27 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
       <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
     </div>
   </div>`;
+}
+
+function habitRowHTML(h, dateObj, todayISO) {
+  const done = habitDoneOnDate(h, dateObj);
+  const iso = toISODate(dateObj);
+  const meta = `<div class="task-row-meta">Hábito · ${habitRecLabel(h)}</div>`;
+  return `<div class="task-row habit${done ? ' done' : ''}" onclick="toggleHabitForDate(${h.id}, '${iso}')">
+    <div class="task-title">
+      <div>${esc(h.title)}</div>
+      ${meta}
+    </div>
+    <div class="task-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();toggleHabitForDate(${h.id}, '${iso}')">${done ? '✓' : '○'}</button>
+    </div>
+  </div>`;
+}
+
+async function toggleHabitForDate(id, dateISO) {
+  const res = await api('habit_toggle','POST',{id, date: dateISO});
+  if (res.ok) { loadHabits(); }
+  else toast(res.error || 'Erro', 'err');
 }
 
 async function toggleTask(id) {
@@ -1875,15 +2060,22 @@ async function loadGoals() {
   document.getElementById('nb-metas').textContent = allGoals.length;
 }
 function renderGoals() {
-  const el = document.getElementById('goalsGrid');
-  if (!allGoals.length) { el.innerHTML='<div class="empty-state">Nenhuma meta cadastrada.</div>'; return; }
+  const shortEl = document.getElementById('goalsShort');
+  const longEl = document.getElementById('goalsLong');
+  if (!allGoals.length) {
+    shortEl.innerHTML = '<div class="empty-state">Sem metas de curto prazo.</div>';
+    longEl.innerHTML = '<div class="empty-state">Sem metas de longo prazo.</div>';
+    return;
+  }
   const ordered = [...allGoals].sort((a,b)=>{
     const ad = parseInt(a.status || 0, 10);
     const bd = parseInt(b.status || 0, 10);
     if (ad !== bd) return ad - bd;
     return b.id - a.id;
   });
-  el.innerHTML = ordered.map(g=>{
+  const shortGoals = ordered.filter(g => (g.goal_term || 'short') === 'short');
+  const longGoals = ordered.filter(g => (g.goal_term || 'short') === 'long');
+  shortEl.innerHTML = shortGoals.length ? shortGoals.map(g=>{
     const done = parseInt(g.status || 0, 10) === 1;
     return `<div class="goal-row${done ? ' done' : ''}">
       <div class="goal-check" onclick="toggleGoal(${g.id})">${done ? '✓' : ''}</div>
@@ -1893,7 +2085,18 @@ function renderGoals() {
         <button class="btn btn-danger btn-icon btn-sm" onclick="deleteGoal(${g.id})">✕</button>
       </div>
     </div>`;
-  }).join('');
+  }).join('') : '<div class="empty-state">Sem metas de curto prazo.</div>';
+  longEl.innerHTML = longGoals.length ? longGoals.map(g=>{
+    const done = parseInt(g.status || 0, 10) === 1;
+    return `<div class="goal-row${done ? ' done' : ''}">
+      <div class="goal-check" onclick="toggleGoal(${g.id})">${done ? '✓' : ''}</div>
+      <div class="goal-title">${esc(g.title)}</div>
+      <div class="goal-actions">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="editGoal(${g.id})">✏</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="deleteGoal(${g.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">Sem metas de longo prazo.</div>';
 }
 function renderOvGoals() {
   const el = document.getElementById('ovGoalList');
@@ -1920,6 +2123,7 @@ function openGoalModal(editData=null) {
   document.getElementById('g-target').value=editData?.target_amount||'';
   document.getElementById('g-current').value=editData?.current_amount||'';
   document.getElementById('g-deadline').value=editData?.deadline||'';
+  document.getElementById('g-term').value=editData?.goal_term||'short';
   const color=editData?.color||'#10d9a0';
   document.getElementById('g-color').value=color;
   buildColorRow('goalColorRow',color,c=>document.getElementById('g-color').value=c);
@@ -1935,7 +2139,7 @@ async function saveGoal() {
   const title=document.getElementById('g-title').value.trim();
   const target=parseFloat(document.getElementById('g-target').value);
   if (!title||!target) { toast('Preencha título e valor','err'); return; }
-  const body={id:document.getElementById('g-id').value,title,target_amount:target,current_amount:parseFloat(document.getElementById('g-current').value)||0,deadline:document.getElementById('g-deadline').value||null,color:document.getElementById('g-color').value};
+  const body={id:document.getElementById('g-id').value,title,target_amount:target,current_amount:parseFloat(document.getElementById('g-current').value)||0,deadline:document.getElementById('g-deadline').value||null,color:document.getElementById('g-color').value,goal_term:document.getElementById('g-term').value};
   const res=await api('goal_save','POST',body);
   if (res.ok) { toast('Meta salva!'); closeModal('goalModal'); loadGoals(); }
   else toast(res.error||'Erro','err');
@@ -1981,8 +2185,8 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 async function init() {
   initDates();
   await loadCats();
-  await Promise.all([loadTasks(), loadFinance(), loadGoals()]);
   await loadHabits();
+  await Promise.all([loadTasks(), loadFinance(), loadGoals()]);
 }
 init();
 </script>

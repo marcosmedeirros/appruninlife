@@ -29,9 +29,9 @@ try {
     $tables = [
         "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100), email VARCHAR(100), password_hash VARCHAR(255))",
         "CREATE TABLE IF NOT EXISTS activities (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), day_date DATE, status TINYINT DEFAULT 0)",
-        "CREATE TABLE IF NOT EXISTS habits (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), checked_dates TEXT)",
+        "CREATE TABLE IF NOT EXISTS habits (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), checked_dates TEXT, recurrence ENUM('daily','weekly') DEFAULT 'daily', recurrence_day INT DEFAULT NULL, show_in_tasks TINYINT DEFAULT 0)",
         "CREATE TABLE IF NOT EXISTS workouts (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, name VARCHAR(255), workout_date DATE, done TINYINT DEFAULT 0)",
-        "CREATE TABLE IF NOT EXISTS goals (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), difficulty ENUM('facil','media','dificil') DEFAULT 'media', status TINYINT DEFAULT 0, goal_type ENUM('geral','anual','mensal') DEFAULT 'geral', completed_at DATETIME DEFAULT NULL)",
+        "CREATE TABLE IF NOT EXISTS goals (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), difficulty ENUM('facil','media','dificil') DEFAULT 'media', status TINYINT DEFAULT 0, goal_type ENUM('geral','anual','mensal') DEFAULT 'geral', target_amount DECIMAL(10,2) DEFAULT 0, current_amount DECIMAL(10,2) DEFAULT 0, deadline DATE DEFAULT NULL, color VARCHAR(20) DEFAULT '#10d9a0', goal_term ENUM('short','long') DEFAULT 'short', completed_at DATETIME DEFAULT NULL)",
         "CREATE TABLE IF NOT EXISTS finances (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, type ENUM('income','expense'), amount DECIMAL(10,2), description VARCHAR(255), created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
         "CREATE TABLE IF NOT EXISTS events (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, title VARCHAR(255), start_date DATETIME, description TEXT)",
         "CREATE TABLE IF NOT EXISTS routine_items (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT DEFAULT 1, routine_time TIME NOT NULL, activity VARCHAR(255) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
