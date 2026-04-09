@@ -333,6 +333,16 @@ body {
 
 /* ===== HABIT LIST ===== */
 .habit-list { display: flex; flex-direction: column; gap: 8px; }
+.habit-section { display: flex; flex-direction: column; gap: 8px; }
+.habit-section + .habit-section { margin-top: 16px; }
+.habit-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin: 4px 0 6px;
+}
 
 .habit-item {
   display: flex;
@@ -1417,6 +1427,7 @@ body {
       <div class="form-group">
         <label class="form-label">RECORRENCIA</label>
         <select id="e-recurrence" class="form-control" onchange="toggleEventRecurrence()">
+          <option value="none">Sem recorrencia</option>
           <option value="daily">Diario</option>
           <option value="weekly">Semanal</option>
           <option value="monthly">Mensal</option>
@@ -1745,7 +1756,10 @@ function renderHabits() {
     el.innerHTML = '<div class="empty-state">Nenhum hábito cadastrado.</div>';
     return;
   }
-  el.innerHTML = allHabits.map(h => `
+  const daily = allHabits.filter(h => h._recurrence !== 'weekly');
+  const weekly = allHabits.filter(h => h._recurrence === 'weekly');
+
+  const renderHabitItem = h => `
     <div class="habit-item${h._done?' done':''}" onclick="toggleHabit(${h.id})">
       <div class="habit-check">${h._done?'✓':''}</div>
       <div class="habit-info">
@@ -1757,7 +1771,22 @@ function renderHabits() {
         <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h.id})">✕</button>
       </div>
     </div>
-  `).join('');
+  `;
+
+  const dailyBlock = `
+    <div class="habit-section">
+      <div class="habit-section-title">Diario</div>
+      ${daily.length ? daily.map(renderHabitItem).join('') : '<div class="empty-state" style="padding:12px 0">Sem habitos diarios.</div>'}
+    </div>
+  `;
+  const weeklyBlock = `
+    <div class="habit-section">
+      <div class="habit-section-title">Semanal</div>
+      ${weekly.length ? weekly.map(renderHabitItem).join('') : '<div class="empty-state" style="padding:12px 0">Sem habitos semanais.</div>'}
+    </div>
+  `;
+
+  el.innerHTML = dailyBlock + weeklyBlock;
 }
 
 function openHabitModal(editData=null) {
@@ -2104,6 +2133,7 @@ function setSelectedEventDate(dateISO) {
 function eventAppliesToDate(ev, dateObj) {
   if (!ev || !ev.start_date) return false;
   const dateISO = toISODate(dateObj);
+  if (ev.recurrence === 'none') return dateISO === ev.start_date;
   if (dateISO < ev.start_date) return false;
   const dayIndex = dayIndexFromDate(dateObj);
   if (ev.recurrence === 'daily') {
@@ -2153,6 +2183,7 @@ function renderEventCalendar() {
 }
 
 function eventRecLabel(ev) {
+  if (ev.recurrence === 'none') return 'Sem recorrencia';
   if (ev.recurrence === 'daily') {
     const days = Array.isArray(ev.days) ? ev.days.map(d => DAYS_WEEK_SHORT[d]).filter(Boolean) : [];
     return days.length ? `Diario: ${days.join(', ')}` : 'Diario';
@@ -2195,7 +2226,7 @@ function openEventModal(editData=null) {
   document.getElementById('e-id').value = editData?.id || '';
   document.getElementById('e-title').value = editData?.title || '';
   document.getElementById('e-date').value = editData?.start_date || toISODate(new Date());
-  document.getElementById('e-recurrence').value = editData?.recurrence || 'daily';
+  document.getElementById('e-recurrence').value = editData?.recurrence || 'none';
   buildEventDays(editData?.days || []);
   toggleEventRecurrence();
   document.getElementById('eventModalTitle').textContent = editData ? 'Editar Evento' : 'Novo Evento';
