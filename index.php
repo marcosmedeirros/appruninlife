@@ -1460,6 +1460,7 @@ function switchTab(tab) {
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
   if (tab==='habitos') loadHabits();
+  if (tab==='tarefas') loadTasks();
   if (tab==='financas') loadFinance();
   if (tab==='metas') loadGoals();
 }
