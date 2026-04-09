@@ -1208,14 +1208,7 @@ body {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">RECORRÊNCIA</label>
-        <select id="t-recurrence" class="form-control" onchange="toggleRecDay()">
-            <option value="daily">Todo dia</option>
-          <option value="weekly">Toda semana</option>
-          <option value="monthly">Todo mês</option>
-        </select>
-      </div>
-      <div class="form-group" id="t-recday-group">
+        <label class="form-label">DIA DA SEMANA</label>
         <label class="form-label" id="t-recday-label">DIA DA SEMANA</label>
         <select id="t-recday" class="form-control"></select>
       </div>
@@ -1805,41 +1798,28 @@ async function toggleTask(id) {
 function openTaskModal(editData=null) {
   document.getElementById('t-id').value = editData?.id||'';
   document.getElementById('t-title').value = editData?.title||'';
-  const rec = editData?.recurrence === 'once' ? 'weekly' : (editData?.recurrence||'weekly');
-  document.getElementById('t-recurrence').value = rec;
   toggleRecDay(editData?.recurrence_day);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Tarefa' : 'Nova Tarefa';
   openModal('taskModal');
 }
 function editTask(id) { const t = allTasks.find(x=>x.id==id); if(t) openTaskModal(t); }
 function toggleRecDay(selected=null) {
-  const rec = document.getElementById('t-recurrence').value;
   const sel = document.getElementById('t-recday');
   const label = document.getElementById('t-recday-label');
-  const recGroup = document.getElementById('t-recday-group');
-  recGroup.style.display = (rec === 'weekly' || rec === 'monthly') ? 'block' : 'none';
-  if (rec === 'daily') return;
-  if (rec==='monthly') {
-    label.textContent = 'DIA DO MÊS';
-    const pick = selected || new Date().getDate();
-    sel.innerHTML = Array.from({length:31},(_,i)=>`<option value="${i+1}" ${pick==i+1?'selected':''}>${i+1}</option>`).join('');
-  } else {
-    label.textContent = 'DIA DA SEMANA';
-    const pick = selected || dayIndexFromDate(new Date());
-    sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
-      `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
-  }
+  label.textContent = 'DIA DA SEMANA';
+  const pick = selected || dayIndexFromDate(new Date());
+  sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
+    `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
 }
 async function saveTask() {
   const title = document.getElementById('t-title').value.trim();
   if (!title) { toast('Informe o título','err'); return; }
-  const rec = document.getElementById('t-recurrence').value;
   const recDay = document.getElementById('t-recday').value;
   const body = {
     id: document.getElementById('t-id').value,
     title,
-    recurrence: rec,
-    recurrence_day: (rec === 'weekly' || rec === 'monthly') ? recDay : null,
+    recurrence: 'weekly',
+    recurrence_day: recDay,
     color: '#ffffff',
     due_date: null
   };
