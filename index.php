@@ -1208,7 +1208,6 @@ body {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">DIA DA SEMANA</label>
         <label class="form-label" id="t-recday-label">DIA DA SEMANA</label>
         <select id="t-recday" class="form-control"></select>
       </div>
