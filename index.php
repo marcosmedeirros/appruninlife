@@ -659,6 +659,39 @@ body {
   gap: 6px;
   min-width: 560px;
 }
+.calendar-mobile-list {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.calendar-mobile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.calendar-mobile-row.is-selected {
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset;
+}
+.calendar-mobile-day {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 70px;
+}
+.calendar-mobile-events {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 .calendar-day {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -1095,8 +1128,9 @@ body {
   .goal-row { gap: 10px; }
   .modal { border-radius: 16px; }
   .bottom-nav { height: 64px; }
-  .calendar-weekdays { min-width: 560px; }
-  .calendar-grid { min-width: 560px; }
+  .calendar-weekdays { display: none; }
+  .calendar-grid { display: none; }
+  .calendar-mobile-list { display: flex; }
   .event-days { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 901px) {
@@ -1245,6 +1279,7 @@ body {
           </div>
           <div class="calendar-weekdays" id="eventWeekdays"></div>
           <div class="calendar-grid" id="eventCalendar"></div>
+          <div class="calendar-mobile-list" id="eventCalendarMobile"></div>
         </div>
         <div class="event-list">
           <div class="event-list-title" id="eventListTitle">Eventos do dia</div>
@@ -2147,6 +2182,7 @@ function getEventsForDate(dateObj) {
 
 function renderEventCalendar() {
   const grid = document.getElementById('eventCalendar');
+  const mobile = document.getElementById('eventCalendarMobile');
   if (!grid) return;
   const year = eventMonth.getFullYear();
   const month = eventMonth.getMonth();
@@ -2176,6 +2212,26 @@ function renderEventCalendar() {
       </div>
     `;
   }).join('');
+
+  if (!mobile) return;
+  const monthDays = new Date(year, month + 1, 0).getDate();
+  const rows = Array.from({ length: monthDays }, (_, i) => {
+    const d = new Date(year, month, i + 1);
+    const iso = toISODate(d);
+    const isSelected = iso === selectedEventDate;
+    const events = getEventsForDate(d);
+    const chips = events.slice(0, 2).map(ev => `<div class="event-chip" title="${esc(ev.title)}">${esc(ev.title)}</div>`).join('');
+    const more = events.length > 2 ? `<div class="event-chip more">+${events.length - 2}</div>` : '';
+    const dayLabel = `${String(d.getDate()).padStart(2,'0')} ${DAYS_WEEK_SHORT[dayIndexFromDate(d)]}`;
+    const empty = events.length ? '' : '<div class="event-chip more">Sem eventos</div>';
+    return `
+      <div class="calendar-mobile-row${isSelected ? ' is-selected' : ''}" onclick="setSelectedEventDate('${iso}')">
+        <div class="calendar-mobile-day">${dayLabel}</div>
+        <div class="calendar-mobile-events">${chips}${more}${empty}</div>
+      </div>
+    `;
+  });
+  mobile.innerHTML = rows.join('');
 }
 
 function eventRecLabel(ev) {
