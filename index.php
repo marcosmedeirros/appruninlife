@@ -2001,15 +2001,9 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
   const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
   const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
-  const recLabel = t.recurrence === 'daily' ? 'Diaria' :
-    t.recurrence === 'weekly' ? 'Semanal' :
-    t.recurrence === 'monthly' ? 'Mensal' :
-    t.recurrence === 'once' ? 'Sem repetir' : 'Semanal';
-  const meta = `<div class="task-row-meta">${recLabel}</div>`;
   return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
     <div class="task-title">
       <div>${esc(t.title)}</div>
-      ${meta}
     </div>
     <div class="task-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
