@@ -1213,7 +1213,6 @@ body {
             <option value="daily">Todo dia</option>
           <option value="weekly">Toda semana</option>
           <option value="monthly">Todo mês</option>
-          <option value="once">Não repetir</option>
         </select>
       </div>
       <div class="form-group" id="t-recday-group">
@@ -1221,10 +1220,6 @@ body {
         <select id="t-recday" class="form-control"></select>
       </div>
     </div>
-      <div class="form-group" id="t-once-group" style="display:none">
-        <label class="form-label">DATA</label>
-        <input type="date" id="t-once-date" class="form-control">
-      </div>
     <input type="hidden" id="t-id">
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('taskModal')">Cancelar</button>
@@ -1810,9 +1805,8 @@ async function toggleTask(id) {
 function openTaskModal(editData=null) {
   document.getElementById('t-id').value = editData?.id||'';
   document.getElementById('t-title').value = editData?.title||'';
-  const rec = editData?.recurrence||'weekly';
+  const rec = editData?.recurrence === 'once' ? 'weekly' : (editData?.recurrence||'weekly');
   document.getElementById('t-recurrence').value = rec;
-  document.getElementById('t-once-date').value = editData?.due_date || '';
   toggleRecDay(editData?.recurrence_day);
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Tarefa' : 'Nova Tarefa';
   openModal('taskModal');
@@ -1823,11 +1817,8 @@ function toggleRecDay(selected=null) {
   const sel = document.getElementById('t-recday');
   const label = document.getElementById('t-recday-label');
   const recGroup = document.getElementById('t-recday-group');
-  const onceGroup = document.getElementById('t-once-group');
   recGroup.style.display = (rec === 'weekly' || rec === 'monthly') ? 'block' : 'none';
-  onceGroup.style.display = rec === 'once' ? 'block' : 'none';
   if (rec === 'daily') return;
-  if (rec === 'once') return;
   if (rec==='monthly') {
     label.textContent = 'DIA DO MÊS';
     const pick = selected || new Date().getDate();
@@ -1844,14 +1835,13 @@ async function saveTask() {
   if (!title) { toast('Informe o título','err'); return; }
   const rec = document.getElementById('t-recurrence').value;
   const recDay = document.getElementById('t-recday').value;
-  const dueDate = rec === 'once' ? document.getElementById('t-once-date').value : null;
   const body = {
     id: document.getElementById('t-id').value,
     title,
     recurrence: rec,
     recurrence_day: (rec === 'weekly' || rec === 'monthly') ? recDay : null,
     color: '#ffffff',
-    due_date: rec === 'once' ? dueDate : null
+    due_date: null
   };
   const res = await api('task_save','POST',body);
   if (res.ok) { toast('Salvo!'); closeModal('taskModal'); loadTasks(); }
