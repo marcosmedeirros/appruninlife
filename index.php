@@ -585,6 +585,147 @@ body {
 .task-row:hover .task-actions { opacity: 1; }
 .task-item:hover .task-actions { opacity: 1; }
 
+/* ===== EVENTS ===== */
+.events-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+}
+.calendar-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.calendar-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calendar-nav button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+}
+.calendar-month {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.calendar-weekdays div {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.calendar-day {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-height: 88px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+.calendar-day.outside { opacity: 0.45; }
+.calendar-day.is-today { border-color: rgba(255,255,255,0.3); }
+.calendar-day.is-selected { box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset; }
+.calendar-day-number {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+.calendar-day-number strong { color: var(--text); }
+.event-chip {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--surface3);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-chip.more { background: transparent; color: var(--muted); }
+.event-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.event-list-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.event-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.event-item-title { font-size: 13px; }
+.event-item-meta { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 4px; }
+.event-item-actions { display: flex; gap: 6px; }
+.event-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.event-day-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+}
+.event-day-check input { accent-color: #ffffff; }
+
 /* ===== TRANSACTIONS ===== */
 .txn-list { display: flex; flex-direction: column; gap: 6px; }
 .txn-item {
@@ -909,6 +1050,7 @@ body {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .content-grid { grid-template-columns: 1fr; }
   .fin-grid { grid-template-columns: 1fr; }
+  .events-layout { grid-template-columns: 1fr; }
   .fin-section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .task-week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .section-header { flex-direction: column; align-items: flex-start; }
@@ -941,6 +1083,9 @@ body {
   .goal-row { gap: 10px; }
   .modal { border-radius: 16px; }
   .bottom-nav { height: 64px; }
+  .calendar-weekdays { grid-template-columns: repeat(2, 1fr); }
+  .calendar-grid { grid-template-columns: repeat(2, 1fr); }
+  .event-days { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 901px) {
   .main { padding-bottom: 80px; }
@@ -976,6 +1121,10 @@ body {
         <span class="nav-icon">≡</span>
         <span class="nav-label">Tarefas</span>
         <span class="nav-badge" id="nb-tarefas">—</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('eventos')" id="nav-eventos">
+        <span class="nav-icon">✶</span>
+        <span class="nav-label">Eventos</span>
       </div>
       <div class="nav-item" onclick="switchTab('financas')" id="nav-financas">
         <span class="nav-icon">◫</span>
@@ -1066,6 +1215,34 @@ body {
       </div>
     </div>
 
+    <!-- ===== EVENTOS ===== -->
+    <div class="panel" id="panel-eventos">
+      <div class="section-header">
+        <div class="section-title">EVENTOS</div>
+        <button class="btn btn-primary" onclick="openEventModal()">+ Novo Evento</button>
+      </div>
+      <div class="events-layout">
+        <div class="calendar-wrap">
+          <div class="calendar-header">
+            <div class="calendar-title">Calendario</div>
+            <div class="calendar-nav">
+              <button onclick="changeEventMonth(-1)">‹</button>
+              <span class="calendar-month" id="eventMonthLabel">—</span>
+              <button onclick="changeEventMonth(1)">›</button>
+            </div>
+          </div>
+          <div class="calendar-weekdays" id="eventWeekdays"></div>
+          <div class="calendar-grid" id="eventCalendar"></div>
+        </div>
+        <div class="event-list">
+          <div class="event-list-title" id="eventListTitle">Eventos do dia</div>
+          <div id="eventDayList">
+            <div class="empty-state">Sem eventos.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== FINANÇAS ===== -->
     <div class="panel" id="panel-financas">
       <div class="fin-section-header">
@@ -1153,6 +1330,10 @@ body {
     <span class="bottom-nav-icon">≡</span>
     <span class="bottom-nav-label">Tarefas</span>
   </button>
+  <button class="bottom-nav-item" onclick="switchTab('eventos')" id="bn-eventos">
+    <span class="bottom-nav-icon">✶</span>
+    <span class="bottom-nav-label">Eventos</span>
+  </button>
   <button class="bottom-nav-item" onclick="switchTab('financas')" id="bn-financas">
     <span class="bottom-nav-icon">◫</span>
     <span class="bottom-nav-label">Finanças</span>
@@ -1216,6 +1397,40 @@ body {
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('taskModal')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTask()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: EVENT ===== -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <div class="modal-title" id="eventModalTitle">Novo Evento</div>
+    <div class="form-group">
+      <label class="form-label">TITULO</label>
+      <input type="text" id="e-title" class="form-control" placeholder="Ex: Reuniao, Consulta">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">DATA INICIAL</label>
+        <input type="date" id="e-date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">RECORRENCIA</label>
+        <select id="e-recurrence" class="form-control" onchange="toggleEventRecurrence()">
+          <option value="daily">Diario</option>
+          <option value="weekly">Semanal</option>
+          <option value="monthly">Mensal</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" id="e-daily-group" style="display:none">
+      <label class="form-label">DIAS DA SEMANA</label>
+      <div class="event-days" id="e-daily-days"></div>
+    </div>
+    <input type="hidden" id="e-id">
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('eventModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1369,14 +1584,19 @@ body {
 // ===== CONFIG =====
 const COLORS = ['#10d9a0','#4da6ff','#a78bfa','#f5c842','#ff4d6d','#fb923c','#e879f9','#34d399','#f87171','#ffffff'];
 const DAYS_WEEK = ['','Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+const DAYS_WEEK_SHORT = ['','Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
 const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const STREAK_DAYS = 7; // configurable
+const EVENT_STORAGE_KEY = 'lifeos_events_v1';
 
 let allTasks = [], allTxns = [], allCats = [], allGoals = [];
 let allHabits = [];
+let allEvents = [];
 let finFilter = 'all';
 let currentMonth = new Date();
+let eventMonth = new Date();
+let selectedEventDate = toISODate(new Date());
 
 // ===== UTILS =====
 function fmtBRL(v) {
@@ -1448,6 +1668,7 @@ function switchTab(tab) {
   if (bn) bn.classList.add('active');
   if (tab==='habitos') loadHabits();
   if (tab==='tarefas') loadTasks();
+  if (tab==='eventos') loadEvents();
   if (tab==='financas') loadFinance();
   if (tab==='metas') loadGoals();
 }
@@ -1832,6 +2053,234 @@ async function deleteTask(id) {
   loadTasks();
 }
 
+// ===== EVENTS =====
+function loadEvents() {
+  allEvents = loadEventsFromStorage();
+  if (!selectedEventDate) selectedEventDate = toISODate(new Date());
+  buildEventWeekdays();
+  updateEventMonthLabel();
+  renderEventCalendar();
+  renderEventDayList();
+}
+
+function loadEventsFromStorage() {
+  try {
+    const raw = localStorage.getItem(EVENT_STORAGE_KEY);
+    const parsed = JSON.parse(raw || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveEventsToStorage() {
+  localStorage.setItem(EVENT_STORAGE_KEY, JSON.stringify(allEvents));
+}
+
+function buildEventWeekdays() {
+  const el = document.getElementById('eventWeekdays');
+  if (!el) return;
+  el.innerHTML = DAYS_WEEK_SHORT.slice(1).map(d => `<div>${d}</div>`).join('');
+}
+
+function updateEventMonthLabel() {
+  const label = document.getElementById('eventMonthLabel');
+  if (!label) return;
+  label.textContent = MONTHS_FULL[eventMonth.getMonth()] + ' ' + eventMonth.getFullYear();
+}
+
+function changeEventMonth(dir) {
+  eventMonth.setMonth(eventMonth.getMonth() + dir);
+  updateEventMonthLabel();
+  renderEventCalendar();
+}
+
+function setSelectedEventDate(dateISO) {
+  selectedEventDate = dateISO;
+  renderEventCalendar();
+  renderEventDayList();
+}
+
+function eventAppliesToDate(ev, dateObj) {
+  if (!ev || !ev.start_date) return false;
+  const dateISO = toISODate(dateObj);
+  if (dateISO < ev.start_date) return false;
+  const dayIndex = dayIndexFromDate(dateObj);
+  if (ev.recurrence === 'daily') {
+    if (Array.isArray(ev.days) && ev.days.length) return ev.days.includes(dayIndex);
+    return true;
+  }
+  if (ev.recurrence === 'weekly') return parseInt(ev.weekday || 0, 10) === dayIndex;
+  if (ev.recurrence === 'monthly') return parseInt(ev.monthday || 0, 10) === dateObj.getDate();
+  return false;
+}
+
+function getEventsForDate(dateObj) {
+  return allEvents.filter(ev => eventAppliesToDate(ev, dateObj));
+}
+
+function renderEventCalendar() {
+  const grid = document.getElementById('eventCalendar');
+  if (!grid) return;
+  const year = eventMonth.getFullYear();
+  const month = eventMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const startDate = new Date(year, month, 1 - startOffset);
+  const todayISO = toISODate(new Date());
+
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    return d;
+  });
+
+  grid.innerHTML = cells.map(d => {
+    const iso = toISODate(d);
+    const inMonth = d.getMonth() === month;
+    const isToday = iso === todayISO;
+    const isSelected = iso === selectedEventDate;
+    const events = getEventsForDate(d);
+    const chips = events.slice(0, 2).map(ev => `<div class="event-chip" title="${esc(ev.title)}">${esc(ev.title)}</div>`).join('');
+    const more = events.length > 2 ? `<div class="event-chip more">+${events.length - 2}</div>` : '';
+    return `
+      <div class="calendar-day${inMonth ? '' : ' outside'}${isToday ? ' is-today' : ''}${isSelected ? ' is-selected' : ''}" onclick="setSelectedEventDate('${iso}')">
+        <div class="calendar-day-number"><strong>${d.getDate()}</strong></div>
+        ${chips}${more}
+      </div>
+    `;
+  }).join('');
+}
+
+function eventRecLabel(ev) {
+  if (ev.recurrence === 'daily') {
+    const days = Array.isArray(ev.days) ? ev.days.map(d => DAYS_WEEK_SHORT[d]).filter(Boolean) : [];
+    return days.length ? `Diario: ${days.join(', ')}` : 'Diario';
+  }
+  if (ev.recurrence === 'weekly') {
+    return `Semanal: ${DAYS_WEEK[ev.weekday] || '—'}`;
+  }
+  if (ev.recurrence === 'monthly') {
+    return `Mensal: dia ${ev.monthday || ''}`;
+  }
+  return 'Evento';
+}
+
+function renderEventDayList() {
+  const list = document.getElementById('eventDayList');
+  const title = document.getElementById('eventListTitle');
+  if (!list || !title) return;
+  const dateObj = new Date(selectedEventDate + 'T00:00:00');
+  title.textContent = `Eventos do dia ${fmtDate(selectedEventDate)}`;
+  const items = getEventsForDate(dateObj);
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-state">Sem eventos.</div>';
+    return;
+  }
+  list.innerHTML = items.map(ev => `
+    <div class="event-item">
+      <div>
+        <div class="event-item-title">${esc(ev.title)}</div>
+        <div class="event-item-meta">${eventRecLabel(ev)}</div>
+      </div>
+      <div class="event-item-actions">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="editEvent(${ev.id})">✏</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="deleteEvent(${ev.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openEventModal(editData=null) {
+  document.getElementById('e-id').value = editData?.id || '';
+  document.getElementById('e-title').value = editData?.title || '';
+  document.getElementById('e-date').value = editData?.start_date || toISODate(new Date());
+  document.getElementById('e-recurrence').value = editData?.recurrence || 'daily';
+  buildEventDays(editData?.days || []);
+  toggleEventRecurrence();
+  document.getElementById('eventModalTitle').textContent = editData ? 'Editar Evento' : 'Novo Evento';
+  openModal('eventModal');
+}
+
+function buildEventDays(selected) {
+  const el = document.getElementById('e-daily-days');
+  if (!el) return;
+  el.innerHTML = DAYS_WEEK_SHORT.slice(1).map((d, idx) => {
+    const dayVal = idx + 1;
+    const checked = Array.isArray(selected) && selected.includes(dayVal) ? 'checked' : '';
+    return `
+      <label class="event-day-check">
+        <input type="checkbox" data-day="${dayVal}" ${checked}>
+        ${d}
+      </label>
+    `;
+  }).join('');
+}
+
+function toggleEventRecurrence() {
+  const rec = document.getElementById('e-recurrence').value;
+  const dailyGroup = document.getElementById('e-daily-group');
+  dailyGroup.style.display = rec === 'daily' ? 'block' : 'none';
+}
+
+function collectEventDays() {
+  const el = document.getElementById('e-daily-days');
+  if (!el) return [];
+  const days = [];
+  el.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (cb.checked) days.push(parseInt(cb.dataset.day, 10));
+  });
+  return days;
+}
+
+function saveEvent() {
+  const title = document.getElementById('e-title').value.trim();
+  const startDate = document.getElementById('e-date').value;
+  const rec = document.getElementById('e-recurrence').value;
+  if (!title) { toast('Informe o titulo','err'); return; }
+  if (!startDate) { toast('Informe a data','err'); return; }
+  const days = rec === 'daily' ? collectEventDays() : [];
+  if (rec === 'daily' && !days.length) { toast('Selecione pelo menos um dia','err'); return; }
+
+  const startObj = new Date(startDate + 'T00:00:00');
+  const weekday = dayIndexFromDate(startObj);
+  const monthday = startObj.getDate();
+
+  const idRaw = document.getElementById('e-id').value;
+  const id = idRaw ? parseInt(idRaw, 10) : Date.now();
+
+  const payload = {
+    id,
+    title,
+    start_date: startDate,
+    recurrence: rec,
+    days,
+    weekday,
+    monthday
+  };
+
+  const existingIdx = allEvents.findIndex(e => e.id === id);
+  if (existingIdx >= 0) allEvents[existingIdx] = payload;
+  else allEvents.unshift(payload);
+
+  saveEventsToStorage();
+  closeModal('eventModal');
+  loadEvents();
+  toast('Evento salvo!');
+}
+
+function editEvent(id) {
+  const ev = allEvents.find(e => e.id === id);
+  if (ev) openEventModal(ev);
+}
+
+function deleteEvent(id) {
+  if (!confirm('Excluir?')) return;
+  allEvents = allEvents.filter(e => e.id !== id);
+  saveEventsToStorage();
+  loadEvents();
+}
+
 // ===== FINANCE =====
 function updateMonthLabel() {
   document.getElementById('finMonthLabel').textContent = MONTHS_FULL[currentMonth.getMonth()]+' '+currentMonth.getFullYear();
@@ -2156,7 +2605,7 @@ async function init() {
   initDates();
   await loadCats();
   await loadHabits();
-  await Promise.all([loadTasks(), loadFinance(), loadGoals()]);
+  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals()]);
 }
 init();
 </script>
