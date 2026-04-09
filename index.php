@@ -606,6 +606,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  overflow-x: auto;
 }
 .calendar-header {
   display: flex;
@@ -656,6 +657,7 @@ body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+  min-width: 560px;
 }
 .calendar-day {
   background: var(--surface2);
@@ -1093,8 +1095,8 @@ body {
   .goal-row { gap: 10px; }
   .modal { border-radius: 16px; }
   .bottom-nav { height: 64px; }
-  .calendar-weekdays { grid-template-columns: repeat(2, 1fr); }
-  .calendar-grid { grid-template-columns: repeat(2, 1fr); }
+  .calendar-weekdays { min-width: 560px; }
+  .calendar-grid { min-width: 560px; }
   .event-days { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 901px) {
