@@ -378,6 +378,14 @@ body {
 .habit-info { flex: 1; }
 .habit-name { font-size: 14px; font-weight: 500; }
 .habit-meta { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+.habit-streak {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  min-width: 68px;
+  text-align: right;
+  white-space: nowrap;
+}
 
 .habit-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
 .habit-item:hover .habit-actions { opacity: 1; }
@@ -1782,6 +1790,7 @@ function renderHabits() {
         <div class="habit-name">${esc(h.title)}</div>
         <div class="habit-meta">${habitRecLabel(h)}${h._show_in_tasks ? ' · Em tarefas' : ''}</div>
       </div>
+      <div class="habit-streak">${habitStreak(h)}</div>
       <div class="habit-actions">
         <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editHabit(${h.id})">✏</button>
         <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h.id})">✕</button>
@@ -1880,6 +1889,41 @@ function habitAppliesToDate(h, dateObj) {
 function habitDoneOnDate(h, dateObj) {
   const iso = toISODate(dateObj);
   return Array.isArray(h._dates) && h._dates.includes(iso);
+}
+
+function habitStreak(h, baseDate = new Date()) {
+  if (!h || !Array.isArray(h._dates) || h._dates.length === 0) return 0;
+
+  const cursor = new Date(baseDate);
+  cursor.setHours(0, 0, 0, 0);
+  let count = 0;
+
+  if (h._recurrence === 'weekly') {
+    const recDay = parseInt(h._recurrence_day || 0, 10);
+    if (recDay < 1 || recDay > 7) return 0;
+
+    while (dayIndexFromDate(cursor) !== recDay) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    while (habitDoneOnDate(h, cursor)) {
+      count += 1;
+      cursor.setDate(cursor.getDate() - 7);
+    }
+
+    return count;
+  }
+
+  if (!habitDoneOnDate(h, cursor)) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  while (habitDoneOnDate(h, cursor)) {
+    count += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return count;
 }
 
 function habitRecLabel(h) {
