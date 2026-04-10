@@ -514,24 +514,40 @@ try {
     if ($action === 'goal_save') {
         $id = isset($input['id']) ? (int)$input['id'] : 0;
         $title = trim((string)($input['title'] ?? ''));
-        $target = isset($input['target_amount']) ? (float)$input['target_amount'] : 0;
-        $current = isset($input['current_amount']) ? (float)$input['current_amount'] : 0;
-        $deadline = $input['deadline'] ?? null;
-        $color = $input['color'] ?? '#10d9a0';
+        $target = array_key_exists('target_amount', $input) ? (float)$input['target_amount'] : null;
+        $current = array_key_exists('current_amount', $input) ? (float)$input['current_amount'] : null;
+        $deadline = array_key_exists('deadline', $input) ? $input['deadline'] : null;
+        $color = isset($input['color']) && trim((string)$input['color']) !== '' ? (string)$input['color'] : null;
         $goalTerm = $input['goal_term'] ?? 'short';
-        if ($title === '' || $target <= 0) {
-            json_response(['ok' => false, 'error' => 'Campos invalidos.'], 400);
+        if ($title === '') {
+            json_response(['ok' => false, 'error' => 'Titulo obrigatorio.'], 400);
         }
         if (!in_array($goalTerm, ['short', 'long'], true)) {
             $goalTerm = 'short';
         }
 
         if ($id > 0) {
+            $prevStmt = $pdo->prepare("SELECT target_amount, current_amount, deadline, color FROM goals WHERE id = ? AND user_id = ?");
+            $prevStmt->execute([$id, $userId]);
+            $prev = $prevStmt->fetch();
+            if (!$prev) {
+                json_response(['ok' => false, 'error' => 'Meta nao encontrada.'], 404);
+            }
+            $targetVal = $target !== null ? $target : (float)$prev['target_amount'];
+            $currentVal = $current !== null ? $current : (float)$prev['current_amount'];
+            $deadlineVal = $deadline !== null ? ($deadline ?: null) : $prev['deadline'];
+            $colorVal = $color !== null ? $color : ($prev['color'] ?: '#10d9a0');
+
             $stmt = $pdo->prepare("UPDATE goals SET title = ?, target_amount = ?, current_amount = ?, deadline = ?, color = ?, goal_term = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([$title, $target, $current, $deadline ?: null, $color, $goalTerm, $id, $userId]);
+            $stmt->execute([$title, $targetVal, $currentVal, $deadlineVal, $colorVal, $goalTerm, $id, $userId]);
         } else {
+            $targetVal = $target !== null ? $target : 0;
+            $currentVal = $current !== null ? $current : 0;
+            $deadlineVal = $deadline ?: null;
+            $colorVal = $color !== null ? $color : '#10d9a0';
+
             $stmt = $pdo->prepare("INSERT INTO goals (user_id, title, target_amount, current_amount, deadline, color, goal_term) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$userId, $title, $target, $current, $deadline ?: null, $color, $goalTerm]);
+            $stmt->execute([$userId, $title, $targetVal, $currentVal, $deadlineVal, $colorVal, $goalTerm]);
         }
         json_response(['ok' => true]);
     }
