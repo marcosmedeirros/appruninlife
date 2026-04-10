@@ -243,16 +243,17 @@ try {
     ensure_tables($pdo);
 
     $userId = 1;
+    $today = date('Y-m-d');
 
     if ($action === 'tasks_list') {
         migrate_legacy_activities($pdo, $userId);
         $stmt = $pdo->prepare("SELECT t.*, 
             CASE 
                 WHEN t.recurrence = 'once' THEN t.status
-                ELSE EXISTS(SELECT 1 FROM task_completions tc WHERE tc.task_id = t.id AND tc.done_date = CURDATE())
+                ELSE EXISTS(SELECT 1 FROM task_completions tc WHERE tc.task_id = t.id AND tc.done_date = ?)
             END AS done_today
             FROM tasks t WHERE t.user_id = ? ORDER BY t.id DESC");
-        $stmt->execute([$userId]);
+        $stmt->execute([$today, $userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
 
@@ -363,13 +364,13 @@ try {
             $upd = $pdo->prepare("UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?");
             $upd->execute([$newStatus, $id, $userId]);
         } else {
-            $stmt = $pdo->prepare("SELECT id FROM task_completions WHERE task_id = ? AND done_date = CURDATE()");
-            $stmt->execute([$id]);
+            $stmt = $pdo->prepare("SELECT id FROM task_completions WHERE task_id = ? AND done_date = ?");
+            $stmt->execute([$id, $today]);
             $row = $stmt->fetch();
             if ($row) {
                 $pdo->prepare("DELETE FROM task_completions WHERE id = ?")->execute([$row['id']]);
             } else {
-                $pdo->prepare("INSERT INTO task_completions (task_id, done_date) VALUES (?, CURDATE())")->execute([$id]);
+                $pdo->prepare("INSERT INTO task_completions (task_id, done_date) VALUES (?, ?)")->execute([$id, $today]);
             }
         }
 

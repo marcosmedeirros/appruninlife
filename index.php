@@ -1624,14 +1624,15 @@ const MONTHS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','
 const MONTHS_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const STREAK_DAYS = 7; // configurable
 const EVENT_STORAGE_KEY = 'lifeos_events_v1';
+const APP_TIMEZONE = 'America/Sao_Paulo';
 
 let allTasks = [], allTxns = [], allCats = [], allGoals = [];
 let allHabits = [];
 let allEvents = [];
 let finFilter = 'all';
-let currentMonth = new Date();
-let eventMonth = new Date();
-let selectedEventDate = toISODate(new Date());
+let currentMonth = getSaoPauloTodayDate();
+let eventMonth = getSaoPauloTodayDate();
+let selectedEventDate = getSaoPauloTodayISO();
 
 // ===== UTILS =====
 function fmtBRL(v) {
@@ -1663,10 +1664,40 @@ function toast(msg, type='ok') {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+function getSaoPauloDateParts(d = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: APP_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(d);
+  const map = {};
+  parts.forEach(p => {
+    if (p.type !== 'literal') map[p.type] = p.value;
+  });
+  return {
+    year: parseInt(map.year, 10),
+    month: parseInt(map.month, 10),
+    day: parseInt(map.day, 10)
+  };
+}
+
+function getSaoPauloTodayISO() {
+  const p = getSaoPauloDateParts(new Date());
+  return `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
+}
+
+function getSaoPauloTodayDate() {
+  const p = getSaoPauloDateParts(new Date());
+  return new Date(p.year, p.month - 1, p.day);
+}
+
 function getMonthStr() {
   return currentMonth.getFullYear()+'-'+String(currentMonth.getMonth()+1).padStart(2,'0');
 }
-function toISODate(d) { return d.toISOString().split('T')[0]; }
+function toISODate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function dayIndexFromDate(d) { const j = d.getDay(); return j===0?7:j; }
 
 function taskAppliesToDate(t, dateObj) {
@@ -1681,7 +1712,7 @@ function taskAppliesToDate(t, dateObj) {
 
 // ===== DATES =====
 function initDates() {
-  const now = new Date();
+  const now = getSaoPauloTodayDate();
   const days = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
   const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
   const dayStr = days[now.getDay()];
@@ -1752,7 +1783,7 @@ async function loadHabits() {
     toast(res.error || 'Erro ao carregar hábitos.', 'err');
     return;
   }
-  const today = toISODate(new Date());
+  const today = getSaoPauloTodayISO();
   allHabits = (res.data || []).map(h => {
     let dates = [];
     try { dates = JSON.parse(h.checked_dates || '[]'); } catch (e) { dates = []; }
@@ -1830,7 +1861,7 @@ function toggleHabitRecurrence(selected=null) {
   const sel = document.getElementById('h-recday');
   group.style.display = rec === 'weekly' ? 'block' : 'none';
   if (rec !== 'weekly') return;
-  const pick = selected || dayIndexFromDate(new Date());
+  const pick = selected || dayIndexFromDate(getSaoPauloTodayDate());
   sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
     `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
 }
@@ -1851,7 +1882,7 @@ async function saveHabit() {
   else toast(res.error||'Erro','err');
 }
 async function toggleHabit(id) {
-  const today = toISODate(new Date());
+  const today = getSaoPauloTodayISO();
   const res = await api('habit_toggle','POST',{id, date: today});
   if (res.ok) { loadHabits(); }
   else toast(res.error||'Erro','err');
@@ -1872,7 +1903,8 @@ async function loadTasks() {
   }
   allTasks = res.data || [];
   renderTasks();
-  const overdue = allTasks.filter(t => t.due_date && t.due_date < toISODate(new Date()) && t.recurrence==='once' && !t.status).length;
+  const todayISO = getSaoPauloTodayISO();
+  const overdue = allTasks.filter(t => t.due_date && t.due_date < todayISO && t.recurrence==='once' && !t.status).length;
   document.getElementById('hStatVencidas').textContent = overdue;
   document.getElementById('nb-tarefas').textContent = allTasks.length;
 }
@@ -1891,7 +1923,7 @@ function habitDoneOnDate(h, dateObj) {
   return Array.isArray(h._dates) && h._dates.includes(iso);
 }
 
-function habitStreak(h, baseDate = new Date()) {
+function habitStreak(h, baseDate = getSaoPauloTodayDate()) {
   if (!h || !Array.isArray(h._dates) || h._dates.length === 0) return 0;
 
   const cursor = new Date(baseDate);
@@ -1946,7 +1978,7 @@ function renderMobileEntry(entry) {
 
 function renderTasks() {
   const el = document.getElementById('taskSections');
-  const today = new Date();
+  const today = getSaoPauloTodayDate();
   const todayISO = toISODate(today);
 
   function getRecurrenceDay(t) {
@@ -2110,7 +2142,7 @@ function toggleRecDay(selected=null) {
   const sel = document.getElementById('t-recday');
   const label = document.getElementById('t-recday-label');
   label.textContent = 'DIA DA SEMANA';
-  const pick = selected || dayIndexFromDate(new Date());
+  const pick = selected || dayIndexFromDate(getSaoPauloTodayDate());
   sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
     `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
 }
@@ -2139,7 +2171,7 @@ async function deleteTask(id) {
 // ===== EVENTS =====
 function loadEvents() {
   allEvents = loadEventsFromStorage();
-  if (!selectedEventDate) selectedEventDate = toISODate(new Date());
+  if (!selectedEventDate) selectedEventDate = getSaoPauloTodayISO();
   buildEventWeekdays();
   updateEventMonthLabel();
   renderEventCalendar();
@@ -2212,7 +2244,7 @@ function renderEventCalendar() {
   const firstDay = new Date(year, month, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
   const startDate = new Date(year, month, 1 - startOffset);
-  const todayISO = toISODate(new Date());
+  const todayISO = getSaoPauloTodayISO();
 
   const cells = Array.from({ length: 42 }, (_, i) => {
     const d = new Date(startDate);
@@ -2300,7 +2332,7 @@ function renderEventDayList() {
 function openEventModal(editData=null) {
   document.getElementById('e-id').value = editData?.id || '';
   document.getElementById('e-title').value = editData?.title || '';
-  document.getElementById('e-date').value = editData?.start_date || toISODate(new Date());
+  document.getElementById('e-date').value = editData?.start_date || getSaoPauloTodayISO();
   document.getElementById('e-recurrence').value = editData?.recurrence || 'none';
   buildEventDays(editData?.days || []);
   toggleEventRecurrence();
@@ -2495,7 +2527,7 @@ function openTxnModal() {
   document.getElementById('txn-id').value='';
   document.getElementById('txn-amount').value='';
   document.getElementById('txn-desc').value='';
-  document.getElementById('txn-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('txn-date').value=getSaoPauloTodayISO();
   loadCatsInModal();
   openModal('txnModal');
 }

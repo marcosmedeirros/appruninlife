@@ -24,6 +24,11 @@ try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    try {
+        $pdo->exec("SET time_zone = '-03:00'");
+    } catch (Exception $e) {
+        error_log('[DB] Nao foi possivel definir time_zone da sessao: ' . $e->getMessage());
+    }
 
     // 1. Criação das Tabelas essenciais (executa uma a uma para compatibilidade com hosts)
     $tables = [
