@@ -1561,33 +1561,12 @@ body {
       <label class="form-label">TÍTULO</label>
       <input type="text" id="g-title" class="form-control" placeholder="Ex: Reserva de emergência…">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">VALOR ALVO (R$)</label>
-        <input type="number" id="g-target" class="form-control" placeholder="0,00">
-      </div>
-      <div class="form-group">
-        <label class="form-label">JÁ TENHO (R$)</label>
-        <input type="number" id="g-current" class="form-control" placeholder="0,00">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">PRAZO</label>
-        <input type="date" id="g-deadline" class="form-control">
-      </div>
-      <div class="form-group">
-        <label class="form-label">TIPO</label>
-        <select id="g-term" class="form-control">
-          <option value="short">Curto prazo</option>
-          <option value="long">Longo prazo</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">COR</label>
-        <div class="color-row" id="goalColorRow"></div>
-        <input type="hidden" id="g-color" value="#10d9a0">
-      </div>
+    <div class="form-group">
+      <label class="form-label">PRAZO</label>
+      <select id="g-term" class="form-control">
+        <option value="short">Curto prazo</option>
+        <option value="long">Longo prazo</option>
+      </select>
     </div>
     <input type="hidden" id="g-id">
     <div class="form-actions">
@@ -2622,13 +2601,7 @@ function renderOvGoals() {
 function openGoalModal(editData=null) {
   document.getElementById('g-id').value=editData?.id||'';
   document.getElementById('g-title').value=editData?.title||'';
-  document.getElementById('g-target').value=editData?.target_amount||'';
-  document.getElementById('g-current').value=editData?.current_amount||'';
-  document.getElementById('g-deadline').value=editData?.deadline||'';
   document.getElementById('g-term').value=editData?.goal_term||'short';
-  const color=editData?.color||'#10d9a0';
-  document.getElementById('g-color').value=color;
-  buildColorRow('goalColorRow',color,c=>document.getElementById('g-color').value=c);
   document.getElementById('goalModalTitle').textContent=editData?'Editar Meta':'Nova Meta';
   openModal('goalModal');
 }
@@ -2639,9 +2612,8 @@ async function toggleGoal(id) {
 }
 async function saveGoal() {
   const title=document.getElementById('g-title').value.trim();
-  const target=parseFloat(document.getElementById('g-target').value);
-  if (!title||!target) { toast('Preencha título e valor','err'); return; }
-  const body={id:document.getElementById('g-id').value,title,target_amount:target,current_amount:parseFloat(document.getElementById('g-current').value)||0,deadline:document.getElementById('g-deadline').value||null,color:document.getElementById('g-color').value,goal_term:document.getElementById('g-term').value};
+  if (!title) { toast('Preencha o nome da meta','err'); return; }
+  const body={id:document.getElementById('g-id').value,title,goal_term:document.getElementById('g-term').value};
   const res=await api('goal_save','POST',body);
   if (res.ok) { toast('Meta salva!'); closeModal('goalModal'); loadGoals(); }
   else toast(res.error||'Erro','err');
