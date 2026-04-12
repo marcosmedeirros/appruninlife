@@ -594,6 +594,8 @@ body {
   padding: 10px 12px;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
+.task-mobile-item.done { opacity: 0.5; }
+.task-mobile-item.done .task-mobile-item-title { text-decoration: line-through; }
 .task-mobile-item-title { font-size: 13px; }
 .task-mobile-actions { display: flex; gap: 6px; }
 .task-row.done { opacity: 0.5; }
@@ -2067,11 +2069,12 @@ function renderTasks() {
 }
 
 function taskMobileItemHTML(t) {
-  return `<div class="task-mobile-item">
+  const done = parseInt(t.done_today || 0, 10) === 1;
+  return `<div class="task-mobile-item${done ? ' done' : ''}" onclick="toggleTask(${t.id})">
     <div class="task-mobile-item-title">${esc(t.title)}</div>
     <div class="task-mobile-actions">
-      <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
-      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteTask(${t.id})">✕</button>
     </div>
   </div>`;
 }
@@ -2093,13 +2096,13 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
   const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
   const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
-  return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}">
+  return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}" onclick="toggleTask(${t.id})">
     <div class="task-title">
       <div>${esc(t.title)}</div>
     </div>
     <div class="task-actions">
-      <button class="btn btn-ghost btn-icon btn-sm" onclick="editTask(${t.id})">✏</button>
-      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteTask(${t.id})">✕</button>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteTask(${t.id})">✕</button>
     </div>
   </div>`;
 }
