@@ -1973,9 +1973,9 @@ function renderDayEntry(entry, todayISO) {
   return taskRowHTML(entry.task, entry.date, todayISO);
 }
 
-function renderMobileEntry(entry) {
+function renderMobileEntry(entry, todayISO) {
   if (entry.kind === 'habit') return habitMobileItemHTML(entry.habit, entry.date);
-  return taskMobileItemHTML(entry.task);
+  return taskMobileItemHTML(entry.task, entry.date, todayISO);
 }
 
 function renderTasks() {
@@ -2055,7 +2055,7 @@ function renderTasks() {
     const mobile = `<div class="task-mobile-list">${weekDates.map((d, i) => {
       const dayLabel = DAYS_WEEK[i + 1] || '';
       const list = dayBuckets[i];
-      const items = list.length ? list.map(entry => renderMobileEntry(entry)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+      const items = list.length ? list.map(entry => renderMobileEntry(entry, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
       const isToday = toISODate(d) === todayISO;
       return `<div class="task-mobile-card${isToday ? ' is-today' : ''}">
         <div class="task-mobile-title">${dayLabel}<span class="task-mobile-count">${list.length}</span></div>
@@ -2068,8 +2068,10 @@ function renderTasks() {
   }
 }
 
-function taskMobileItemHTML(t) {
-  const done = parseInt(t.done_today || 0, 10) === 1;
+function taskMobileItemHTML(t, dateObj, todayISO) {
+  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
+  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
+  const done = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   return `<div class="task-mobile-item${done ? ' done' : ''}" onclick="toggleTask(${t.id})">
     <div class="task-mobile-item-title">${esc(t.title)}</div>
     <div class="task-mobile-actions">
