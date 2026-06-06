@@ -1147,6 +1147,124 @@ body {
   .main { padding-bottom: 80px; }
 }
 
+/* ===== WEEKLY PLANNER (accordion) ===== */
+.weekly-planner { display: flex; flex-direction: column; gap: 0; }
+.week-summary {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+}
+.week-progress-bar {
+  flex: 1; height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden;
+}
+.week-progress-fill {
+  height: 100%; background: var(--green); border-radius: 99px; transition: width 0.5s ease;
+}
+.week-summary-text {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+}
+.week-days { display: flex; flex-direction: column; }
+.week-day-row {
+  border-top: 1px solid var(--border);
+}
+.week-day-row:last-child { border-bottom: 1px solid var(--border); }
+.week-day-hdr {
+  display: flex; align-items: center; gap: 14px; padding: 14px 4px; cursor: pointer;
+  transition: background 0.1s;
+}
+.week-day-hdr:hover { background: rgba(255,255,255,0.02); border-radius: 10px; }
+.week-day-hdr:hover .week-day-addBtn { opacity: 1; }
+.week-day-icon {
+  width: 38px; height: 38px; min-width: 38px; border-radius: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+}
+.week-day-icon .wdi-num {
+  font-size: 14px; font-weight: 700; line-height: 1; color: var(--muted2);
+}
+.week-day-icon .wdi-mon {
+  font-size: 8px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.4;
+}
+.week-day-row.is-today .week-day-icon {
+  background: var(--text); border-color: var(--text);
+}
+.week-day-row.is-today .week-day-icon .wdi-num { color: var(--bg); }
+.week-day-row.is-today .week-day-icon .wdi-mon { color: rgba(0,0,0,0.5); }
+.week-day-name-wrap { flex: 1; min-width: 0; }
+.week-day-name {
+  font-size: 14px; font-weight: 600; color: var(--muted2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.week-day-row.is-today .week-day-name { color: var(--text); }
+.week-day-row.is-past .week-day-name { color: var(--muted); }
+.week-day-sub {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.3px; margin-top: 1px;
+}
+.week-day-count {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--muted); background: var(--surface2);
+  border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.week-day-row.is-today .week-day-count { color: var(--muted2); border-color: var(--border2); }
+.week-day-addBtn {
+  opacity: 0; width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--border2); background: transparent; color: var(--muted2);
+  cursor: pointer; font-size: 18px; line-height: 1; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; transition: all 0.15s;
+}
+.week-day-addBtn:hover { background: var(--surface2); color: var(--text); }
+.week-day-chevron {
+  color: var(--muted); font-size: 14px; flex-shrink: 0;
+  transition: transform 0.2s; transform: rotate(0deg);
+}
+.week-day-row.expanded .week-day-chevron { transform: rotate(90deg); }
+.week-day-body {
+  display: none; flex-direction: column; gap: 8px;
+  padding: 0 4px 16px 52px;
+}
+.week-day-row.expanded .week-day-body { display: flex; }
+.week-day-empty-label {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  padding: 6px 0; letter-spacing: 0.5px;
+}
+.week-task-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 12px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.week-task-item:hover { border-color: var(--border2); }
+.week-task-item:hover .week-task-actions { opacity: 1; }
+.week-task-item.done { opacity: 0.45; }
+.week-task-item.habit { border-style: dashed; }
+.week-task-check {
+  width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
+  border: 1.5px solid var(--border2); display: flex; align-items: center;
+  justify-content: center; font-size: 11px; color: transparent; transition: all 0.15s;
+}
+.week-task-item.done .week-task-check { background: var(--green); border-color: var(--green); color: var(--bg); }
+.week-task-item.habit .week-task-check { border-color: rgba(245,200,66,0.4); }
+.week-task-item.habit.done .week-task-check { background: var(--yellow); border-color: var(--yellow); color: var(--bg); }
+.week-task-title {
+  flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.week-task-item.done .week-task-title { text-decoration: line-through; }
+.week-task-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted);
+  background: var(--surface3); padding: 2px 8px; border-radius: 999px;
+  white-space: nowrap; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.week-task-item.habit .week-task-badge { color: var(--yellow); background: rgba(245,200,66,0.08); }
+.week-task-actions { display: flex; gap: 4px; opacity: 0; flex-shrink: 0; transition: opacity 0.2s; }
+@media (max-width: 700px) {
+  .week-day-body { padding-left: 0; }
+  .week-day-addBtn { opacity: 1; }
+  .week-task-actions { opacity: 1; }
+  .week-day-hdr { gap: 10px; padding: 12px 2px; }
+  .week-day-icon { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; }
+}
+
 /* ===== TASK WEEK HEADER ===== */
 .task-week-header {
   display: flex;
@@ -2134,18 +2252,13 @@ function renderMobileEntry(entry, todayISO) {
   return taskMobileItemHTML(entry.task, entry.date, todayISO);
 }
 
+const _expandedDays = new Set();
+let _expandedInit = false;
+
 function renderTasks() {
   const el = document.getElementById('taskSections');
   const today = getSaoPauloTodayDate();
   const todayISO = toISODate(today);
-
-  function getRecurrenceDay(t) {
-    const raw = parseInt(t.recurrence_day || 0, 10);
-    if (raw > 0) return raw;
-    if (t.recurrence === 'weekly') return dayIndexFromDate(today);
-    if (t.recurrence === 'monthly') return today.getDate();
-    return null;
-  }
 
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
@@ -2161,77 +2274,110 @@ function renderTasks() {
   const weekLabel = document.getElementById('taskWeekLabel');
   if (weekLabel) weekLabel.textContent = `${fmtShort(weekStart)} – ${fmtShort(weekEnd)}`;
 
-  const dayBuckets = weekDates.map(() => []);
-  const outOfWeek = [];
+  if (!_expandedInit) { _expandedDays.add(todayISO); _expandedInit = true; }
 
-  const habitsForTasks = allHabits.filter(h => h._show_in_tasks);
-  habitsForTasks.forEach(h => {
+  function getRecDay(t) {
+    const raw = parseInt(t.recurrence_day || 0, 10);
+    if (raw > 0) return raw;
+    return dayIndexFromDate(today);
+  }
+
+  const dayBuckets = weekDates.map(() => []);
+  allHabits.filter(h => h._show_in_tasks).forEach(h => {
     weekDates.forEach((d, i) => {
-      if (habitAppliesToDate(h, d)) {
-        dayBuckets[i].push({ kind: 'habit', habit: h, date: d });
-      }
+      if (habitAppliesToDate(h, d)) dayBuckets[i].push({ kind: 'habit', habit: h, date: d });
     });
   });
-
   allTasks.forEach(t => {
     const rec = t.recurrence || 'weekly';
-    if (rec === 'daily') {
-      dayBuckets.forEach((list, i) => list.push({ kind: 'task', task: t, date: weekDates[i] }));
-      return;
-    }
-    if (rec === 'weekly') {
-      const idx = Math.max(1, getRecurrenceDay(t) || 1) - 1;
-      if (idx >= 0 && idx < 7) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
-      return;
-    }
-    if (rec === 'monthly') {
-      const dayNum = getRecurrenceDay(t) || today.getDate();
-      const idx = weekDates.findIndex(d => d.getDate() === dayNum);
-      if (idx >= 0) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
-      else outOfWeek.push(t);
-      return;
-    }
-    if (rec === 'once') {
-      if (t.due_date) {
-        const idx = weekDates.findIndex(d => toISODate(d) === t.due_date);
-        if (idx >= 0) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
-        else outOfWeek.push(t);
-      } else {
-        const idx = dayIndexFromDate(today) - 1;
-        dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] });
-      }
-    }
+    if (rec === 'daily') { dayBuckets.forEach((list, i) => list.push({ kind: 'task', task: t, date: weekDates[i] })); return; }
+    if (rec === 'weekly') { const idx = Math.max(1, getRecDay(t)) - 1; if (idx >= 0 && idx < 7) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] }); return; }
+    if (rec === 'once' && t.due_date) { const idx = weekDates.findIndex(d => toISODate(d) === t.due_date); if (idx >= 0) dayBuckets[idx].push({ kind: 'task', task: t, date: weekDates[idx] }); }
   });
 
-  const grid = `<div class="task-week-wrap"><div class="task-week-grid">${weekDates.map((d, i) => {
-    const dayLabel = DAYS_WEEK[i + 1] || '';
-    const list = dayBuckets[i];
-    const items = list.length ? list.map(entry => renderDayEntry(entry, todayISO)).join('') : '<div class="task-day-empty">livre</div>';
-    const isToday = toISODate(d) === todayISO;
-    return `<div class="task-day${isToday ? ' is-today' : ''}">
-      <div class="task-day-header">
-        <strong>${dayLabel}</strong>
-        <div class="task-day-date">${fmtShort(d)}</div>
-      </div>
-      <div class="task-day-list">${items}</div>
-    </div>`;
-  }).join('')}</div></div>`;
+  let totalTasks = 0, doneTasks = 0;
+  dayBuckets.forEach((list, i) => {
+    list.forEach(e => {
+      if (e.kind !== 'task') return;
+      totalTasks++;
+      const dMatch = e.task.due_date && toISODate(weekDates[i]) === e.task.due_date;
+      const isTod = toISODate(weekDates[i]) === todayISO;
+      if ((isTod || dMatch) && parseInt(e.task.done_today || 0) === 1) doneTasks++;
+    });
+  });
+  const pct = totalTasks > 0 ? Math.round(doneTasks / totalTasks * 100) : 0;
 
-  if (window.innerWidth <= 600) {
-    const mobile = `<div class="task-mobile-list">${weekDates.map((d, i) => {
-      const dayLabel = DAYS_WEEK[i + 1] || '';
-      const list = dayBuckets[i];
-      const items = list.length ? list.map(entry => renderMobileEntry(entry, todayISO)).join('') : '<div class="task-day-empty">livre</div>';
-      const isToday = toISODate(d) === todayISO;
-      return `<div class="task-mobile-card${isToday ? ' is-today' : ''}">
-        <div class="task-mobile-title">${dayLabel} <span style="color:var(--muted);font-size:10px">${fmtShort(d)}</span><span class="task-mobile-count">${list.length}</span></div>
-        <div class="task-mobile-items">${items}</div>
-      </div>`;
-    }).join('')}</div>`;
-    el.innerHTML = mobile;
-  } else {
-    el.innerHTML = grid;
-  }
+  const MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+  const daysHTML = weekDates.map((d, i) => {
+    const iso = toISODate(d);
+    const isToday = iso === todayISO;
+    const isPast = iso < todayISO;
+    const list = dayBuckets[i];
+    const expanded = _expandedDays.has(iso);
+    const cls = ['week-day-row', isToday ? 'is-today' : '', isPast ? 'is-past' : '', expanded ? 'expanded' : ''].filter(Boolean).join(' ');
+    const countLabel = list.length ? `${list.length} ${list.length === 1 ? 'tarefa' : 'tarefas'}` : 'livre';
+    const dayName = isToday ? `HOJE — ${DAYS_WEEK[i+1].toUpperCase()}` : DAYS_WEEK[i+1].toUpperCase();
+    const subLabel = `${fmtShort(d)}${isPast && !isToday ? ' · concluído' : ''}`;
+    const tasksHTML = list.length ? list.map(e => e.kind === 'habit' ? weekHabitHTML(e.habit, e.date) : weekTaskHTML(e.task, e.date, todayISO)).join('') : `<div class="week-day-empty-label">livre</div>`;
+    return `<div class="${cls}" id="wday-${iso}">
+      <div class="week-day-hdr" onclick="toggleWeekDay('${iso}')">
+        <div class="week-day-icon"><div class="wdi-num">${d.getDate()}</div><div class="wdi-mon">${MONTHS_SHORT[d.getMonth()]}</div></div>
+        <div class="week-day-name-wrap">
+          <div class="week-day-name">${dayName}</div>
+          <div class="week-day-sub">${subLabel}</div>
+        </div>
+        <div class="week-day-count">${countLabel}</div>
+        <button class="week-day-addBtn" onclick="event.stopPropagation();openTaskModal(null,${i+1})">+</button>
+        <div class="week-day-chevron">›</div>
+      </div>
+      <div class="week-day-body">${tasksHTML}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="weekly-planner">
+    <div class="week-summary">
+      <div class="week-progress-bar"><div class="week-progress-fill" style="width:${pct}%"></div></div>
+      <div class="week-summary-text">${doneTasks} / ${totalTasks} feitas</div>
+    </div>
+    <div class="week-days">${daysHTML}</div>
+  </div>`;
+}
+
+function toggleWeekDay(iso) {
+  const row = document.getElementById('wday-' + iso);
+  if (!row) return;
+  if (_expandedDays.has(iso)) { _expandedDays.delete(iso); row.classList.remove('expanded'); }
+  else { _expandedDays.add(iso); row.classList.add('expanded'); }
+}
+
+function weekTaskHTML(t, dateObj, todayISO) {
+  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
+  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
+  const done = (isToday || dueMatch) && parseInt(t.done_today || 0) === 1;
+  const badge = t.recurrence === 'weekly' ? '∞ semanal' : '1×';
+  return `<div class="week-task-item${done ? ' done' : ''}" onclick="toggleTask(${t.id})">
+    <div class="week-task-check">✓</div>
+    <div class="week-task-title">${esc(t.title)}</div>
+    <div class="week-task-badge">${badge}</div>
+    <div class="week-task-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
+      <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteTask(${t.id})">✕</button>
+    </div>
+  </div>`;
+}
+
+function weekHabitHTML(h, dateObj) {
+  const done = habitDoneOnDate(h, dateObj);
+  const iso = toISODate(dateObj);
+  return `<div class="week-task-item habit${done ? ' done' : ''}" onclick="toggleHabitForDate(${h.id}, '${iso}')">
+    <div class="week-task-check">✓</div>
+    <div class="week-task-title">${esc(h.title)}</div>
+    <div class="week-task-badge">hábito</div>
+    <div class="week-task-actions">
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();toggleHabitForDate(${h.id}, '${iso}')">${done ? '✓' : '○'}</button>
+    </div>
+  </div>`;
 }
 
 function taskMobileItemHTML(t, dateObj, todayISO) {
@@ -2303,11 +2449,11 @@ async function toggleTask(id) {
 }
 
 let _taskSelectedDay = 1;
-function openTaskModal(editData=null) {
+function openTaskModal(editData=null, prefillDay=null) {
   document.getElementById('t-id').value = editData?.id||'';
   document.getElementById('t-title').value = editData?.title||'';
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
-  _taskSelectedDay = editData?.recurrence_day || dayIndexFromDate(getSaoPauloTodayDate());
+  _taskSelectedDay = editData?.recurrence_day || prefillDay || dayIndexFromDate(getSaoPauloTodayDate());
   const rec = editData?.recurrence || 'weekly';
   document.getElementById('t-recurrence').value = rec;
   setRecToggle(rec, true);
