@@ -21,9 +21,14 @@
     <script>const BASE_PATH = '<?php echo BASE_PATH; ?>';</script>
     <script>
         if ('serviceWorker' in navigator) {
+            let _swRefreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!_swRefreshing) { _swRefreshing = true; window.location.reload(); }
+            });
             window.addEventListener('load', () => {
-                const swUrl = `${BASE_PATH}/sw.js`;
-                navigator.serviceWorker.register(swUrl).catch(() => {});
+                navigator.serviceWorker.register(`${BASE_PATH}/sw.js`, { updateViaCache: 'none' })
+                    .then(reg => reg.update())
+                    .catch(() => {});
             });
         }
     </script>
