@@ -2296,11 +2296,6 @@ function renderTasks() {
   }
 
   const dayBuckets = weekDates.map(() => []);
-  allHabits.filter(h => h._show_in_tasks).forEach(h => {
-    weekDates.forEach((d, i) => {
-      if (habitAppliesToDate(h, d)) dayBuckets[i].push({ kind: 'habit', habit: h, date: d });
-    });
-  });
   allTasks.forEach(t => {
     const rec = t.recurrence || 'weekly';
     if (rec === 'daily') { dayBuckets.forEach((list, i) => list.push({ kind: 'task', task: t, date: weekDates[i] })); return; }
@@ -2332,7 +2327,7 @@ function renderTasks() {
     const countLabel = list.length ? `${list.length} ${list.length === 1 ? 'tarefa' : 'tarefas'}` : 'livre';
     const dayName = isToday ? `HOJE — ${DAYS_WEEK[i+1].toUpperCase()}` : DAYS_WEEK[i+1].toUpperCase();
     const subLabel = `${fmtShort(d)}${isPast && !isToday ? ' · concluído' : ''}`;
-    const tasksHTML = list.length ? list.map(e => e.kind === 'habit' ? weekHabitHTML(e.habit, e.date) : weekTaskHTML(e.task, e.date, todayISO)).join('') : `<div class="week-day-empty-label">livre</div>`;
+    const tasksHTML = list.length ? list.map(e => weekTaskHTML(e.task, e.date, todayISO)).join('') : `<div class="week-day-empty-label">livre</div>`;
     return `<div class="${cls}" id="wday-${iso}">
       <div class="week-day-hdr" onclick="toggleWeekDay('${iso}')">
         <div class="week-day-icon"><div class="wdi-num">${d.getDate()}</div><div class="wdi-mon">${MONTHS_SHORT[d.getMonth()]}</div></div>
