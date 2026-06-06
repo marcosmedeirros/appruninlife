@@ -247,11 +247,15 @@ try {
 
     if ($action === 'tasks_list') {
         migrate_legacy_activities($pdo, $userId);
-        $stmt = $pdo->prepare("SELECT t.*, 
-            CASE 
+        $stmt = $pdo->prepare("SELECT t.*,
+            CASE
                 WHEN t.recurrence = 'once' THEN t.status
                 ELSE EXISTS(SELECT 1 FROM task_completions tc WHERE tc.task_id = t.id AND tc.done_date = ?)
-            END AS done_today
+            END AS done_today,
+            (SELECT GROUP_CONCAT(tc2.done_date ORDER BY tc2.done_date SEPARATOR ',')
+             FROM task_completions tc2
+             WHERE tc2.task_id = t.id
+             AND tc2.done_date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)) AS done_dates
             FROM tasks t WHERE t.user_id = ? ORDER BY t.id DESC");
         $stmt->execute([$today, $userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
@@ -352,6 +356,9 @@ try {
         if ($id <= 0) {
             json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
         }
+        $toggleDate = isset($input['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $input['date'])
+            ? $input['date'] : $today;
+
         $stmt = $pdo->prepare("SELECT id, recurrence, status FROM tasks WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $userId]);
         $task = $stmt->fetch();
@@ -365,12 +372,12 @@ try {
             $upd->execute([$newStatus, $id, $userId]);
         } else {
             $stmt = $pdo->prepare("SELECT id FROM task_completions WHERE task_id = ? AND done_date = ?");
-            $stmt->execute([$id, $today]);
+            $stmt->execute([$id, $toggleDate]);
             $row = $stmt->fetch();
             if ($row) {
                 $pdo->prepare("DELETE FROM task_completions WHERE id = ?")->execute([$row['id']]);
             } else {
-                $pdo->prepare("INSERT INTO task_completions (task_id, done_date) VALUES (?, ?)")->execute([$id, $today]);
+                $pdo->prepare("INSERT INTO task_completions (task_id, done_date) VALUES (?, ?)")->execute([$id, $toggleDate]);
             }
         }
 

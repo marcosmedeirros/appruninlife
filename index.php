@@ -2364,12 +2364,19 @@ function toggleWeekDay(iso) {
   else { _expandedDays.add(iso); row.classList.add('expanded'); }
 }
 
+function isTaskDone(t, dateObj) {
+  if (!dateObj) return false;
+  if (t.recurrence === 'once') return parseInt(t.done_today || 0) === 1;
+  const iso = toISODate(dateObj);
+  const dates = t.done_dates ? t.done_dates.split(',') : [];
+  return dates.includes(iso);
+}
+
 function weekTaskHTML(t, dateObj, todayISO) {
-  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
-  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
-  const done = (isToday || dueMatch) && parseInt(t.done_today || 0) === 1;
+  const done = isTaskDone(t, dateObj);
+  const dateISO = toISODate(dateObj);
   const badge = t.recurrence === 'weekly' ? '∞ semanal' : '1×';
-  return `<div class="week-task-item${done ? ' done' : ''}" onclick="toggleTask(${t.id})">
+  return `<div class="week-task-item${done ? ' done' : ''}" onclick="toggleTask(${t.id},'${dateISO}')">
     <div class="week-task-check">✓</div>
     <div class="week-task-title">${esc(t.title)}</div>
     <div class="week-task-badge">${badge}</div>
@@ -2394,10 +2401,9 @@ function weekHabitHTML(h, dateObj) {
 }
 
 function taskMobileItemHTML(t, dateObj, todayISO) {
-  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
-  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
-  const done = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
-  return `<div class="task-mobile-item${done ? ' done' : ''}" onclick="toggleTask(${t.id})">
+  const done = isTaskDone(t, dateObj);
+  const dateISO = toISODate(dateObj);
+  return `<div class="task-mobile-item${done ? ' done' : ''}" onclick="toggleTask(${t.id},'${dateISO}')">
     <div class="task-mobile-item-title">${esc(t.title)}</div>
     <div class="task-mobile-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
@@ -2418,12 +2424,11 @@ function habitMobileItemHTML(h, dateObj) {
 }
 
 function taskRowHTML(t, dateObj, todayISO, compact=false) {
-  const isToday = dateObj ? toISODate(dateObj) === todayISO : false;
-  const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
-  const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
+  const isDone = isTaskDone(t, dateObj);
+  const dateISO = toISODate(dateObj);
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
   const recBadge = t.recurrence === 'weekly' ? '' : `<span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:4px">1×</span>`;
-  return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}" onclick="toggleTask(${t.id})">
+  return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}" onclick="toggleTask(${t.id},'${dateISO}')">
     <div class="task-check">✓</div>
     <div class="task-title">
       <div>${esc(t.title)}${recBadge}</div>
@@ -2456,8 +2461,8 @@ async function toggleHabitForDate(id, dateISO) {
   else toast(res.error || 'Erro', 'err');
 }
 
-async function toggleTask(id) {
-  await api('task_toggle','POST',{id});
+async function toggleTask(id, dateISO) {
+  await api('task_toggle','POST',{id, date: dateISO || getSaoPauloTodayISO()});
   loadTasks();
 }
 
