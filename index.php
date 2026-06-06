@@ -1265,6 +1265,31 @@ body {
   .week-day-icon { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; }
 }
 
+/* ===== A FAZER (undated tasks) ===== */
+.undated-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.undated-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.undated-title {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.undated-add {
+  font-size: 18px; width: 26px; height: 26px; border-radius: 8px;
+  border: 1px solid var(--border2); background: transparent; color: var(--muted2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  line-height: 1; transition: all 0.15s;
+}
+.undated-add:hover { background: var(--surface2); color: var(--text); }
+.undated-list { display: flex; flex-direction: column; gap: 8px; }
+.undated-empty { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
 /* ===== TASK WEEK HEADER ===== */
 .task-week-header {
   display: flex;
@@ -1728,15 +1753,16 @@ if ('serviceWorker' in navigator) {
       <input type="text" id="t-title" class="form-control" placeholder="Ex: Academia, Relatório, Reunião…">
     </div>
     <div class="form-group">
-      <label class="form-label">DIA DA SEMANA</label>
-      <div class="day-chips" id="t-day-chips"></div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">RECORRÊNCIA</label>
+      <label class="form-label">QUANDO</label>
       <div class="rec-toggle">
         <button class="rec-toggle-btn active" id="rec-weekly" onclick="setRecToggle('weekly')">Toda semana</button>
-        <button class="rec-toggle-btn" id="rec-once" onclick="setRecToggle('once')">Só esta semana</button>
+        <button class="rec-toggle-btn" id="rec-once" onclick="setRecToggle('once')">Esta semana</button>
+        <button class="rec-toggle-btn" id="rec-undated" onclick="setRecToggle('undated')">Sem dia</button>
       </div>
+    </div>
+    <div class="form-group" id="t-day-group">
+      <label class="form-label">DIA DA SEMANA</label>
+      <div class="day-chips" id="t-day-chips"></div>
     </div>
     <input type="hidden" id="t-id">
     <input type="hidden" id="t-recurrence" value="weekly">
@@ -2343,7 +2369,28 @@ function renderTasks() {
     </div>`;
   }).join('');
 
+  const undated = allTasks.filter(t => t.recurrence === 'once' && !t.due_date && parseInt(t.status || 0) === 0);
+  const undatedHTML = undated.length
+    ? undated.map(t => `<div class="week-task-item${parseInt(t.done_today||0)?' done':''}" onclick="toggleTask(${t.id},null)">
+        <div class="week-task-check">✓</div>
+        <div class="week-task-title">${esc(t.title)}</div>
+        <div class="week-task-actions">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteTask(${t.id})">✕</button>
+        </div>
+      </div>`).join('')
+    : `<div class="undated-empty">Nenhuma tarefa pendente.</div>`;
+
+  const undatedSection = `<div class="undated-section">
+    <div class="undated-header">
+      <div class="undated-title">A fazer</div>
+      <button class="undated-add" onclick="openTaskModal(null,null,true)">+</button>
+    </div>
+    <div class="undated-list">${undatedHTML}</div>
+  </div>`;
+
   el.innerHTML = `<div class="weekly-planner">
+    ${undatedSection}
     <div class="week-summary">
       <div class="week-progress-bar"><div class="week-progress-fill" style="width:${pct}%"></div></div>
       <div class="week-summary-text">${doneTasks} / ${totalTasks} feitas</div>
@@ -2457,18 +2504,19 @@ async function toggleHabitForDate(id, dateISO) {
 }
 
 async function toggleTask(id, dateISO) {
-  await api('task_toggle','POST',{id, date: dateISO || getSaoPauloTodayISO()});
+  const body = dateISO ? {id, date: dateISO} : {id};
+  await api('task_toggle','POST', body);
   loadTasks();
 }
 
 let _taskSelectedDay = 1;
-function openTaskModal(editData=null, prefillDay=null) {
+function openTaskModal(editData=null, prefillDay=null, undated=false) {
   document.getElementById('t-id').value = editData?.id||'';
   document.getElementById('t-title').value = editData?.title||'';
   document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
   _taskSelectedDay = editData?.recurrence_day || prefillDay || dayIndexFromDate(getSaoPauloTodayDate());
-  const rec = editData?.recurrence || 'weekly';
-  document.getElementById('t-recurrence').value = rec;
+  let rec = editData?.recurrence || 'weekly';
+  if (undated || (editData && editData.recurrence === 'once' && !editData.due_date && !editData.recurrence_day)) rec = 'undated';
   setRecToggle(rec, true);
   renderDayChips(_taskSelectedDay);
   openModal('taskModal');
@@ -2489,28 +2537,38 @@ function setRecToggle(val, silent=false) {
   document.getElementById('t-recurrence').value = val;
   document.getElementById('rec-weekly').classList.toggle('active', val==='weekly');
   document.getElementById('rec-once').classList.toggle('active', val==='once');
+  document.getElementById('rec-undated').classList.toggle('active', val==='undated');
+  const dayGroup = document.getElementById('t-day-group');
+  if (dayGroup) dayGroup.style.display = val === 'undated' ? 'none' : '';
 }
 async function saveTask() {
   const title = document.getElementById('t-title').value.trim();
   if (!title) { toast('Informe o título','err'); return; }
-  const recurrence = document.getElementById('t-recurrence').value || 'weekly';
+  const recToggleVal = document.getElementById('t-recurrence').value || 'weekly';
   const recDay = _taskSelectedDay || dayIndexFromDate(getSaoPauloTodayDate());
 
-  let due_date = null;
-  if (recurrence === 'once') {
+  let recurrence = recToggleVal, due_date = null, recurrence_day = null;
+
+  if (recToggleVal === 'undated') {
+    recurrence = 'once';
+  } else if (recToggleVal === 'once') {
+    recurrence = 'once';
     const today = getSaoPauloTodayDate();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
     const target = new Date(weekStart);
     target.setDate(weekStart.getDate() + (recDay - 1));
     due_date = toISODate(target);
+  } else {
+    recurrence = 'weekly';
+    recurrence_day = recDay;
   }
 
   const body = {
     id: document.getElementById('t-id').value,
     title,
     recurrence,
-    recurrence_day: recurrence === 'weekly' ? recDay : null,
+    recurrence_day,
     color: '#ffffff',
     due_date
   };
