@@ -1146,6 +1146,128 @@ body {
 @media (min-width: 901px) {
   .main { padding-bottom: 80px; }
 }
+
+/* ===== TASK WEEK HEADER ===== */
+.task-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.task-week-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.task-day-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.task-day.is-today .task-day-date { color: var(--muted2); }
+.task-check {
+  width: 18px; height: 18px; min-width: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent;
+  transition: all 0.15s;
+}
+.task-row.done .task-check { background: var(--green); border-color: var(--green); color: var(--bg); }
+.task-row.habit .task-check { border-color: rgba(245,200,66,0.4); }
+.task-row.habit.done .task-check { background: var(--yellow); border-color: var(--yellow); }
+
+/* Task day + chip selector in modal */
+.day-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.day-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--muted2);
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.day-chip.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.rec-toggle {
+  display: flex; gap: 0; border: 1px solid var(--border2); border-radius: 999px; overflow: hidden;
+}
+.rec-toggle-btn {
+  flex: 1; padding: 8px 14px;
+  background: var(--surface2); color: var(--muted2);
+  border: none; cursor: pointer;
+  font-size: 12px; font-family: 'DM Mono', monospace;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  transition: all 0.15s;
+}
+.rec-toggle-btn.active { background: var(--text); color: var(--bg); }
+
+/* ===== CORPO PANEL ===== */
+.corpo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.corpo-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.corpo-block-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+.corpo-textarea {
+  width: 100%;
+  min-height: 360px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.corpo-textarea:focus { border-color: var(--border2); }
+.corpo-save-hint {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  text-align: right;
+  min-height: 16px;
+  transition: color 0.3s;
+}
+.corpo-save-hint.saved { color: var(--green); }
+@media (max-width: 900px) {
+  .corpo-grid { grid-template-columns: 1fr; }
+  .corpo-textarea { min-height: 260px; }
+}
 </style>
 </head>
 <body>
@@ -1190,6 +1312,10 @@ body {
         <span class="nav-icon">◎</span>
         <span class="nav-label">Metas</span>
         <span class="nav-badge" id="nb-metas">—</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('corpo')" id="nav-corpo">
+        <span class="nav-icon">♡</span>
+        <span class="nav-label">Corpo</span>
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -1262,12 +1388,15 @@ body {
     <!-- ===== TAREFAS ===== -->
     <div class="panel" id="panel-tarefas">
       <div class="section-header">
-        <div class="section-title">TAREFAS</div>
-        <button class="btn btn-primary" onclick="openTaskModal()">+ Nova Tarefa</button>
+        <div>
+          <div class="section-title">SEMANA</div>
+          <div class="task-week-label" id="taskWeekLabel">—</div>
+        </div>
+        <button class="btn btn-primary" onclick="openTaskModal()">+ Atividade</button>
       </div>
 
       <div id="taskSections">
-          <div class="empty-state">Carregando tarefas…</div>
+          <div class="empty-state">Carregando…</div>
       </div>
     </div>
 
@@ -1373,6 +1502,25 @@ body {
       </div>
     </div>
 
+    <!-- ===== CORPO ===== -->
+    <div class="panel" id="panel-corpo">
+      <div class="section-header" style="margin-bottom:24px">
+        <div class="section-title">CORPO</div>
+      </div>
+      <div class="corpo-grid">
+        <div class="corpo-block">
+          <div class="corpo-block-title">MEU TREINO</div>
+          <textarea class="corpo-textarea" id="corpoTreino" placeholder="Descreva seu treino da semana, exercícios, séries, cargas…" oninput="scheduleCorpoSave('treino')"></textarea>
+          <div class="corpo-save-hint" id="corpoTreinoHint"></div>
+        </div>
+        <div class="corpo-block">
+          <div class="corpo-block-title">MINHA DIETA</div>
+          <textarea class="corpo-textarea" id="corpoDieta" placeholder="Descreva sua dieta, refeições, macros, metas…" oninput="scheduleCorpoSave('dieta')"></textarea>
+          <div class="corpo-save-hint" id="corpoDietaHint"></div>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1398,6 +1546,10 @@ body {
   <button class="bottom-nav-item" onclick="switchTab('metas')" id="bn-metas">
     <span class="bottom-nav-icon">◎</span>
     <span class="bottom-nav-label">Metas</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchTab('corpo')" id="bn-corpo">
+    <span class="bottom-nav-icon">♡</span>
+    <span class="bottom-nav-label">Corpo</span>
   </button>
 </nav>
 
@@ -1439,18 +1591,24 @@ body {
 <!-- ===== MODAL: TASK ===== -->
 <div class="modal-overlay" id="taskModal">
   <div class="modal">
-    <div class="modal-title" id="taskModalTitle">Nova Tarefa</div>
+    <div class="modal-title" id="taskModalTitle">Nova Atividade</div>
     <div class="form-group">
       <label class="form-label">TÍTULO</label>
-      <input type="text" id="t-title" class="form-control" placeholder="Ex: Revisar código, Enviar relatório…">
+      <input type="text" id="t-title" class="form-control" placeholder="Ex: Academia, Relatório, Reunião…">
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label" id="t-recday-label">DIA DA SEMANA</label>
-        <select id="t-recday" class="form-control"></select>
+    <div class="form-group">
+      <label class="form-label">DIA DA SEMANA</label>
+      <div class="day-chips" id="t-day-chips"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">RECORRÊNCIA</label>
+      <div class="rec-toggle">
+        <button class="rec-toggle-btn active" id="rec-weekly" onclick="setRecToggle('weekly')">Toda semana</button>
+        <button class="rec-toggle-btn" id="rec-once" onclick="setRecToggle('once')">Só esta semana</button>
       </div>
     </div>
     <input type="hidden" id="t-id">
+    <input type="hidden" id="t-recurrence" value="weekly">
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('taskModal')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTask()">Salvar</button>
@@ -1739,6 +1897,7 @@ function switchTab(tab) {
   if (tab==='eventos') loadEvents();
   if (tab==='financas') loadFinance();
   if (tab==='metas') loadGoals();
+  if (tab==='corpo') loadCorpo();
 }
 
 // ===== STREAK =====
@@ -1905,10 +2064,7 @@ async function loadTasks() {
   }
   allTasks = res.data || [];
   renderTasks();
-  const todayISO = getSaoPauloTodayISO();
-  const overdue = allTasks.filter(t => t.due_date && t.due_date < todayISO && t.recurrence==='once' && !t.status).length;
-  document.getElementById('hStatVencidas').textContent = overdue;
-  document.getElementById('nb-tarefas').textContent = allTasks.length;
+  document.getElementById('nb-tarefas').textContent = allTasks.length || '—';
 }
 
 function habitAppliesToDate(h, dateObj) {
@@ -1993,11 +2149,17 @@ function renderTasks() {
 
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     return d;
   });
+
+  const fmtShort = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const weekLabel = document.getElementById('taskWeekLabel');
+  if (weekLabel) weekLabel.textContent = `${fmtShort(weekStart)} – ${fmtShort(weekEnd)}`;
 
   const dayBuckets = weekDates.map(() => []);
   const outOfWeek = [];
@@ -2044,21 +2206,25 @@ function renderTasks() {
   const grid = `<div class="task-week-wrap"><div class="task-week-grid">${weekDates.map((d, i) => {
     const dayLabel = DAYS_WEEK[i + 1] || '';
     const list = dayBuckets[i];
-    const items = list.length ? list.map(entry => renderDayEntry(entry, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+    const items = list.length ? list.map(entry => renderDayEntry(entry, todayISO)).join('') : '<div class="task-day-empty">livre</div>';
     const isToday = toISODate(d) === todayISO;
     return `<div class="task-day${isToday ? ' is-today' : ''}">
-      <div class="task-day-header"><strong>${dayLabel}</strong></div>
+      <div class="task-day-header">
+        <strong>${dayLabel}</strong>
+        <div class="task-day-date">${fmtShort(d)}</div>
+      </div>
       <div class="task-day-list">${items}</div>
     </div>`;
   }).join('')}</div></div>`;
+
   if (window.innerWidth <= 600) {
     const mobile = `<div class="task-mobile-list">${weekDates.map((d, i) => {
       const dayLabel = DAYS_WEEK[i + 1] || '';
       const list = dayBuckets[i];
-      const items = list.length ? list.map(entry => renderMobileEntry(entry, todayISO)).join('') : '<div class="task-day-empty">Sem tarefas</div>';
+      const items = list.length ? list.map(entry => renderMobileEntry(entry, todayISO)).join('') : '<div class="task-day-empty">livre</div>';
       const isToday = toISODate(d) === todayISO;
       return `<div class="task-mobile-card${isToday ? ' is-today' : ''}">
-        <div class="task-mobile-title">${dayLabel}<span class="task-mobile-count">${list.length}</span></div>
+        <div class="task-mobile-title">${dayLabel} <span style="color:var(--muted);font-size:10px">${fmtShort(d)}</span><span class="task-mobile-count">${list.length}</span></div>
         <div class="task-mobile-items">${items}</div>
       </div>`;
     }).join('')}</div>`;
@@ -2097,10 +2263,11 @@ function taskRowHTML(t, dateObj, todayISO, compact=false) {
   const dueMatch = dateObj && t.due_date && toISODate(dateObj) === t.due_date;
   const isDone = (isToday || dueMatch) && parseInt(t.done_today || 0, 10) === 1;
   const isOverdue = t.recurrence === 'once' && t.due_date && t.due_date < todayISO && !t.status;
-  const dateLabel = t.due_date ? `<span class="task-date${isOverdue ? ' overdue' : ''}">⊙ ${fmtDate(t.due_date)}</span>` : '';
+  const recBadge = t.recurrence === 'weekly' ? '' : `<span style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:4px">1×</span>`;
   return `<div class="task-row${isDone ? ' done' : ''}${isOverdue ? ' overdue' : ''}" onclick="toggleTask(${t.id})">
+    <div class="task-check">✓</div>
     <div class="task-title">
-      <div>${esc(t.title)}</div>
+      <div>${esc(t.title)}${recBadge}</div>
     </div>
     <div class="task-actions">
       <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editTask(${t.id})">✏</button>
@@ -2135,33 +2302,58 @@ async function toggleTask(id) {
   loadTasks();
 }
 
+let _taskSelectedDay = 1;
 function openTaskModal(editData=null) {
   document.getElementById('t-id').value = editData?.id||'';
   document.getElementById('t-title').value = editData?.title||'';
-  toggleRecDay(editData?.recurrence_day);
-  document.getElementById('taskModalTitle').textContent = editData ? 'Editar Tarefa' : 'Nova Tarefa';
+  document.getElementById('taskModalTitle').textContent = editData ? 'Editar Atividade' : 'Nova Atividade';
+  _taskSelectedDay = editData?.recurrence_day || dayIndexFromDate(getSaoPauloTodayDate());
+  const rec = editData?.recurrence || 'weekly';
+  document.getElementById('t-recurrence').value = rec;
+  setRecToggle(rec, true);
+  renderDayChips(_taskSelectedDay);
   openModal('taskModal');
 }
 function editTask(id) { const t = allTasks.find(x=>x.id==id); if(t) openTaskModal(t); }
-function toggleRecDay(selected=null) {
-  const sel = document.getElementById('t-recday');
-  const label = document.getElementById('t-recday-label');
-  label.textContent = 'DIA DA SEMANA';
-  const pick = selected || dayIndexFromDate(getSaoPauloTodayDate());
-  sel.innerHTML = DAYS_WEEK.map((d,i)=>i===0?'':
-    `<option value="${i}" ${pick==i?'selected':''}>${d}</option>`).join('');
+function renderDayChips(selected) {
+  const wrap = document.getElementById('t-day-chips');
+  if (!wrap) return;
+  wrap.innerHTML = DAYS_WEEK.map((d,i) => i===0 ? '' :
+    `<button class="day-chip${i==selected?' active':''}" onclick="selectDayChip(${i})">${d.substring(0,3)}</button>`
+  ).join('');
+}
+function selectDayChip(idx) {
+  _taskSelectedDay = idx;
+  renderDayChips(idx);
+}
+function setRecToggle(val, silent=false) {
+  document.getElementById('t-recurrence').value = val;
+  document.getElementById('rec-weekly').classList.toggle('active', val==='weekly');
+  document.getElementById('rec-once').classList.toggle('active', val==='once');
 }
 async function saveTask() {
   const title = document.getElementById('t-title').value.trim();
   if (!title) { toast('Informe o título','err'); return; }
-  const recDay = document.getElementById('t-recday').value;
+  const recurrence = document.getElementById('t-recurrence').value || 'weekly';
+  const recDay = _taskSelectedDay || dayIndexFromDate(getSaoPauloTodayDate());
+
+  let due_date = null;
+  if (recurrence === 'once') {
+    const today = getSaoPauloTodayDate();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const target = new Date(weekStart);
+    target.setDate(weekStart.getDate() + (recDay - 1));
+    due_date = toISODate(target);
+  }
+
   const body = {
     id: document.getElementById('t-id').value,
     title,
-    recurrence: 'weekly',
-    recurrence_day: recDay,
+    recurrence,
+    recurrence_day: recurrence === 'weekly' ? recDay : null,
     color: '#ffffff',
-    due_date: null
+    due_date
   };
   const res = await api('task_save','POST',body);
   if (res.ok) { toast('Salvo!'); closeModal('taskModal'); loadTasks(); }
@@ -2736,9 +2928,29 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
   o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
 });
 
+// ===== CORPO =====
+const CORPO_KEYS = { treino: 'corpo_treino_v1', dieta: 'corpo_dieta_v1' };
+const _corpoTimers = {};
+function loadCorpo() {
+  document.getElementById('corpoTreino').value = localStorage.getItem(CORPO_KEYS.treino) || '';
+  document.getElementById('corpoDieta').value = localStorage.getItem(CORPO_KEYS.dieta) || '';
+}
+function scheduleCorpoSave(type) {
+  clearTimeout(_corpoTimers[type]);
+  _corpoTimers[type] = setTimeout(() => {
+    const val = document.getElementById(type === 'treino' ? 'corpoTreino' : 'corpoDieta').value;
+    localStorage.setItem(CORPO_KEYS[type], val);
+    const hint = document.getElementById(type === 'treino' ? 'corpoTreinoHint' : 'corpoDietaHint');
+    hint.textContent = 'salvo';
+    hint.classList.add('saved');
+    setTimeout(() => { hint.textContent = ''; hint.classList.remove('saved'); }, 1800);
+  }, 600);
+}
+
 // ===== INIT =====
 async function init() {
   initDates();
+  loadCorpo();
   await loadCats();
   await loadHabits();
   await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals()]);
