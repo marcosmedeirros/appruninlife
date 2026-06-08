@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "vidaemcontrole": {
+      "command": "node",
+      "args": ["C:\\Users\\marco\\OneDrive\\Documentos\\appruninlife\\mcp-server\\index.js"]
+    }
+  }
+}

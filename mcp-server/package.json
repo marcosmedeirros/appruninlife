@@ -1,0 +1,13 @@
+{
+  "name": "vidaemcontrole-mcp",
+  "version": "1.0.0",
+  "description": "MCP server para Vida em Controle - gerencia tarefas, habitos, financas e metas",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
