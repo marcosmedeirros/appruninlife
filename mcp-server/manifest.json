@@ -1,0 +1,46 @@
+{
+  "manifest_version": "0.3",
+  "name": "vida-em-controle",
+  "display_name": "Vida em Controle",
+  "version": "1.0.0",
+  "description": "Ferramentas de controle de vida: tarefas, hábitos, finanças e metas integradas ao marcosmedeiros.page",
+  "author": {
+    "name": "Marcos Medeiros",
+    "email": "marcoscemd@gmail.com"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/index.js"]
+    }
+  },
+  "tools": [
+    { "name": "listar_tarefas",    "description": "Lista todas as tarefas da semana com status" },
+    { "name": "criar_tarefa",      "description": "Cria nova tarefa recorrente ou pontual" },
+    { "name": "atualizar_tarefa",  "description": "Atualiza dados de uma tarefa existente" },
+    { "name": "marcar_tarefa",     "description": "Marca/desmarca tarefa como concluída" },
+    { "name": "deletar_tarefa",    "description": "Remove uma tarefa" },
+    { "name": "listar_habitos",    "description": "Lista todos os hábitos e streaks" },
+    { "name": "criar_habito",      "description": "Cria novo hábito diário ou semanal" },
+    { "name": "marcar_habito",     "description": "Registra conclusão de hábito no dia" },
+    { "name": "deletar_habito",    "description": "Remove um hábito" },
+    { "name": "listar_financas",   "description": "Lista transações financeiras" },
+    { "name": "resumo_financeiro", "description": "Retorna saldo, receitas e despesas" },
+    { "name": "criar_transacao",   "description": "Registra receita ou despesa" },
+    { "name": "deletar_transacao", "description": "Remove uma transação" },
+    { "name": "listar_categorias", "description": "Lista categorias de transações" },
+    { "name": "listar_metas",      "description": "Lista metas de curto e longo prazo" },
+    { "name": "criar_meta",        "description": "Cria nova meta com valor alvo" },
+    { "name": "depositar_meta",    "description": "Adiciona valor a uma meta" },
+    { "name": "marcar_meta",       "description": "Marca meta como concluída" },
+    { "name": "deletar_meta",      "description": "Remove uma meta" }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}
