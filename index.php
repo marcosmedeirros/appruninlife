@@ -343,6 +343,7 @@ body {
   border-radius: var(--radius);
   padding: 24px;
 }
+.panel > .card + .card { margin-top: 20px; }
 .card-title {
   font-family: 'DM Mono', monospace;
   font-size: 10px;

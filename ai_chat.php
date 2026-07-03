@@ -18,6 +18,7 @@ if (ANTHROPIC_API_KEY === '') {
 
 $userId = 1;
 $today = date('Y-m-d');
+$today_year = date('Y');
 $input = json_decode(file_get_contents('php://input'), true);
 $userMessage = trim((string)($input['message'] ?? ''));
 if ($userMessage === '') {
@@ -104,7 +105,10 @@ $systemPrompt = "Voce e o assistente pessoal dentro do app 'Vida em Controle', d
     . "Quando o usuario contar algo que bate com uma tarefa ou habito da lista acima, marque como feito usando o id certo. "
     . "Se ele mencionar algo novo que nao existe na lista (uma tarefa nova pra lembrar), pode criar com create_task. "
     . "Nunca invente numeros que voce nao tem — use get_summary se precisar de dados de outros dias/semana/mes. "
-    . "Nao repita de volta os dados que ja estao no contexto acima a nao ser que o usuario pergunte.";
+    . "Nao repita de volta os dados que ja estao no contexto acima a nao ser que o usuario pergunte. "
+    . "Se o usuario mandar varios gastos/receitas de uma vez, um por linha (ex: '50 reais 19/07 mercado' e depois '30 reais 20/07 farmacia'), "
+    . "chame log_finance uma vez para cada linha, passando a data de cada uma no formato YYYY-MM-DD (ano {$today_year}, a menos que o usuario diga outro ano). "
+    . "No final, confirme quantos lancamentos voce registrou, sem precisar listar cada um de novo.";
 
 $tools = [
     [
@@ -162,13 +166,14 @@ $tools = [
     ],
     [
         'name' => 'log_finance',
-        'description' => 'Registra uma receita ou despesa financeira.',
+        'description' => 'Registra uma receita ou despesa financeira. Se o usuario mandar varios gastos de uma vez (um por linha), chame esta ferramenta uma vez para cada um.',
         'input_schema' => [
             'type' => 'object',
             'properties' => [
                 'type' => ['type' => 'string', 'enum' => ['income', 'expense']],
                 'amount' => ['type' => 'number'],
                 'description' => ['type' => 'string'],
+                'date' => ['type' => 'string', 'description' => 'Data no formato YYYY-MM-DD. Se o usuario nao informar uma data, use a data de hoje.'],
             ],
             'required' => ['type', 'amount', 'description'],
         ],
@@ -248,10 +253,14 @@ function execute_tool(PDO $pdo, int $userId, string $today, string $name, array 
             $type = ($args['type'] ?? '') === 'income' ? 'income' : 'expense';
             $amount = (float)($args['amount'] ?? 0);
             $desc = trim((string)($args['description'] ?? ''));
+            $date = trim((string)($args['date'] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $date = $today;
+            }
             if ($amount <= 0) return ['ok' => false, 'error' => 'valor invalido'];
             $pdo->prepare("INSERT INTO fin_transactions (user_id, type, amount, description, transaction_date) VALUES (?, ?, ?, ?, ?)")
-                ->execute([$userId, $type, $amount, $desc, $today]);
-            return ['ok' => true];
+                ->execute([$userId, $type, $amount, $desc, $date]);
+            return ['ok' => true, 'date' => $date];
 
         case 'get_summary':
             $scope = $args['scope'] ?? 'week';
