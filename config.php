@@ -4,6 +4,14 @@
 // ===== DETECÇÃO DO BASE PATH =====
 require_once __DIR__ . '/includes/paths.php';
 
+// ===== SEGREDOS (chaves de API) — arquivo fora do git, ver secrets.php =====
+if (file_exists(__DIR__ . '/secrets.php')) {
+    require_once __DIR__ . '/secrets.php';
+}
+if (!defined('ANTHROPIC_API_KEY')) {
+    define('ANTHROPIC_API_KEY', getenv('ANTHROPIC_API_KEY') ?: '');
+}
+
 // Fuso horario padrao
 date_default_timezone_set('America/Sao_Paulo');
 
