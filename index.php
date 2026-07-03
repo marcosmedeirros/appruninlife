@@ -375,7 +375,9 @@ body {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   transition: all 0.2s;
+  cursor: pointer;
 }
+.habit-item:hover { border-color: var(--border2); }
 .habit-item.done { opacity: 0.5; }
 .habit-item.done .habit-name { text-decoration: line-through; }
 
@@ -2701,16 +2703,16 @@ function renderHabits() {
   const weekly = allHabits.filter(h => h._recurrence === 'weekly');
 
   const renderHabitItem = h => `
-    <div class="habit-item${h._done?' done':''}">
-      <div class="habit-check" title="${h._done ? 'Feito hoje' : 'Ainda não feito hoje — marque na aba Início'}">${h._done?'✓':''}</div>
+    <div class="habit-item${h._done?' done':''}" onclick="toggleHabit(${h.id})">
+      <div class="habit-check">${h._done?'✓':''}</div>
       <div class="habit-info">
         <div class="habit-name">${esc(h.title)}</div>
         <div class="habit-meta">${habitRecLabel(h)}${h._show_in_tasks ? ' · Em tarefas' : ''}</div>
       </div>
       <div class="habit-streak">${habitStreak(h)}</div>
       <div class="habit-actions">
-        <button class="btn btn-ghost btn-icon btn-sm" onclick="editHabit(${h.id})">✏</button>
-        <button class="btn btn-danger btn-icon btn-sm" onclick="deleteHabit(${h.id})">✕</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editHabit(${h.id})">✏</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();deleteHabit(${h.id})">✕</button>
       </div>
     </div>
   `;
