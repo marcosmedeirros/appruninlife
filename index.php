@@ -1018,9 +1018,10 @@ body {
   border-top: 1px solid var(--border);
   height: var(--bottomnav);
   z-index: 200;
-  padding: 0 16px;
+  padding: 0 4px;
   justify-content: space-around;
   align-items: center;
+  overflow-x: auto;
 }
 .bottom-nav-item {
   display: flex;
@@ -1028,7 +1029,7 @@ body {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 8px 10px;
   border-radius: 12px;
   transition: all 0.2s;
   color: var(--muted);
@@ -1411,6 +1412,109 @@ body {
   .corpo-grid { grid-template-columns: 1fr; }
   .corpo-textarea { min-height: 260px; }
 }
+
+/* ===== INÍCIO / XP / RECOMPENSAS ===== */
+.xp-hero { position: relative; overflow: visible; }
+.xp-hero-top { display: flex; align-items: center; gap: 24px; }
+.xp-level-badge {
+  flex-shrink: 0;
+  width: 78px; height: 78px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--surface2), var(--surface3));
+  border: 2px solid var(--border2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.xp-level-num { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 700; line-height: 1; }
+.xp-level-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-top: 4px; }
+.xp-hero-info { flex: 1; min-width: 0; }
+.xp-hero-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 1.5px; margin-bottom: 10px; }
+.xp-bar-track { background: var(--surface2); border-radius: 99px; height: 14px; overflow: hidden; border: 1px solid var(--border); }
+.xp-bar-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--green), #6fe8c9);
+  transition: width 0.7s cubic-bezier(.22,1,.36,1);
+}
+.xp-bar-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted2); margin-top: 8px; }
+.xp-points-wrap { flex-shrink: 0; text-align: right; position: relative; }
+.xp-points-num { font-family: 'DM Mono', monospace; font-size: 30px; font-weight: 700; color: var(--green); line-height: 1; }
+.xp-points-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-top: 4px; }
+.xp-week-chart { display: flex; align-items: flex-end; gap: 6px; height: 54px; margin-top: 22px; }
+.xp-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+.xp-bar-fillcol { width: 100%; max-width: 22px; background: var(--surface3); border-radius: 5px 5px 2px 2px; transition: height 0.5s ease; }
+.xp-bar-col.is-today .xp-bar-fillcol { background: var(--green); }
+.xp-bar-daylabel { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); }
+.xp-actions-hdr { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+
+.points-pop {
+  position: absolute; right: 8px; top: -6px;
+  font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px;
+  color: var(--green);
+  pointer-events: none;
+  animation: popFloat 1s ease forwards;
+}
+@keyframes popFloat {
+  0% { opacity: 0; transform: translateY(6px) scale(0.9); }
+  20% { opacity: 1; transform: translateY(-4px) scale(1.05); }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
+
+.action-list { display: flex; flex-direction: column; gap: 8px; }
+.action-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.action-row:hover { border-color: var(--border2); }
+.action-row.done { opacity: 0.55; }
+.action-check {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--green);
+  transition: all 0.15s;
+}
+.action-row.done .action-check { background: var(--green); border-color: var(--green); color: var(--bg); }
+.action-title { flex: 1; font-size: 14px; }
+.action-row.done .action-title { text-decoration: line-through; }
+.action-badge {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--green); background: rgba(16,217,160,0.1);
+  padding: 3px 8px; border-radius: 99px; flex-shrink: 0;
+}
+.action-kind-tag { font-size: 10px; color: var(--muted); margin-left: 4px; }
+
+.reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; }
+.reward-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  transition: all 0.15s;
+}
+.reward-card.locked { opacity: 0.5; }
+.reward-icon { font-size: 30px; margin-bottom: 8px; }
+.reward-title { font-size: 13px; margin-bottom: 6px; }
+.reward-cost { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--green); margin-bottom: 12px; }
+.reward-actions { display: flex; gap: 6px; justify-content: center; align-items: center; }
+.reward-actions .btn-primary { flex: 1; }
+
+.redemption-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.redemption-row:last-child { border-bottom: none; }
+.redemption-cost { font-family: 'DM Mono', monospace; color: var(--red); font-size: 12px; }
+.redemption-date { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 11px; }
+@media (max-width: 900px) {
+  .xp-hero-top { flex-wrap: wrap; }
+  .xp-points-wrap { text-align: left; }
+}
 </style>
 <script>
 if ('serviceWorker' in navigator) {
@@ -1446,7 +1550,12 @@ if ('serviceWorker' in navigator) {
       <div class="logo-sub">painel pessoal</div>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" onclick="switchTab('habitos')" id="nav-habitos">
+      <div class="nav-item active" onclick="switchTab('inicio')" id="nav-inicio">
+        <span class="nav-icon">⚡</span>
+        <span class="nav-label">Início</span>
+        <span class="nav-badge" id="nb-inicio">—</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('habitos')" id="nav-habitos">
         <span class="nav-icon">⊙</span>
         <span class="nav-label">Hábitos</span>
         <span class="nav-badge" id="nb-habitos">—</span>
@@ -1485,8 +1594,64 @@ if ('serviceWorker' in navigator) {
   <!-- MAIN -->
   <main class="main">
 
+    <!-- ===== INÍCIO ===== -->
+    <div class="panel active" id="panel-inicio">
+
+      <div class="card xp-hero">
+        <div class="xp-hero-top">
+          <div class="xp-level-badge">
+            <div class="xp-level-num" id="xpLevel">1</div>
+            <div class="xp-level-label">NÍVEL</div>
+          </div>
+          <div class="xp-hero-info">
+            <div class="xp-hero-title">SEU PROGRESSO</div>
+            <div class="xp-bar-track">
+              <div class="xp-bar-fill" id="xpBarFill" style="width:0%"></div>
+            </div>
+            <div class="xp-bar-label" id="xpBarLabel">0 / 100 XP</div>
+          </div>
+          <div class="xp-points-wrap" id="xpPointsWrap">
+            <div class="xp-points-num" id="pointsBalance">0</div>
+            <div class="xp-points-label">PONTOS</div>
+          </div>
+        </div>
+        <div class="xp-week-chart" id="xpWeekChart"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
+          <div class="card-title" style="margin:0">AÇÕES DE HOJE</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="xp-actions-hdr" id="inicioActionsHdr">0/0 hoje</div>
+            <button class="btn btn-ghost btn-sm" onclick="openActionModal()">+ Nova Ação</button>
+          </div>
+        </div>
+        <div class="action-list" id="inicioActions">
+          <div class="empty-state">Carregando…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div class="card-title" style="margin:0">RECOMPENSAS</div>
+          <button class="btn btn-ghost btn-sm" onclick="openRewardModal()">+ Nova</button>
+        </div>
+        <div class="reward-grid" id="rewardsList">
+          <div class="empty-state">Carregando…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">ÚLTIMOS RESGATES</div>
+        <div id="redemptionsList">
+          <div class="empty-state">Nenhum resgate ainda.</div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ===== HÁBITOS ===== -->
-    <div class="panel active" id="panel-habitos">
+    <div class="panel" id="panel-habitos">
 
       <!-- Desktop streak -->
       <div class="streak-section">
@@ -1683,7 +1848,11 @@ if ('serviceWorker' in navigator) {
 
 <!-- BOTTOM NAV (mobile) -->
 <nav class="bottom-nav">
-  <button class="bottom-nav-item active" onclick="switchTab('habitos')" id="bn-habitos">
+  <button class="bottom-nav-item active" onclick="switchTab('inicio')" id="bn-inicio">
+    <span class="bottom-nav-icon">⚡</span>
+    <span class="bottom-nav-label">Início</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchTab('habitos')" id="bn-habitos">
     <span class="bottom-nav-icon">⊙</span>
     <span class="bottom-nav-label">Hábitos</span>
   </button>
@@ -1917,6 +2086,59 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- ===== MODAL: NOVA AÇÃO (INÍCIO) ===== -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal">
+    <div class="modal-title">Nova Ação</div>
+    <div class="form-group">
+      <label class="form-label">TÍTULO</label>
+      <input type="text" id="a-title" class="form-control" placeholder="Ex: Beber água, Ler 10 páginas…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">FREQUÊNCIA</label>
+      <div class="rec-toggle">
+        <button class="rec-toggle-btn active" id="a-rec-daily" onclick="setActionRecToggle('daily')">Diária</button>
+        <button class="rec-toggle-btn" id="a-rec-weekly" onclick="setActionRecToggle('weekly')">Semanal</button>
+      </div>
+    </div>
+    <div class="form-group" id="a-day-group" style="display:none">
+      <label class="form-label">DIA DA SEMANA</label>
+      <div class="day-chips" id="a-day-chips"></div>
+    </div>
+    <input type="hidden" id="a-recurrence" value="daily">
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('actionModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAction()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: REWARD ===== -->
+<div class="modal-overlay" id="rewardModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title" id="rewardModalTitle">Nova Recompensa</div>
+    <div class="form-row">
+      <div class="form-group" style="max-width:90px">
+        <label class="form-label">ÍCONE</label>
+        <input type="text" id="r-icon" class="form-control" maxlength="4" placeholder="🎁" style="text-align:center;font-size:20px">
+      </div>
+      <div class="form-group">
+        <label class="form-label">RECOMPENSA</label>
+        <input type="text" id="r-title" class="form-control" placeholder="Ex: Ver um filme, Pedir comida…">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">CUSTO (PONTOS)</label>
+      <input type="number" id="r-cost" class="form-control" placeholder="50" min="1" step="1">
+    </div>
+    <input type="hidden" id="r-id">
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('rewardModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveReward()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: INITIAL BALANCE ===== -->
 <div class="modal-overlay" id="initialBalanceModal">
   <div class="modal" style="max-width:360px">
@@ -1945,6 +2167,8 @@ const APP_TIMEZONE = 'America/Sao_Paulo';
 
 let allTasks = [], allTxns = [], allCats = [], allGoals = [];
 let allHabits = [];
+let allRewards = [], allRedemptions = [];
+let pointsData = { balance: 0, total_earned: 0, level: 1, xp_into_level: 0, xp_for_level: 100, week: [] };
 let allEvents = [];
 let finFilter = 'all';
 let currentMonth = getSaoPauloTodayDate();
@@ -2049,6 +2273,7 @@ function switchTab(tab) {
   if (nv) nv.classList.add('active');
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
+  if (tab==='inicio') { loadPoints(); loadRewards(); renderInicioActions(); }
   if (tab==='habitos') loadHabits();
   if (tab==='tarefas') loadTasks();
   if (tab==='eventos') loadEvents();
@@ -2083,11 +2308,241 @@ function renderStreak() {
   document.getElementById('streakHeadline').innerHTML = `HOJE: <span>${done}/${total} HÁBITOS</span>`;
   document.getElementById('streakHeadlineMob').textContent = headline;
 
-  document.getElementById('hStatHoje').textContent = `${done}/${total}`;
-  document.getElementById('hStatStreak').textContent = STREAK_DAYS;
-  document.getElementById('hStatSemana').textContent = total > 0 ? Math.round(done/total*100)+'%' : '0%';
+  const hStatHoje = document.getElementById('hStatHoje');
+  const hStatStreak = document.getElementById('hStatStreak');
+  const hStatSemana = document.getElementById('hStatSemana');
+  if (hStatHoje) hStatHoje.textContent = `${done}/${total}`;
+  if (hStatStreak) hStatStreak.textContent = STREAK_DAYS;
+  if (hStatSemana) hStatSemana.textContent = total > 0 ? Math.round(done/total*100)+'%' : '0%';
 
   document.getElementById('nb-habitos').textContent = `${done}/${total}`;
+}
+
+// ===== INÍCIO (XP / PONTOS / RECOMPENSAS) =====
+async function loadPoints() {
+  const res = await api('points_summary');
+  if (res.ok) { pointsData = res.data; renderPoints(); }
+}
+
+function renderPoints() {
+  const level = pointsData.level || 1;
+  const into = pointsData.xp_into_level || 0;
+  const need = pointsData.xp_for_level || 100;
+  const pct = Math.max(0, Math.min(100, Math.round(into/need*100)));
+  document.getElementById('xpLevel').textContent = level;
+  document.getElementById('xpBarFill').style.width = pct + '%';
+  document.getElementById('xpBarLabel').textContent = `${into} / ${need} XP`;
+  const balEl = document.getElementById('pointsBalance');
+  balEl.textContent = pointsData.balance ?? 0;
+  balEl.style.color = (pointsData.balance||0) < 0 ? 'var(--red)' : '';
+
+  const weekWrap = document.getElementById('xpWeekChart');
+  if (weekWrap) {
+    const week = pointsData.week || [];
+    const maxP = Math.max(10, ...week.map(w=>w.points));
+    const DAYS_SHORT = ['D','S','T','Q','Q','S','S'];
+    const todayISO = getSaoPauloTodayISO();
+    weekWrap.innerHTML = week.map(w=>{
+      const h = Math.max(4, Math.round((w.points/maxP)*100));
+      const d = new Date(w.date+'T00:00:00');
+      const isToday = w.date === todayISO;
+      return `<div class="xp-bar-col${isToday?' is-today':''}" title="${w.points} pts">
+        <div class="xp-bar-fillcol" style="height:${h}%"></div>
+        <div class="xp-bar-daylabel">${DAYS_SHORT[d.getDay()]}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function popPoints(amount) {
+  const wrap = document.getElementById('xpPointsWrap');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'points-pop';
+  el.textContent = (amount > 0 ? '+' : '') + amount;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+async function loadRewards() {
+  const res = await api('rewards_list');
+  if (res.ok) { allRewards = res.data || []; renderRewards(); }
+  const res2 = await api('redemptions_list');
+  if (res2.ok) { allRedemptions = res2.data || []; renderRedemptions(); }
+}
+
+function renderRewards() {
+  const el = document.getElementById('rewardsList');
+  if (!el) return;
+  if (!allRewards.length) {
+    el.innerHTML = '<div class="empty-state">Nenhuma recompensa cadastrada. Crie a sua!</div>';
+    return;
+  }
+  el.innerHTML = allRewards.map(r=>{
+    const afford = (pointsData.balance||0) >= parseInt(r.cost,10);
+    return `<div class="reward-card${afford?'':' locked'}">
+      <div class="reward-icon">${esc(r.icon||'🎁')}</div>
+      <div class="reward-title">${esc(r.title)}</div>
+      <div class="reward-cost">${r.cost} pts</div>
+      <div class="reward-actions">
+        <button class="btn btn-primary btn-sm" ${afford?'':'disabled'} onclick="redeemReward(${r.id})">Resgatar</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="editReward(${r.id})">✏</button>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="deleteReward(${r.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRedemptions() {
+  const el = document.getElementById('redemptionsList');
+  if (!el) return;
+  if (!allRedemptions.length) {
+    el.innerHTML = '<div class="empty-state">Nenhum resgate ainda.</div>';
+    return;
+  }
+  el.innerHTML = allRedemptions.map(r=>{
+    const d = (r.redeemed_at||'').split(' ')[0];
+    return `<div class="redemption-row">
+      <span>${esc(r.title)}</span>
+      <span>
+        <span class="redemption-cost">-${r.cost} pts</span>
+        <span class="redemption-date">${fmtDate(d)}</span>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function openRewardModal(editData=null) {
+  document.getElementById('r-id').value = editData?.id || '';
+  document.getElementById('r-title').value = editData?.title || '';
+  document.getElementById('r-cost').value = editData?.cost || '';
+  document.getElementById('r-icon').value = editData?.icon || '🎁';
+  document.getElementById('rewardModalTitle').textContent = editData ? 'Editar Recompensa' : 'Nova Recompensa';
+  openModal('rewardModal');
+}
+function editReward(id) { const r = allRewards.find(x=>x.id==id); if (r) openRewardModal(r); }
+async function saveReward() {
+  const title = document.getElementById('r-title').value.trim();
+  const cost = parseInt(document.getElementById('r-cost').value, 10);
+  if (!title) { toast('Informe o nome da recompensa','err'); return; }
+  if (!cost || cost <= 0) { toast('Informe um custo valido','err'); return; }
+  const body = {
+    id: document.getElementById('r-id').value,
+    title, cost,
+    icon: document.getElementById('r-icon').value.trim() || '🎁'
+  };
+  const res = await api('reward_save','POST',body);
+  if (res.ok) { toast('Recompensa salva!'); closeModal('rewardModal'); loadRewards(); }
+  else toast(res.error||'Erro','err');
+}
+async function deleteReward(id) {
+  if (!confirm('Excluir esta recompensa?')) return;
+  const res = await api('reward_delete','POST',{id});
+  if (res.ok) { loadRewards(); }
+  else toast(res.error||'Erro','err');
+}
+async function redeemReward(id) {
+  const r = allRewards.find(x=>x.id==id);
+  if (!r) return;
+  if (!confirm(`Resgatar "${r.title}" por ${r.cost} pontos?`)) return;
+  const res = await api('reward_redeem','POST',{id});
+  if (res.ok) {
+    toast('Recompensa resgatada! Aproveite 🎉');
+    await loadPoints();
+    await loadRewards();
+  } else {
+    toast(res.error || 'Erro ao resgatar.', 'err');
+  }
+}
+
+function renderInicioActions() {
+  const el = document.getElementById('inicioActions');
+  if (!el) return;
+  const todayDate = getSaoPauloTodayDate();
+  const items = [];
+  allHabits.forEach(h => {
+    if (habitAppliesToDate(h, todayDate)) {
+      items.push({ kind: 'habit', id: h.id, title: h.title, done: !!h._done, points: 10 });
+    }
+  });
+  allTasks.forEach(t => {
+    if (taskAppliesToDate(t, todayDate)) {
+      items.push({ kind: 'task', id: t.id, title: t.title, done: parseInt(t.done_today||0,10)===1, points: 10 });
+    }
+  });
+
+  const total = items.length;
+  const done = items.filter(i=>i.done).length;
+  const hdr = document.getElementById('inicioActionsHdr');
+  if (hdr) hdr.textContent = `${done}/${total} hoje`;
+  const nb = document.getElementById('nb-inicio');
+  if (nb) nb.textContent = `${done}/${total}`;
+
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-state">Nenhuma ação para hoje. Cadastre hábitos ou tarefas.</div>';
+    return;
+  }
+  items.sort((a,b) => (a.done - b.done) || a.title.localeCompare(b.title));
+  el.innerHTML = items.map(i => {
+    const fn = i.kind === 'habit' ? `inicioToggleHabit(${i.id})` : `inicioToggleTask(${i.id})`;
+    const tag = i.kind === 'habit' ? 'hábito' : 'tarefa';
+    return `<div class="action-row${i.done?' done':''}" onclick="${fn}">
+      <div class="action-check">${i.done?'✓':''}</div>
+      <div class="action-title">${esc(i.title)}<span class="action-kind-tag">· ${tag}</span></div>
+      <div class="action-badge">+${i.points}</div>
+    </div>`;
+  }).join('');
+}
+
+async function inicioToggleHabit(id) {
+  const h = allHabits.find(x=>x.id==id);
+  const wasDone = !!h?._done;
+  await toggleHabit(id);
+  await loadPoints();
+  if (!wasDone) popPoints(10);
+}
+async function inicioToggleTask(id) {
+  const t = allTasks.find(x=>x.id==id);
+  const wasDone = t ? parseInt(t.done_today||0,10)===1 : false;
+  await toggleTask(id, getSaoPauloTodayISO());
+  await loadPoints();
+  if (!wasDone) popPoints(10);
+}
+
+let _actionSelectedDay = null;
+function openActionModal() {
+  document.getElementById('a-title').value = '';
+  setActionRecToggle('daily');
+  openModal('actionModal');
+}
+function setActionRecToggle(type) {
+  document.getElementById('a-recurrence').value = type;
+  document.getElementById('a-rec-daily').classList.toggle('active', type === 'daily');
+  document.getElementById('a-rec-weekly').classList.toggle('active', type === 'weekly');
+  document.getElementById('a-day-group').style.display = type === 'weekly' ? 'block' : 'none';
+  if (type === 'weekly') {
+    renderActionDayChips(_actionSelectedDay || dayIndexFromDate(getSaoPauloTodayDate()));
+  }
+}
+function renderActionDayChips(selected) {
+  _actionSelectedDay = selected;
+  const wrap = document.getElementById('a-day-chips');
+  wrap.innerHTML = DAYS_WEEK.map((d,i) => i===0 ? '' :
+    `<button class="day-chip${i==selected?' active':''}" onclick="selectActionDayChip(${i})">${d.substring(0,3)}</button>`).join('');
+}
+function selectActionDayChip(i) { renderActionDayChips(i); }
+async function saveAction() {
+  const title = document.getElementById('a-title').value.trim();
+  if (!title) { toast('Informe o título da ação','err'); return; }
+  const recurrence = document.getElementById('a-recurrence').value;
+  const body = {
+    title,
+    recurrence,
+    recurrence_day: recurrence === 'weekly' ? (_actionSelectedDay || dayIndexFromDate(getSaoPauloTodayDate())) : null
+  };
+  const res = await api('task_save','POST',body);
+  if (res.ok) { toast('Ação criada!'); closeModal('actionModal'); await loadTasks(); }
+  else toast(res.error||'Erro','err');
 }
 
 // ===== HABITS =====
@@ -2121,6 +2576,7 @@ async function loadHabits() {
   renderHabits();
   renderStreak();
   renderTasks();
+  renderInicioActions();
 }
 
 function renderHabits() {
@@ -2221,6 +2677,7 @@ async function loadTasks() {
   }
   allTasks = res.data || [];
   renderTasks();
+  renderInicioActions();
   document.getElementById('nb-tarefas').textContent = allTasks.length || '—';
 }
 
@@ -3170,7 +3627,8 @@ async function init() {
   loadCorpo();
   await loadCats();
   await loadHabits();
-  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals()]);
+  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards()]);
+  renderInicioActions();
 }
 init();
 </script>

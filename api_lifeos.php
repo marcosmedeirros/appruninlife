@@ -149,6 +149,60 @@ function ensure_tables(PDO $pdo): void {
     if (!column_exists($pdo, 'habits', 'show_in_tasks')) {
         $pdo->exec("ALTER TABLE habits ADD COLUMN show_in_tasks TINYINT DEFAULT 0");
     }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS point_events (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        points INT NOT NULL,
+        reason VARCHAR(255) DEFAULT NULL,
+        event_date DATE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_user_date (user_id, event_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS rewards (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        title VARCHAR(255) NOT NULL,
+        cost INT NOT NULL DEFAULT 50,
+        icon VARCHAR(10) DEFAULT '🎁',
+        active TINYINT DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS reward_redemptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        reward_id INT DEFAULT NULL,
+        title VARCHAR(255) NOT NULL,
+        cost INT NOT NULL,
+        redeemed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_user (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+}
+
+function award_points(PDO $pdo, int $userId, int $points, string $reason, string $date): void {
+    if ($points === 0) {
+        return;
+    }
+    $stmt = $pdo->prepare("INSERT INTO point_events (user_id, points, reason, event_date) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$userId, $points, $reason, $date]);
+}
+
+function points_balance(PDO $pdo, int $userId): array {
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(points),0) AS total FROM point_events WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $totalEarned = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(cost),0) AS total FROM reward_redemptions WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $totalSpent = (int)$stmt->fetchColumn();
+
+    return [
+        'total_earned' => $totalEarned,
+        'total_spent' => $totalSpent,
+        'balance' => $totalEarned - $totalSpent
+    ];
 }
 
 function migrate_legacy_activities(PDO $pdo, int $userId): void {
@@ -311,11 +365,16 @@ try {
         }
         if (in_array($date, $arr, true)) {
             $arr = array_values(array_diff($arr, [$date]));
+            $wasAdded = false;
         } else {
             $arr[] = $date;
+            $wasAdded = true;
         }
         $upd = $pdo->prepare("UPDATE habits SET checked_dates = ? WHERE id = ?");
         $upd->execute([json_encode($arr), $id]);
+        if ($date === $today) {
+            award_points($pdo, $userId, $wasAdded ? 10 : -10, 'Habito', $today);
+        }
         json_response(['ok' => true]);
     }
 
@@ -366,18 +425,29 @@ try {
             json_response(['ok' => false, 'error' => 'Tarefa nao encontrada.'], 404);
         }
 
+        $isToday = ($toggleDate === $today);
+
         if ($task['recurrence'] === 'once') {
             $newStatus = (int)!((int)$task['status']);
             $upd = $pdo->prepare("UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?");
             $upd->execute([$newStatus, $id, $userId]);
+            if ($isToday) {
+                award_points($pdo, $userId, $newStatus ? 10 : -10, 'Tarefa', $today);
+            }
         } else {
             $stmt = $pdo->prepare("SELECT id FROM task_completions WHERE task_id = ? AND done_date = ?");
             $stmt->execute([$id, $toggleDate]);
             $row = $stmt->fetch();
             if ($row) {
                 $pdo->prepare("DELETE FROM task_completions WHERE id = ?")->execute([$row['id']]);
+                if ($isToday) {
+                    award_points($pdo, $userId, -10, 'Tarefa', $today);
+                }
             } else {
                 $pdo->prepare("INSERT INTO task_completions (task_id, done_date) VALUES (?, ?)")->execute([$id, $toggleDate]);
+                if ($isToday) {
+                    award_points($pdo, $userId, 10, 'Tarefa', $today);
+                }
             }
         }
 
@@ -575,8 +645,16 @@ try {
         if ($id <= 0) {
             json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
         }
-        $stmt = $pdo->prepare("UPDATE goals SET status = 1 - status WHERE id = ? AND user_id = ?");
+        $stmt = $pdo->prepare("SELECT status FROM goals WHERE id = ? AND user_id = ?");
         $stmt->execute([$id, $userId]);
+        $goal = $stmt->fetch();
+        if (!$goal) {
+            json_response(['ok' => false, 'error' => 'Meta nao encontrada.'], 404);
+        }
+        $newStatus = 1 - (int)$goal['status'];
+        $stmt = $pdo->prepare("UPDATE goals SET status = ? WHERE id = ? AND user_id = ?");
+        $stmt->execute([$newStatus, $id, $userId]);
+        award_points($pdo, $userId, $newStatus ? 50 : -50, 'Meta concluida', $today);
         json_response(['ok' => true]);
     }
 
@@ -589,6 +667,102 @@ try {
         $stmt = $pdo->prepare("UPDATE goals SET current_amount = current_amount + ? WHERE id = ? AND user_id = ?");
         $stmt->execute([$amount, $id, $userId]);
         json_response(['ok' => true]);
+    }
+
+    if ($action === 'points_summary') {
+        $bal = points_balance($pdo, $userId);
+        $earnedPositive = max(0, $bal['total_earned']);
+        $level = intdiv($earnedPositive, 100) + 1;
+        $xpInto = $earnedPositive % 100;
+
+        $stmt = $pdo->prepare("SELECT event_date, SUM(points) AS total FROM point_events
+            WHERE user_id = ? AND event_date >= DATE_SUB(?, INTERVAL 6 DAY) AND event_date <= ?
+            GROUP BY event_date");
+        $stmt->execute([$userId, $today, $today]);
+        $map = [];
+        foreach ($stmt->fetchAll() as $r) {
+            $map[$r['event_date']] = (int)$r['total'];
+        }
+        $week = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $d = date('Y-m-d', strtotime("-$i day", strtotime($today)));
+            $week[] = ['date' => $d, 'points' => max(0, $map[$d] ?? 0)];
+        }
+
+        json_response(['ok' => true, 'data' => [
+            'balance' => $bal['balance'],
+            'total_earned' => $bal['total_earned'],
+            'level' => $level,
+            'xp_into_level' => $xpInto,
+            'xp_for_level' => 100,
+            'week' => $week
+        ]]);
+    }
+
+    if ($action === 'rewards_list') {
+        $stmt = $pdo->prepare("SELECT id, title, cost, icon FROM rewards WHERE user_id = ? AND active = 1 ORDER BY cost ASC, id DESC");
+        $stmt->execute([$userId]);
+        json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($action === 'reward_save') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        $title = trim((string)($input['title'] ?? ''));
+        $cost = isset($input['cost']) ? (int)$input['cost'] : 0;
+        $icon = trim((string)($input['icon'] ?? ''));
+        if ($icon === '') {
+            $icon = '🎁';
+        }
+        if ($title === '' || $cost <= 0) {
+            json_response(['ok' => false, 'error' => 'Preencha nome e um custo valido.'], 400);
+        }
+
+        if ($id > 0) {
+            $stmt = $pdo->prepare("UPDATE rewards SET title = ?, cost = ?, icon = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$title, $cost, $icon, $id, $userId]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO rewards (user_id, title, cost, icon) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$userId, $title, $cost, $icon]);
+        }
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'reward_delete') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        if ($id <= 0) {
+            json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
+        }
+        $stmt = $pdo->prepare("UPDATE rewards SET active = 0 WHERE id = ? AND user_id = ?");
+        $stmt->execute([$id, $userId]);
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'reward_redeem') {
+        $id = isset($input['id']) ? (int)$input['id'] : 0;
+        if ($id <= 0) {
+            json_response(['ok' => false, 'error' => 'ID invalido.'], 400);
+        }
+        $stmt = $pdo->prepare("SELECT id, title, cost FROM rewards WHERE id = ? AND user_id = ? AND active = 1");
+        $stmt->execute([$id, $userId]);
+        $reward = $stmt->fetch();
+        if (!$reward) {
+            json_response(['ok' => false, 'error' => 'Recompensa nao encontrada.'], 404);
+        }
+
+        $bal = points_balance($pdo, $userId);
+        if ($bal['balance'] < (int)$reward['cost']) {
+            json_response(['ok' => false, 'error' => 'Pontos insuficientes.'], 400);
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO reward_redemptions (user_id, reward_id, title, cost) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$userId, $reward['id'], $reward['title'], $reward['cost']]);
+        json_response(['ok' => true]);
+    }
+
+    if ($action === 'redemptions_list') {
+        $stmt = $pdo->prepare("SELECT id, title, cost, redeemed_at FROM reward_redemptions WHERE user_id = ? ORDER BY id DESC LIMIT 10");
+        $stmt->execute([$userId]);
+        json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
 
     json_response(['ok' => false, 'error' => 'Rota nao encontrada.'], 404);
