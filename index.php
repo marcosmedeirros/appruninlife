@@ -1547,23 +1547,18 @@ body {
 .chat-bubble.assistant { align-self: flex-start; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
 .chat-bubble.pending { color: var(--muted); font-style: italic; }
 .chat-input-row { display: flex; gap: 10px; }
-.chat-input-row .form-control { flex: 1; }
-
-.water-quick-row { display: flex; gap: 10px; flex-wrap: wrap; }
-
-.food-input-row { display: flex; gap: 10px; }
-.food-input-row .form-control { flex: 1; }
-.food-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 8px;
-}
-.food-item-meal { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; margin-right: 8px; }
+.chat-input-row .form-control { flex: 1; min-width: 0; }
+.chat-input-row .btn { flex-shrink: 0; width: auto; }
+.card-title + .btn { flex-shrink: 0; width: auto; }
 
 @media (max-width: 900px) {
   .xp-hero-top { flex-wrap: wrap; }
   .xp-points-wrap { text-align: left; }
   .chat-log { max-height: 260px; }
+}
+@media (max-width: 480px) {
+  .chat-input-row .btn { padding: 9px 12px; }
+  .reward-grid { grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); }
 }
 </style>
 <script>
@@ -1675,30 +1670,6 @@ if ('serviceWorker' in navigator) {
         <div class="chat-input-row">
           <input type="text" id="chatInput" class="form-control" placeholder="Bebi 500ml de água, terminei a academia…" onkeydown="if(event.key==='Enter')sendChatMessage()">
           <button class="btn btn-primary" id="chatSendBtn" onclick="sendChatMessage()">Enviar</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div class="card-title" style="margin:0">ÁGUA HOJE</div>
-          <div class="xp-actions-hdr" id="waterTodayLabel">0 ml</div>
-        </div>
-        <div class="water-quick-row">
-          <button class="btn btn-ghost btn-sm" onclick="quickAddWater(200)">+200ml</button>
-          <button class="btn btn-ghost btn-sm" onclick="quickAddWater(300)">+300ml</button>
-          <button class="btn btn-ghost btn-sm" onclick="quickAddWater(500)">+500ml</button>
-        </div>
-        <div class="xp-week-chart" id="waterWeekChart" style="margin-top:18px"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">REFEIÇÕES DE HOJE</div>
-        <div class="food-input-row">
-          <input type="text" id="foodInput" class="form-control" placeholder="O que você comeu?" onkeydown="if(event.key==='Enter')addFoodEntry()">
-          <button class="btn btn-ghost btn-sm" onclick="addFoodEntry()">+</button>
-        </div>
-        <div id="foodTodayList" style="margin-top:12px">
-          <div class="empty-state">Nenhuma refeição registrada hoje.</div>
         </div>
       </div>
 
@@ -2363,7 +2334,7 @@ function switchTab(tab) {
   if (nv) nv.classList.add('active');
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
-  if (tab==='inicio') { loadPoints(); loadRewards(); loadWater(); loadFoodToday(); renderInicioActions(); }
+  if (tab==='inicio') { loadPoints(); loadRewards(); renderInicioActions(); }
   if (tab==='habitos') loadHabits();
   if (tab==='tarefas') loadTasks();
   if (tab==='eventos') loadEvents();
@@ -2635,68 +2606,6 @@ async function saveAction() {
   else toast(res.error||'Erro','err');
 }
 
-// ===== ÁGUA =====
-async function loadWater() {
-  const res = await api('water_summary');
-  if (!res.ok) return;
-  const label = document.getElementById('waterTodayLabel');
-  if (label) label.textContent = `${res.data.today_ml} ml`;
-
-  const wrap = document.getElementById('waterWeekChart');
-  if (wrap) {
-    const week = res.data.week || [];
-    const maxMl = Math.max(500, ...week.map(w=>w.ml));
-    const DAYS_SHORT = ['D','S','T','Q','Q','S','S'];
-    const todayISO = getSaoPauloTodayISO();
-    wrap.innerHTML = week.map(w=>{
-      const h = Math.max(4, Math.round((w.ml/maxMl)*100));
-      const d = new Date(w.date+'T00:00:00');
-      const isToday = w.date === todayISO;
-      return `<div class="xp-bar-col${isToday?' is-today':''}" title="${w.ml} ml">
-        <div class="xp-bar-fillcol" style="height:${h}%"></div>
-        <div class="xp-bar-daylabel">${DAYS_SHORT[d.getDay()]}</div>
-      </div>`;
-    }).join('');
-  }
-}
-async function quickAddWater(ml) {
-  const res = await api('water_add','POST',{amount_ml: ml});
-  if (res.ok) { toast(`+${ml}ml de água`); loadWater(); }
-  else toast(res.error||'Erro','err');
-}
-
-// ===== REFEIÇÕES =====
-let allFoodToday = [];
-async function loadFoodToday() {
-  const res = await api('food_today');
-  if (!res.ok) return;
-  allFoodToday = res.data || [];
-  const el = document.getElementById('foodTodayList');
-  if (!el) return;
-  if (!allFoodToday.length) {
-    el.innerHTML = '<div class="empty-state">Nenhuma refeição registrada hoje.</div>';
-    return;
-  }
-  el.innerHTML = allFoodToday.map(f => `
-    <div class="food-item">
-      <span>${f.meal_label ? `<span class="food-item-meal">${esc(f.meal_label)}</span>` : ''}${esc(f.description)}</span>
-      <button class="btn btn-danger btn-icon btn-sm" onclick="deleteFoodEntry(${f.id})">✕</button>
-    </div>
-  `).join('');
-}
-async function addFoodEntry() {
-  const input = document.getElementById('foodInput');
-  const description = input.value.trim();
-  if (!description) return;
-  const res = await api('food_add','POST',{description});
-  if (res.ok) { input.value = ''; loadFoodToday(); }
-  else toast(res.error||'Erro','err');
-}
-async function deleteFoodEntry(id) {
-  const res = await api('food_delete','POST',{id});
-  if (res.ok) loadFoodToday();
-}
-
 // ===== CHAT =====
 async function loadChatHistory() {
   const res = await api('chat_history');
@@ -2734,7 +2643,7 @@ async function sendChatMessage() {
     const pendingEl = document.getElementById(pendingId);
     if (data.ok) {
       if (pendingEl) { pendingEl.textContent = data.reply; pendingEl.classList.remove('pending'); }
-      await Promise.all([loadPoints(), loadWater(), loadFoodToday(), loadTasks(), loadHabits()]);
+      await Promise.all([loadPoints(), loadTasks(), loadHabits()]);
     } else {
       if (pendingEl) { pendingEl.textContent = data.error || 'Erro ao falar com a IA.'; pendingEl.classList.remove('pending'); }
     }
@@ -3831,7 +3740,7 @@ async function init() {
   loadCorpo();
   await loadCats();
   await loadHabits();
-  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards(), loadWater(), loadFoodToday(), loadChatHistory()]);
+  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards(), loadChatHistory()]);
   renderInicioActions();
 }
 init();
