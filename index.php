@@ -352,6 +352,13 @@ body {
 .inicio-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .ov-fin-balance { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700; }
 .ov-fin-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+.ov-fin-stats { display: flex; gap: 24px; margin-top: 14px; }
+.ov-fin-stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+.ov-fin-stat-value { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 600; margin-top: 2px; }
+.ov-fin-quickadd { display: flex; gap: 8px; margin-top: 16px; }
+.ov-fin-quickadd .form-control { flex: 1; min-width: 0; padding: 8px 10px; font-size: 13px; }
+.ov-fin-quickadd .ov-fin-amount { flex: 0 0 90px; }
+.ov-fin-quickadd .btn { flex-shrink: 0; width: auto; }
 .reward-history-title {
   font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase;
   letter-spacing: 2px; color: var(--muted); margin: 24px 0 12px;
@@ -1708,6 +1715,21 @@ if ('serviceWorker' in navigator) {
               </div>
               <div class="ov-fin-balance" id="ovFinBalance">R$ 0,00</div>
               <div class="ov-fin-sub">saldo do mês</div>
+              <div class="ov-fin-stats">
+                <div class="ov-fin-stat">
+                  <div class="ov-fin-stat-label">ENTRADAS</div>
+                  <div class="ov-fin-stat-value" id="ovFinIncome" style="color:var(--green)">R$ 0,00</div>
+                </div>
+                <div class="ov-fin-stat">
+                  <div class="ov-fin-stat-label">GASTOS</div>
+                  <div class="ov-fin-stat-value" id="ovFinExpense" style="color:var(--red)">R$ 0,00</div>
+                </div>
+              </div>
+              <div class="ov-fin-quickadd">
+                <input type="text" id="ovFinDesc" class="form-control" placeholder="Descrição do gasto" onkeydown="if(event.key==='Enter')quickAddExpense()">
+                <input type="number" id="ovFinAmount" class="form-control ov-fin-amount" placeholder="Valor" step="0.01" onkeydown="if(event.key==='Enter')quickAddExpense()">
+                <button class="btn btn-primary btn-sm" onclick="quickAddExpense()">+</button>
+              </div>
               <div id="ovTxnList" style="margin-top:14px"></div>
             </div>
 
@@ -3511,10 +3533,32 @@ async function loadFinance() {
     renderOvTxns(txnRes.data||[]);
     const ovBal = document.getElementById('ovFinBalance');
     if (ovBal) { ovBal.textContent = fmtBRL(s.balance); ovBal.style.color = s.balance>=0 ? 'var(--green)' : 'var(--red)'; }
+    const ovIncome = document.getElementById('ovFinIncome');
+    if (ovIncome) ovIncome.textContent = fmtBRL(s.income);
+    const ovExpense = document.getElementById('ovFinExpense');
+    if (ovExpense) ovExpense.textContent = fmtBRL(s.expense);
   }
   if (txnRes.ok) {
     allTxns = txnRes.data||[];
     renderTxnFull();
+  }
+}
+
+async function quickAddExpense() {
+  const descEl = document.getElementById('ovFinDesc');
+  const amountEl = document.getElementById('ovFinAmount');
+  const description = descEl.value.trim();
+  const amount = parseFloat(amountEl.value);
+  if (!description) { toast('Informe a descrição do gasto','err'); return; }
+  if (!amount || amount <= 0) { toast('Informe um valor válido','err'); return; }
+  const res = await api('fin_save','POST',{type:'expense', amount, description, date: getSaoPauloTodayISO()});
+  if (res.ok) {
+    descEl.value = '';
+    amountEl.value = '';
+    toast('Gasto registrado!');
+    await loadFinance();
+  } else {
+    toast(res.error||'Erro','err');
   }
 }
 
