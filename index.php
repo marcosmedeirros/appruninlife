@@ -346,8 +346,9 @@ body {
 .panel > .card + .card { margin-top: 20px; }
 
 /* ===== INÍCIO: GRID DE CONTROLE ===== */
-.inicio-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; margin-top: 20px; }
+.inicio-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: stretch; margin-top: 20px; }
 .inicio-main, .inicio-sidebar { display: flex; flex-direction: column; gap: 20px; }
+.inicio-sidebar > .card:last-child { flex: 1; }
 .inicio-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .ov-fin-balance { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700; }
 .ov-fin-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
@@ -356,11 +357,7 @@ body {
   letter-spacing: 2px; color: var(--muted); margin: 24px 0 12px;
   padding-top: 20px; border-top: 1px solid var(--border);
 }
-.ov-corpo-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
-.ov-corpo-text {
-  font-size: 13px; color: var(--text); margin-top: 4px;
-  white-space: pre-wrap; max-height: 60px; overflow: hidden;
-}
+.ov-corpo-text { font-size: 13px; color: var(--text); white-space: pre-wrap; }
 @media (max-width: 1100px) {
   .inicio-grid { grid-template-columns: 1fr; }
 }
@@ -1751,13 +1748,10 @@ if ('serviceWorker' in navigator) {
 
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-              <div class="card-title" style="margin:0">CORPO HOJE</div>
+              <div class="card-title" style="margin:0">TREINO</div>
               <button class="btn btn-ghost btn-sm" onclick="switchTab('corpo')">Editar</button>
             </div>
-            <div class="ov-corpo-label">TREINO</div>
             <div class="ov-corpo-text" id="ovCorpoTreino">—</div>
-            <div class="ov-corpo-label" style="margin-top:12px">DIETA</div>
-            <div class="ov-corpo-text" id="ovCorpoDieta">—</div>
           </div>
         </div>
       </div>
@@ -3813,12 +3807,9 @@ function loadCorpo() {
 }
 function renderOvCorpo() {
   const treinoEl = document.getElementById('ovCorpoTreino');
-  const dietaEl = document.getElementById('ovCorpoDieta');
-  if (!treinoEl || !dietaEl) return;
+  if (!treinoEl) return;
   const t = (localStorage.getItem(CORPO_KEYS.treino) || '').trim();
-  const d = (localStorage.getItem(CORPO_KEYS.dieta) || '').trim();
   treinoEl.textContent = t || '—';
-  dietaEl.textContent = d || '—';
 }
 function scheduleCorpoSave(type) {
   clearTimeout(_corpoTimers[type]);
