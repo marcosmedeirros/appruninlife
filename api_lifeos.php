@@ -635,6 +635,51 @@ try {
         json_response(['ok' => true, 'data' => array_reverse($stmt->fetchAll())]);
     }
 
+    if ($action === 'note_get') {
+        $date = $_GET['date'] ?? $today;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = $today;
+        }
+        $stmt = $pdo->prepare("SELECT note_date, content, photo_data FROM daily_notes WHERE user_id = ? AND note_date = ?");
+        $stmt->execute([$userId, $date]);
+        $row = $stmt->fetch();
+        json_response(['ok' => true, 'data' => $row ?: ['note_date' => $date, 'content' => '', 'photo_data' => null]]);
+    }
+
+    if ($action === 'notes_list') {
+        $search = trim((string)($_GET['search'] ?? ''));
+        if ($search !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $search)) {
+            $stmt = $pdo->prepare("SELECT id, note_date, content, photo_data FROM daily_notes WHERE user_id = ? AND note_date = ?");
+            $stmt->execute([$userId, $search]);
+        } else {
+            $stmt = $pdo->prepare("SELECT id, note_date, content, photo_data FROM daily_notes WHERE user_id = ? ORDER BY note_date DESC LIMIT 90");
+            $stmt->execute([$userId]);
+        }
+        json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($action === 'note_save') {
+        $date = trim((string)($input['date'] ?? ''));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            json_response(['ok' => false, 'error' => 'Data invalida.'], 400);
+        }
+        $content = (string)($input['content'] ?? '');
+        $photoData = array_key_exists('photo_data', $input) ? $input['photo_data'] : null;
+
+        if ($photoData !== null) {
+            $stmt = $pdo->prepare("INSERT INTO daily_notes (user_id, note_date, content, photo_data)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE content = VALUES(content), photo_data = VALUES(photo_data), updated_at = CURRENT_TIMESTAMP");
+            $stmt->execute([$userId, $date, $content, $photoData ?: null]);
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO daily_notes (user_id, note_date, content)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = CURRENT_TIMESTAMP");
+            $stmt->execute([$userId, $date, $content]);
+        }
+        json_response(['ok' => true]);
+    }
+
     json_response(['ok' => false, 'error' => 'Rota nao encontrada.'], 404);
 } catch (Exception $e) {
     error_log('[API_LIFEOS] ' . $e->getMessage());

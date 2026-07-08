@@ -365,6 +365,40 @@ body {
   padding-top: 20px; border-top: 1px solid var(--border);
 }
 .ov-corpo-text { font-size: 13px; color: var(--text); white-space: pre-wrap; }
+
+/* ===== ANOTAÇÕES ===== */
+.notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.note-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; display: flex; flex-direction: column; gap: 10px;
+}
+.note-card.today { border-color: var(--text); }
+.note-card-date {
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--text);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.note-card.today .note-card-date { color: var(--green); }
+.note-card-date-sub { font-size: 10px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+.note-card-text, .ov-note-textarea {
+  width: 100%; min-height: 110px; resize: vertical;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'Space Grotesk', sans-serif; font-size: 13px; line-height: 1.6;
+  padding: 12px 14px; outline: none; transition: border-color 0.15s;
+}
+.note-card-text:focus, .ov-note-textarea:focus { border-color: var(--border2); }
+.ov-note-textarea { min-height: 80px; }
+.note-photo-wrap img.note-card-photo {
+  width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer;
+}
+.note-photo-add {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border: 1px dashed var(--border2); border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--muted2); cursor: pointer; transition: all 0.15s;
+}
+.note-photo-add:hover { color: var(--text); border-color: var(--text); }
+.note-save-hint { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); min-height: 14px; transition: color 0.3s; }
+.note-save-hint.saved { color: var(--green); }
 @media (max-width: 1100px) {
   .inicio-grid { grid-template-columns: 1fr; }
 }
@@ -1655,6 +1689,10 @@ if ('serviceWorker' in navigator) {
         <span class="nav-icon">♡</span>
         <span class="nav-label">Corpo</span>
       </div>
+      <div class="nav-item" onclick="switchTab('anotacoes')" id="nav-anotacoes">
+        <span class="nav-icon">✎</span>
+        <span class="nav-label">Anotações</span>
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-date">
@@ -1774,6 +1812,16 @@ if ('serviceWorker' in navigator) {
               <button class="btn btn-ghost btn-sm" onclick="switchTab('corpo')">Editar</button>
             </div>
             <div class="ov-corpo-text" id="ovCorpoTreino">—</div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="card-title" style="margin:0">ANOTAÇÃO DE HOJE</div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('anotacoes')">Ver todas</button>
+            </div>
+            <textarea class="ov-note-textarea" id="ovNoteText" placeholder="Escreva algo sobre hoje…" oninput="scheduleOvNoteSave()"></textarea>
+            <div class="note-photo-wrap" id="ovNotePhotoWrap"></div>
+            <div class="note-save-hint" id="ovNoteHint"></div>
           </div>
         </div>
       </div>
@@ -1972,6 +2020,20 @@ if ('serviceWorker' in navigator) {
       </div>
     </div>
 
+    <!-- ===== ANOTAÇÕES ===== -->
+    <div class="panel" id="panel-anotacoes">
+      <div class="section-header" style="margin-bottom:24px;gap:12px;flex-wrap:wrap">
+        <div class="section-title">ANOTAÇÕES</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="date" id="notesSearchDate" class="form-control" style="max-width:170px" onchange="searchNoteByDate()">
+          <button class="btn btn-ghost btn-sm" onclick="clearNoteSearch()">Limpar</button>
+        </div>
+      </div>
+      <div class="notes-grid" id="notesGrid">
+        <div class="empty-state">Carregando…</div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -2005,6 +2067,10 @@ if ('serviceWorker' in navigator) {
   <button class="bottom-nav-item" onclick="switchTab('corpo')" id="bn-corpo">
     <span class="bottom-nav-icon">♡</span>
     <span class="bottom-nav-label">Corpo</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchTab('anotacoes')" id="bn-anotacoes">
+    <span class="bottom-nav-icon">✎</span>
+    <span class="bottom-nav-label">Notas</span>
   </button>
 </nav>
 
@@ -2409,13 +2475,14 @@ function switchTab(tab) {
   if (nv) nv.classList.add('active');
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
-  if (tab==='inicio') { loadPoints(); loadRewards(); loadFinance(); loadGoals(); loadEvents(); loadCorpo(); renderInicioActions(); }
+  if (tab==='inicio') { loadPoints(); loadRewards(); loadFinance(); loadGoals(); loadEvents(); loadCorpo(); loadNoteToday(); renderInicioActions(); }
   if (tab==='habitos') loadHabits();
   if (tab==='tarefas') loadTasks();
   if (tab==='eventos') loadEvents();
   if (tab==='financas') loadFinance();
   if (tab==='metas') loadGoals();
   if (tab==='corpo') loadCorpo();
+  if (tab==='anotacoes') { clearNoteSearch(false); loadNotes(); }
 }
 
 // ===== STREAK =====
@@ -3867,13 +3934,197 @@ function scheduleCorpoSave(type) {
   }, 600);
 }
 
+// ===== ANOTAÇÕES =====
+let allNotes = [];
+let _notesSearchDate = null;
+const _noteSaveTimers = {};
+const NOTE_MAX_PHOTO_DIM = 1000;
+
+function resizeImageToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > NOTE_MAX_PHOTO_DIM || h > NOTE_MAX_PHOTO_DIM) {
+          if (w > h) { h = Math.round(h * NOTE_MAX_PHOTO_DIM / w); w = NOTE_MAX_PHOTO_DIM; }
+          else { w = Math.round(w * NOTE_MAX_PHOTO_DIM / h); h = NOTE_MAX_PHOTO_DIM; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function notePhotoWrapHTML(date, photoData, ovMode = false) {
+  if (photoData) {
+    return `<img class="note-card-photo" src="${photoData}" alt="Foto do dia">`;
+  }
+  const handler = ovMode ? 'handleOvNotePhoto(event)' : `handleNotePhoto(event,'${date}')`;
+  return `<label class="note-photo-add">📷 Adicionar foto
+    <input type="file" accept="image/*" style="display:none" onchange="${handler}">
+  </label>`;
+}
+
+async function loadNotes(search = '') {
+  _notesSearchDate = search || null;
+  const params = search ? `&search=${search}` : '';
+  const res = await api('notes_list', 'GET', null, params);
+  if (!res.ok) return;
+  allNotes = res.data || [];
+  renderNotes();
+}
+
+function clearNoteSearch(shouldReload = true) {
+  const input = document.getElementById('notesSearchDate');
+  if (input) input.value = '';
+  _notesSearchDate = null;
+  if (shouldReload) loadNotes();
+}
+
+function searchNoteByDate() {
+  const val = document.getElementById('notesSearchDate').value;
+  if (!val) { clearNoteSearch(); return; }
+  loadNotes(val);
+}
+
+function renderNotes() {
+  const el = document.getElementById('notesGrid');
+  if (!el) return;
+  const todayISO = getSaoPauloTodayISO();
+  let list;
+  if (_notesSearchDate) {
+    list = allNotes.length ? [...allNotes] : [{ note_date: _notesSearchDate, content: '', photo_data: null }];
+  } else {
+    list = [...allNotes];
+    if (!list.find(n => n.note_date === todayISO)) {
+      list.unshift({ note_date: todayISO, content: '', photo_data: null });
+    }
+    list.sort((a, b) => {
+      if (a.note_date === todayISO) return -1;
+      if (b.note_date === todayISO) return 1;
+      return b.note_date.localeCompare(a.note_date);
+    });
+  }
+
+  const MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  el.innerHTML = list.map(n => {
+    const isToday = n.note_date === todayISO;
+    const d = new Date(n.note_date + 'T00:00:00');
+    const dayName = DAYS_WEEK[dayIndexFromDate(d)] || '';
+    const dateLabel = `${String(d.getDate()).padStart(2,'0')} ${MONTHS_SHORT[d.getMonth()]}`;
+    return `<div class="note-card${isToday ? ' today' : ''}" data-date="${n.note_date}">
+      <div class="note-card-date">${isToday ? 'HOJE' : dayName}<span class="note-card-date-sub">${dateLabel}</span></div>
+      <textarea class="note-card-text" placeholder="Escreva algo sobre esse dia…" oninput="scheduleNoteSave('${n.note_date}')">${esc(n.content||'')}</textarea>
+      <div class="note-photo-wrap">${notePhotoWrapHTML(n.note_date, n.photo_data)}</div>
+      <div class="note-save-hint"></div>
+    </div>`;
+  }).join('');
+}
+
+function scheduleNoteSave(date) {
+  clearTimeout(_noteSaveTimers[date]);
+  _noteSaveTimers[date] = setTimeout(() => saveNote(date), 700);
+}
+
+async function saveNote(date) {
+  const card = document.querySelector(`.note-card[data-date="${date}"]`);
+  if (!card) return;
+  const content = card.querySelector('.note-card-text').value;
+  const hint = card.querySelector('.note-save-hint');
+  const res = await api('note_save', 'POST', { date, content });
+  if (res.ok) {
+    const n = allNotes.find(x => x.note_date === date);
+    if (n) n.content = content; else allNotes.push({ note_date: date, content, photo_data: null });
+    if (hint) {
+      hint.textContent = 'salvo';
+      hint.classList.add('saved');
+      setTimeout(() => { hint.textContent = ''; hint.classList.remove('saved'); }, 1500);
+    }
+    if (date === getSaoPauloTodayISO()) loadNoteToday();
+  }
+}
+
+async function handleNotePhoto(event, date) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const card = document.querySelector(`.note-card[data-date="${date}"]`);
+  const content = card ? card.querySelector('.note-card-text').value : (allNotes.find(x=>x.note_date===date)?.content || '');
+  const dataUrl = await resizeImageToDataUrl(file);
+  const res = await api('note_save', 'POST', { date, content, photo_data: dataUrl });
+  if (res.ok) {
+    const n = allNotes.find(x => x.note_date === date);
+    if (n) { n.content = content; n.photo_data = dataUrl; } else allNotes.push({ note_date: date, content, photo_data: dataUrl });
+    renderNotes();
+    if (date === getSaoPauloTodayISO()) loadNoteToday();
+  } else {
+    toast(res.error || 'Erro ao enviar foto', 'err');
+  }
+}
+
+async function loadNoteToday() {
+  const textEl = document.getElementById('ovNoteText');
+  if (!textEl) return;
+  const res = await api('note_get');
+  if (!res.ok) return;
+  textEl.value = res.data.content || '';
+  const wrap = document.getElementById('ovNotePhotoWrap');
+  if (wrap) wrap.innerHTML = notePhotoWrapHTML(getSaoPauloTodayISO(), res.data.photo_data, true);
+}
+
+let _ovNoteTimer = null;
+function scheduleOvNoteSave() {
+  clearTimeout(_ovNoteTimer);
+  _ovNoteTimer = setTimeout(saveOvNoteToday, 700);
+}
+
+async function saveOvNoteToday() {
+  const today = getSaoPauloTodayISO();
+  const content = document.getElementById('ovNoteText').value;
+  const hint = document.getElementById('ovNoteHint');
+  const res = await api('note_save', 'POST', { date: today, content });
+  if (res.ok) {
+    const n = allNotes.find(x => x.note_date === today);
+    if (n) n.content = content;
+    if (hint) {
+      hint.textContent = 'salvo';
+      hint.classList.add('saved');
+      setTimeout(() => { hint.textContent = ''; hint.classList.remove('saved'); }, 1500);
+    }
+  }
+}
+
+async function handleOvNotePhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const today = getSaoPauloTodayISO();
+  const content = document.getElementById('ovNoteText').value;
+  const dataUrl = await resizeImageToDataUrl(file);
+  const res = await api('note_save', 'POST', { date: today, content, photo_data: dataUrl });
+  if (res.ok) {
+    const n = allNotes.find(x => x.note_date === today);
+    if (n) { n.content = content; n.photo_data = dataUrl; }
+    loadNoteToday();
+  } else {
+    toast(res.error || 'Erro ao enviar foto', 'err');
+  }
+}
+
 // ===== INIT =====
 async function init() {
   initDates();
   loadCorpo();
   await loadCats();
   await loadHabits();
-  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards()]);
+  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards(), loadNoteToday()]);
   renderInicioActions();
 }
 init();

@@ -200,6 +200,17 @@ function ensure_tables(PDO $pdo): void {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         KEY idx_user (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS daily_notes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        note_date DATE NOT NULL,
+        content TEXT,
+        photo_data MEDIUMTEXT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_date (user_id, note_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 }
 
 function award_points(PDO $pdo, int $userId, int $points, string $reason, string $date): void {
