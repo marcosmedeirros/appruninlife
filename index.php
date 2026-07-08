@@ -344,6 +344,29 @@ body {
   padding: 24px;
 }
 .panel > .card + .card { margin-top: 20px; }
+
+/* ===== INÍCIO: GRID DE CONTROLE ===== */
+.inicio-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; margin-top: 20px; }
+.inicio-main, .inicio-sidebar { display: flex; flex-direction: column; gap: 20px; }
+.inicio-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.ov-fin-balance { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 700; }
+.ov-fin-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+.reward-history-title {
+  font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--muted); margin: 24px 0 12px;
+  padding-top: 20px; border-top: 1px solid var(--border);
+}
+.ov-corpo-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.ov-corpo-text {
+  font-size: 13px; color: var(--text); margin-top: 4px;
+  white-space: pre-wrap; max-height: 60px; overflow: hidden;
+}
+@media (max-width: 1100px) {
+  .inicio-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .inicio-subgrid { grid-template-columns: 1fr; }
+}
 .card-title {
   font-family: 'DM Mono', monospace;
   font-size: 10px;
@@ -1665,42 +1688,77 @@ if ('serviceWorker' in navigator) {
         <div class="xp-week-chart" id="xpWeekChart"></div>
       </div>
 
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">💬 CONVERSAR SOBRE O DIA</div>
-        <div class="chat-log" id="chatLog"></div>
-        <div class="chat-input-row">
-          <input type="text" id="chatInput" class="form-control" placeholder="Bebi 500ml de água, terminei a academia…" onkeydown="if(event.key==='Enter')sendChatMessage()">
-          <button class="btn btn-primary" id="chatSendBtn" onclick="sendChatMessage()">Enviar</button>
-        </div>
-      </div>
+      <div class="inicio-grid">
+        <div class="inicio-main">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0">AÇÕES DE HOJE</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="xp-actions-hdr" id="inicioActionsHdr">0/0 hoje</div>
+                <button class="btn btn-ghost btn-sm" onclick="openActionModal()">+ Nova Ação</button>
+              </div>
+            </div>
+            <div class="action-list" id="inicioActions">
+              <div class="empty-state">Carregando…</div>
+            </div>
+          </div>
 
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
-          <div class="card-title" style="margin:0">AÇÕES DE HOJE</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="xp-actions-hdr" id="inicioActionsHdr">0/0 hoje</div>
-            <button class="btn btn-ghost btn-sm" onclick="openActionModal()">+ Nova Ação</button>
+          <div class="inicio-subgrid">
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div class="card-title" style="margin:0">FINANÇAS</div>
+                <button class="btn btn-ghost btn-sm" onclick="switchTab('financas')">Ver tudo</button>
+              </div>
+              <div class="ov-fin-balance" id="ovFinBalance">R$ 0,00</div>
+              <div class="ov-fin-sub">saldo do mês</div>
+              <div id="ovTxnList" style="margin-top:14px"></div>
+            </div>
+
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <div class="card-title" style="margin:0">METAS</div>
+                <button class="btn btn-ghost btn-sm" onclick="switchTab('metas')">Ver tudo</button>
+              </div>
+              <div id="ovGoalList"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div class="card-title" style="margin:0">RECOMPENSAS</div>
+              <button class="btn btn-ghost btn-sm" onclick="openRewardModal()">+ Nova</button>
+            </div>
+            <div class="reward-grid" id="rewardsList">
+              <div class="empty-state">Carregando…</div>
+            </div>
+            <div class="reward-history-title">ÚLTIMOS RESGATES</div>
+            <div id="redemptionsList">
+              <div class="empty-state">Nenhum resgate ainda.</div>
+            </div>
           </div>
         </div>
-        <div class="action-list" id="inicioActions">
-          <div class="empty-state">Carregando…</div>
-        </div>
-      </div>
 
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div class="card-title" style="margin:0">RECOMPENSAS</div>
-          <button class="btn btn-ghost btn-sm" onclick="openRewardModal()">+ Nova</button>
-        </div>
-        <div class="reward-grid" id="rewardsList">
-          <div class="empty-state">Carregando…</div>
-        </div>
-      </div>
+        <div class="inicio-sidebar">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="card-title" style="margin:0">PRÓXIMOS EVENTOS</div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('eventos')">Ver tudo</button>
+            </div>
+            <div id="ovEventList">
+              <div class="empty-state">Sem eventos próximos.</div>
+            </div>
+          </div>
 
-      <div class="card">
-        <div class="card-title" style="margin-bottom:16px">ÚLTIMOS RESGATES</div>
-        <div id="redemptionsList">
-          <div class="empty-state">Nenhum resgate ainda.</div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="card-title" style="margin:0">CORPO HOJE</div>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('corpo')">Editar</button>
+            </div>
+            <div class="ov-corpo-label">TREINO</div>
+            <div class="ov-corpo-text" id="ovCorpoTreino">—</div>
+            <div class="ov-corpo-label" style="margin-top:12px">DIETA</div>
+            <div class="ov-corpo-text" id="ovCorpoDieta">—</div>
+          </div>
         </div>
       </div>
 
@@ -2335,7 +2393,7 @@ function switchTab(tab) {
   if (nv) nv.classList.add('active');
   const bn = document.getElementById('bn-'+tab);
   if (bn) bn.classList.add('active');
-  if (tab==='inicio') { loadPoints(); loadRewards(); renderInicioActions(); }
+  if (tab==='inicio') { loadPoints(); loadRewards(); loadFinance(); loadGoals(); loadEvents(); loadCorpo(); renderInicioActions(); }
   if (tab==='habitos') loadHabits();
   if (tab==='tarefas') loadTasks();
   if (tab==='eventos') loadEvents();
@@ -3161,6 +3219,32 @@ function loadEvents() {
   updateEventMonthLabel();
   renderEventCalendar();
   renderEventDayList();
+  renderOvEvents();
+}
+
+function renderOvEvents() {
+  const el = document.getElementById('ovEventList');
+  if (!el) return;
+  const today = getSaoPauloTodayDate();
+  const found = [];
+  for (let i = 0; i < 21 && found.length < 4; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    getEventsForDate(d).forEach(ev => found.push({ ev, date: new Date(d) }));
+  }
+  if (!found.length) {
+    el.innerHTML = '<div class="empty-state">Sem eventos próximos.</div>';
+    return;
+  }
+  const MONTHS_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  el.innerHTML = found.map(({ev, date}) => `
+    <div class="event-item">
+      <div>
+        <div class="event-item-title">${esc(ev.title)}</div>
+        <div class="event-item-meta">${String(date.getDate()).padStart(2,'0')} ${MONTHS_SHORT[date.getMonth()]}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function loadEventsFromStorage() {
@@ -3431,6 +3515,8 @@ async function loadFinance() {
     document.getElementById('finInitialSub').textContent = `saldo inicial: ${fmtBRL(s.initial_balance||0)}`;
     renderCatBreakdown(s.by_category||[]);
     renderOvTxns(txnRes.data||[]);
+    const ovBal = document.getElementById('ovFinBalance');
+    if (ovBal) { ovBal.textContent = fmtBRL(s.balance); ovBal.style.color = s.balance>=0 ? 'var(--green)' : 'var(--red)'; }
   }
   if (txnRes.ok) {
     allTxns = txnRes.data||[];
@@ -3599,6 +3685,7 @@ async function loadGoals() {
   const res = await api('goals_list');
   allGoals = res.data||[];
   renderGoals();
+  renderOvGoals();
   document.getElementById('nb-metas').textContent = allGoals.length;
 }
 function renderGoals() {
@@ -3722,6 +3809,16 @@ const _corpoTimers = {};
 function loadCorpo() {
   document.getElementById('corpoTreino').value = localStorage.getItem(CORPO_KEYS.treino) || '';
   document.getElementById('corpoDieta').value = localStorage.getItem(CORPO_KEYS.dieta) || '';
+  renderOvCorpo();
+}
+function renderOvCorpo() {
+  const treinoEl = document.getElementById('ovCorpoTreino');
+  const dietaEl = document.getElementById('ovCorpoDieta');
+  if (!treinoEl || !dietaEl) return;
+  const t = (localStorage.getItem(CORPO_KEYS.treino) || '').trim();
+  const d = (localStorage.getItem(CORPO_KEYS.dieta) || '').trim();
+  treinoEl.textContent = t || '—';
+  dietaEl.textContent = d || '—';
 }
 function scheduleCorpoSave(type) {
   clearTimeout(_corpoTimers[type]);
@@ -3741,7 +3838,7 @@ async function init() {
   loadCorpo();
   await loadCats();
   await loadHabits();
-  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards(), loadChatHistory()]);
+  await Promise.all([loadTasks(), loadEvents(), loadFinance(), loadGoals(), loadPoints(), loadRewards()]);
   renderInicioActions();
 }
 init();
