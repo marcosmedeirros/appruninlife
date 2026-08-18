@@ -1,6 +1,7 @@
-const CACHE_NAME = 'lifeos-v3';
+const CACHE_NAME = 'vidaemcontrole-v4';
 const STATIC_ASSETS = [
-  './assets/css/style.css',
+  './assets/css/app.css',
+  './assets/js/app.js',
   './manifest.json'
 ];
 

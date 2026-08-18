@@ -1,27 +1,32 @@
 {
-  "name": "LifeOS",
-  "short_name": "LifeOS",
-  "description": "Sistema de Gestão de Vida - Dashboard Pessoal",
+  "name": "Vida em Controle",
+  "short_name": "Controle",
+  "description": "Painel pessoal: o dia, tarefas de casa e do trabalho, finanças e treinos.",
   "start_url": "./index.php",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#000000",
+  "background_color": "#0b0c0f",
+  "theme_color": "#0b0c0f",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230a0a0a' width='192' height='192'/%3E%3Crect x='28' y='36' width='136' height='128' rx='18' stroke='%23ffffff' stroke-width='8' fill='none'/%3E%3Crect x='28' y='56' width='136' height='26' fill='%231a1a1a'/%3E%3Cpath d='M56 28v20M136 28v20' stroke='%23ffffff' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M56 104l14 14L98 90' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M106 104l14 14L148 90' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%230b0c0f' width='192' height='192' rx='42'/%3E%3Ccircle cx='96' cy='96' r='54' fill='none' stroke='%2310d9a0' stroke-width='14'/%3E%3Cpath d='M70 98l18 18 36-40' fill='none' stroke='%23ffffff' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%230a0a0a' width='512' height='512'/%3E%3Crect x='76' y='96' width='360' height='340' rx='44' stroke='%23ffffff' stroke-width='18' fill='none'/%3E%3Crect x='76' y='146' width='360' height='70' fill='%231a1a1a'/%3E%3Cpath d='M160 76v56M352 76v56' stroke='%23ffffff' stroke-width='18' stroke-linecap='round'/%3E%3Cpath d='M160 280l40 40L280 240' stroke='%23ffffff' stroke-width='18' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M300 280l40 40L420 240' stroke='%23ffffff' stroke-width='18' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%230b0c0f' width='512' height='512' rx='112'/%3E%3Ccircle cx='256' cy='256' r='144' fill='none' stroke='%2310d9a0' stroke-width='37'/%3E%3Cpath d='M187 261l48 48 96-107' fill='none' stroke='%23ffffff' stroke-width='37' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "lifestyle", "utilities"],
-  "screenshots": []
+  "shortcuts": [
+    { "name": "Hoje", "url": "./index.php#hoje" },
+    { "name": "Tarefas", "url": "./index.php#tarefas" },
+    { "name": "Finanças", "url": "./index.php#financas" },
+    { "name": "Treinos", "url": "./index.php#treinos" }
+  ],
+  "categories": ["productivity", "lifestyle"]
 }

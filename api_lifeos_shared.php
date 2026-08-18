@@ -211,7 +211,65 @@ function ensure_tables(PDO $pdo): void {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uniq_user_date (user_id, note_date)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // ===== REMODELAGEM 2026: areas de tarefa + treinos =====
+
+    // Tarefas ganham "area" (casa / trabalho / pessoal) e prioridade.
+    if (!column_exists($pdo, 'tasks', 'area')) {
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN area ENUM('casa','trabalho','pessoal') DEFAULT 'pessoal' AFTER title");
+    }
+    if (!column_exists($pdo, 'tasks', 'priority')) {
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN priority TINYINT DEFAULT 0 AFTER area");
+    }
+    if (!column_exists($pdo, 'tasks', 'archived')) {
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN archived TINYINT DEFAULT 0");
+    }
+
+    // Plano semanal de treino: um item por dia da semana (0=domingo ... 6=sabado).
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workout_plan (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        weekday TINYINT NOT NULL,
+        name VARCHAR(120) DEFAULT NULL,
+        type ENUM('gym','run','other','rest') DEFAULT 'rest',
+        UNIQUE KEY uniq_user_weekday (user_id, weekday)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // Log de treino feito/nao feito por dia (reaproveita a tabela workouts existente).
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workouts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        name VARCHAR(255),
+        workout_date DATE,
+        done TINYINT DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    if (!column_exists($pdo, 'workouts', 'type')) {
+        $pdo->exec("ALTER TABLE workouts ADD COLUMN type ENUM('gym','run','other','rest') DEFAULT 'other'");
+    }
+    if (!column_exists($pdo, 'workouts', 'notes')) {
+        $pdo->exec("ALTER TABLE workouts ADD COLUMN notes VARCHAR(255) DEFAULT NULL");
+    }
+    try {
+        $pdo->exec("ALTER TABLE workouts ADD UNIQUE KEY uniq_workout_day (user_id, workout_date)");
+    } catch (Exception $e) {
+        // Indice ja existe (ou ha duplicatas antigas) — segue sem quebrar.
+    }
+
+    // Corridas: distancia + duracao para calcular pace.
+    $pdo->exec("CREATE TABLE IF NOT EXISTS runs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT 1,
+        title VARCHAR(255) NOT NULL,
+        run_date DATE NOT NULL,
+        distance_km DECIMAL(6,2) DEFAULT 0,
+        notes VARCHAR(255) DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    if (!column_exists($pdo, 'runs', 'duration_min')) {
+        $pdo->exec("ALTER TABLE runs ADD COLUMN duration_min INT DEFAULT 0 AFTER distance_km");
+    }
 }
+
 
 function award_points(PDO $pdo, int $userId, int $points, string $reason, string $date): void {
     if ($points === 0) {

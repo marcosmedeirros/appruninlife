@@ -1,95 +1,74 @@
-# RunInLife - Sistema Integrado com App de Apostas
+# Vida em Controle
 
-Sistema completo de planejamento de vida com módulo integrado de gestão de apostas.
+Painel pessoal para tocar o dia: tarefas de casa e do trabalho, finanças e treinos.
+PHP + MySQL, sem build, sem dependência de front-end.
 
-## 🎯 URLs de Acesso
+## Navegação
 
-| Rota | Descrição |
-|------|-----------|
-| `https://marcosmedeiros.page/` | Página principal do sistema |
-| `https://marcosmedeiros.page/app` | App integrado de apostas |
-| `https://marcosmedeiros.page/app_api.php` | API JSON para operações |
+| Aba | O que faz |
+|-----|-----------|
+| **Hoje** | Tudo que precisa de atenção hoje numa lista só (tarefas + hábitos + treino), anel de progresso, saldo do mês, gasto do dia e nota do dia com autosave |
+| **Tarefas** | Filtros por período (hoje / semana / todas / feitas) e por área (🏠 Casa, 💼 Trabalho, 👤 Pessoal). Avulsas, com data, diárias ou semanais |
+| **Finanças** | Navegação por mês, saldo/entradas/saídas, "onde foi o dinheiro" por categoria e lançamentos agrupados por dia |
+| **Treinos** | Plano semanal fixo, treino do dia com um botão de concluir, semana em 7 bolinhas, e corridas com km, tempo e pace |
+| **Mais** | Hábitos, metas, anotações e ajustes (tema, saldo inicial, categorias) |
 
-## 📁 Arquivos Principais
+Desktop usa barra lateral; no celular vira barra inferior com 5 abas. Tema escuro,
+claro ou automático (segue o sistema). Instalável como PWA.
+
+Atalhos de teclado no desktop: `n` nova tarefa, `g` novo gasto, `Esc` fecha o modal.
+
+## Arquivos
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `index.php` | Página principal + roteamento para `/app` |
-| `app.php` | Interface do app de apostas (incluído via index.php) |
-| `app_api.php` | API JSON com operações CRUD |
-| `config.php` | Configuração do banco + migrations |
+| `index.php` | Casca do app (HTML mínimo) + roteamento de `/app` e `/app_api.php` |
+| `assets/css/app.css` | Toda a interface. Tokens de cor em `:root` e `[data-theme="light"]` |
+| `assets/js/app.js` | Todo o comportamento. Sem framework, sem dependência externa |
+| `api_lifeos.php` | API JSON principal (tarefas, hábitos, finanças, metas, notas) |
+| `api_lifeos_extra.php` | Endpoints de treinos, corridas e o `bootstrap` |
+| `api_lifeos_shared.php` | Criação de tabelas e migrations automáticas |
+| `config.php` | Conexão com o banco + tabelas legadas |
+| `app.php` / `app_api.php` | App de apostas, servido em `/app` |
 
-## 🗄️ Banco de Dados
+## Por que é rápido
 
-### Tabelas de Apostas
-- **bets**: Armazena informações das apostas
-  - id, bet_date, odds, stake, result, profit, created_at
-  
-- **bet_selections**: Armazena seleções/competições de cada aposta
-  - id, bet_id, comp, descr, sort_order
+O app carrega **tudo numa chamada só** (`api_lifeos.php?api=bootstrap`) e guarda em
+memória. Trocar de aba não faz request — só re-renderiza. Cada clique atualiza a tela
+na hora e sincroniza com o servidor em segundo plano; se o servidor recusar, o app
+avisa e recarrega para não mentir sobre o que foi salvo.
 
-### Migrations Automáticas
-Todas as tabelas são criadas automaticamente quando o sistema inicia (via `config.php`).
+As fontes são as do sistema, então não há requisição de fonte bloqueando a primeira
+pintura, e o tema é aplicado antes dela para não piscar branco no modo escuro.
 
-## 🔌 API Endpoints
+## Banco de dados
 
-Requisições para `/app_api.php` com `?action=`:
+As migrations rodam sozinhas a cada requisição (`ensure_tables()`), então basta subir
+os arquivos. A remodelagem adicionou:
 
-| Action | Método | Descrição |
-|--------|--------|-----------|
-| `list` | GET | Lista todas as apostas |
-| `create` | POST | Cria nova aposta |
-| `update` | POST | Atualiza aposta existente |
-| `delete` | POST | Deleta uma aposta |
+- `tasks.area` — `casa` / `trabalho` / `pessoal`
+- `tasks.priority`, `tasks.archived`
+- `workout_plan` — plano fixo por dia da semana (1 = segunda … 7 = domingo)
+- `workouts.type`, `workouts.notes` + índice único por dia
+- `runs.duration_min` — permite calcular o pace
 
-**Exemplo:**
-```bash
-curl "https://marcosmedeiros.page/app_api.php?action=list"
-```
+Nada foi apagado: hábitos, metas, anotações, XP e apostas continuam no banco.
 
-## ✨ Funcionalidades
+## API
 
-✅ Dashboard com estatísticas gerais (lucro, investimento, winrate)
-✅ Registro de apostas simples e múltiplas
-✅ Edição e exclusão de registros
-✅ Análise de performance por competição
-✅ Fluxo de caixa diário
-✅ Gráfico de evolução da banca
-✅ Cálculo automático de lucro/prejuízo
-✅ Validação de dados em tempo real
+Requisições para `api_lifeos.php?api=<ação>`. `GET` para leitura, `POST` com corpo
+JSON para escrita. Todas respondem `{ok: true, data: ...}` ou `{ok: false, error: "..."}`.
 
-## 🚀 Tecnologias
+Principais: `bootstrap`, `task_save`, `task_toggle`, `task_delete`, `habit_save`,
+`habit_toggle`, `fin_save`, `fin_delete`, `fin_settings_save`, `cat_save`,
+`goal_save`, `goal_deposit`, `note_save`, `workout_plan_save`, `workout_toggle`,
+`run_save`, `run_delete`.
 
-- **Backend**: PHP 7.4+
-- **Banco**: MySQL 5.7+
-- **Frontend**: HTML5, CSS3 (TailwindCSS), JavaScript (Vanilla)
-- **API**: JSON REST
-- **Charting**: Chart.js
-
-## 📝 Notas
-
-- O app de apostas é totalmente integrado no sistema principal
-- Dados persistidos em banco de dados MySQL
-- Service Worker configurado para evitar cache em `/app` e `/app_api.php`
-- Compatível com localhost (`/lifeos/`) e produção
-- URLs amigáveis configuradas via `.htaccess`
-
-## 📖 Documentação Adicional
-
-- `MIGRATION.md` - Detalhes técnicos da integração
-- `INTEGRATION_COMPLETE.md` - Resumo das mudanças
-- `test_integration.php` - Script de validação
-
-## 🔄 Arquitetura de Roteamento
+## Rodando local
 
 ```
-Requisição HTTP
-    ↓
-.htaccess (rewrite rules)
-    ↓
-index.php (entry point)
-    ├─ Detecta /app → inclui app.php
-    ├─ Detecta /app_api.php → inclui app_api.php
-    └─ Resto do sistema continua normalmente
+run_local.bat
 ```
 
+Sobe o PHP embutido em `http://localhost:8899`. Precisa do MySQL local com o banco
+`u289267434_runlife` — ou defina `DB_HOST`, `DB_NAME`, `DB_USER` e `DB_PASS` no ambiente.

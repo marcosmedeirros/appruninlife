@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/api_lifeos_shared.php';
+require_once __DIR__ . '/api_lifeos_extra.php';
 
 header('Content-Type: application/json');
 
@@ -115,7 +116,7 @@ try {
              FROM task_completions tc2
              WHERE tc2.task_id = t.id
              AND tc2.done_date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)) AS done_dates
-            FROM tasks t WHERE t.user_id = ? ORDER BY t.id DESC");
+            FROM tasks t WHERE t.user_id = ? AND t.archived = 0 ORDER BY t.priority DESC, t.id DESC");
         $stmt->execute([$today, $userId]);
         json_response(['ok' => true, 'data' => $stmt->fetchAll()]);
     }
@@ -199,17 +200,22 @@ try {
         if ($title === '') {
             json_response(['ok' => false, 'error' => 'Titulo obrigatorio.'], 400);
         }
-        $recurrence = $input['recurrence'] ?? 'weekly';
+        $recurrence = $input['recurrence'] ?? 'once';
         $recurrenceDay = isset($input['recurrence_day']) ? (int)$input['recurrence_day'] : null;
         $dueDate = $input['due_date'] ?? null;
         $color = $input['color'] ?? '#ffffff';
+        $area = $input['area'] ?? 'pessoal';
+        if (!in_array($area, ['casa', 'trabalho', 'pessoal'], true)) {
+            $area = 'pessoal';
+        }
+        $priority = !empty($input['priority']) ? 1 : 0;
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE tasks SET title = ?, recurrence = ?, recurrence_day = ?, due_date = ?, color = ? WHERE id = ? AND user_id = ?");
-            $stmt->execute([$title, $recurrence, $recurrenceDay ?: null, $dueDate ?: null, $color, $id, $userId]);
+            $stmt = $pdo->prepare("UPDATE tasks SET title = ?, area = ?, priority = ?, recurrence = ?, recurrence_day = ?, due_date = ?, color = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$title, $area, $priority, $recurrence, $recurrenceDay ?: null, $dueDate ?: null, $color, $id, $userId]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, recurrence, recurrence_day, due_date, color) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$userId, $title, $recurrence, $recurrenceDay ?: null, $dueDate ?: null, $color]);
+            $stmt = $pdo->prepare("INSERT INTO tasks (user_id, title, area, priority, recurrence, recurrence_day, due_date, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$userId, $title, $area, $priority, $recurrence, $recurrenceDay ?: null, $dueDate ?: null, $color]);
         }
 
         json_response(['ok' => true]);
@@ -679,6 +685,8 @@ try {
         }
         json_response(['ok' => true]);
     }
+
+    handle_extra_actions($pdo, $action, $input, $userId, $today);
 
     json_response(['ok' => false, 'error' => 'Rota nao encontrada.'], 404);
 } catch (Exception $e) {
