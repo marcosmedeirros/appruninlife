@@ -142,7 +142,7 @@ function handle_extra_actions(PDO $pdo, string $action, array $input, int $userI
         migrate_legacy_finances($pdo, $userId, $monthStart, $monthEnd);
 
         $stmt = $pdo->prepare("SELECT t.id, t.title, t.area, t.priority, t.recurrence, t.recurrence_day,
-                t.due_date, t.color, t.status,
+                t.due_date, t.color, t.status, t.completed_at,
                 CASE
                     WHEN t.recurrence = 'once' THEN t.status
                     ELSE EXISTS(SELECT 1 FROM task_completions tc WHERE tc.task_id = t.id AND tc.done_date = ?)

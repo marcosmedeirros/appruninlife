@@ -240,8 +240,8 @@ try {
 
         if ($task['recurrence'] === 'once') {
             $newStatus = (int)!((int)$task['status']);
-            $upd = $pdo->prepare("UPDATE tasks SET status = ? WHERE id = ? AND user_id = ?");
-            $upd->execute([$newStatus, $id, $userId]);
+            $upd = $pdo->prepare("UPDATE tasks SET status = ?, completed_at = ? WHERE id = ? AND user_id = ?");
+            $upd->execute([$newStatus, $newStatus ? date('Y-m-d H:i:s') : null, $id, $userId]);
             if ($isToday) {
                 award_points($pdo, $userId, $newStatus ? 10 : -10, 'Tarefa', $today);
             }

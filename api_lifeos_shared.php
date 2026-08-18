@@ -224,6 +224,11 @@ function ensure_tables(PDO $pdo): void {
     if (!column_exists($pdo, 'tasks', 'archived')) {
         $pdo->exec("ALTER TABLE tasks ADD COLUMN archived TINYINT DEFAULT 0");
     }
+    // Sem isto nao da para saber ha quanto tempo uma tarefa avulsa foi concluida,
+    // e ela ficaria na lista para sempre.
+    if (!column_exists($pdo, 'tasks', 'completed_at')) {
+        $pdo->exec("ALTER TABLE tasks ADD COLUMN completed_at DATETIME DEFAULT NULL");
+    }
 
     // Plano semanal de treino: um item por dia da semana (0=domingo ... 6=sabado).
     $pdo->exec("CREATE TABLE IF NOT EXISTS workout_plan (

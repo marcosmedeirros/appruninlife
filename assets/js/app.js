@@ -254,6 +254,28 @@ function taskDoneOn(t, iso) {
   return dates.indexOf(iso) !== -1;
 }
 
+/* Depois de uma semana, tarefa avulsa (que nao se repete) sai da interface:
+   concluida ha mais de 7 dias, ou vencida ha mais de 7 dias sem ninguem tocar.
+   Nada e apagado — continua tudo no banco. */
+var STALE_DAYS = 7;
+
+function taskIsStale(t) {
+  if ((t.recurrence || 'once') !== 'once') return false;
+  if (touched[t.id]) return false;             // mexeu agora: fica visivel
+
+  var limit = addDays(today(), -STALE_DAYS);
+
+  if (Number(t.status) === 1) {
+    // Tarefas antigas, concluidas antes de existir o carimbo de data, usam a
+    // data prevista como referencia; sem nenhuma das duas, ja sao velhas.
+    var ref = t.completed_at ? String(t.completed_at).slice(0, 10)
+            : (t.due_date ? String(t.due_date).slice(0, 10) : null);
+    return ref === null || ref < limit;
+  }
+
+  return !!t.due_date && String(t.due_date).slice(0, 10) < limit;
+}
+
 /* Tarefa avulsa com data passada e ainda em aberto. */
 function taskIsLate(t) {
   return (t.recurrence || 'once') === 'once' &&
@@ -301,6 +323,7 @@ function todayItems() {
   var out = [];
 
   (S.tasks || []).forEach(function (t) {
+    if (taskIsStale(t)) return;
     var due = taskDueOn(t, iso);
     var late = taskIsLate(t);
     // "touched" mantem na lista a tarefa atrasada que acabou de ser concluida,
@@ -417,7 +440,7 @@ function viewHoje() {
     '</div>';
   }).join('') : emptyState('Nada pendente hoje. Aproveite. \u{1F389}');
 
-  var inbox = (S.tasks || []).filter(taskIsInbox);
+  var inbox = (S.tasks || []).filter(function (t) { return taskIsInbox(t) && !taskIsStale(t); });
 
   return '' +
   '<div class="hero">' +
@@ -500,7 +523,7 @@ function viewHoje() {
 
 function tasksFiltered() {
   var iso = today();
-  var list = (S.tasks || []).slice();
+  var list = (S.tasks || []).filter(function (t) { return !taskIsStale(t); });
 
   if (filterArea !== 'todas') {
     list = list.filter(function (t) { return (t.area || 'pessoal') === filterArea; });
@@ -557,7 +580,8 @@ function viewTarefas() {
   var counts = {};
   ['casa', 'trabalho', 'pessoal'].forEach(function (a) {
     counts[a] = (S.tasks || []).filter(function (t) {
-      return (t.area || 'pessoal') === a && ((taskDueOn(t, today()) && !taskDoneOn(t, today())) || taskIsLate(t));
+      return (t.area || 'pessoal') === a && !taskIsStale(t) &&
+        ((taskDueOn(t, today()) && !taskDoneOn(t, today())) || taskIsLate(t));
     }).length;
   });
 
@@ -746,6 +770,8 @@ function viewTreinos() {
     '<button class="btn" data-act="edit-plan">Editar plano</button>' +
   '</div>' +
 
+  '<div class="stack">' +
+
   '<div class="card">' +
     '<div class="today-workout">' +
       '<div class="today-workout-info">' +
@@ -797,6 +823,8 @@ function viewTreinos() {
         '</div>';
       }).join('') : emptyState('Nenhuma corrida registrada ainda.')) +
     '</div>' +
+  '</div>' +
+
   '</div>' +
 
   '<button class="btn btn-primary btn-block btn-lg" data-act="new-run" style="margin-top:16px">+ Registrar corrida</button>';
@@ -1330,6 +1358,7 @@ function localToggleTask(id, iso) {
   if (!t) return;
   if ((t.recurrence || 'once') === 'once') {
     t.status = Number(t.status) === 1 ? 0 : 1;
+    t.completed_at = t.status ? today() + ' 00:00:00' : null;
   } else {
     var dates = String(t.done_dates || '').split(',').filter(Boolean);
     var i = dates.indexOf(iso);
