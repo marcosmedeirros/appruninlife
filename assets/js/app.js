@@ -707,14 +707,14 @@ function viewFinancas() {
     '<button class="icon-btn" data-act="month" data-val="1" aria-label="Próximo mês">›</button>' +
   '</div>' +
 
-  '<div class="grid grid-stats-3" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">' +
+  '<div class="grid grid-stats-3 stats-fin" style="margin-bottom:14px">' +
     '<div class="stat"><div class="stat-label">Saldo</div>' +
-      '<div class="stat-value ' + (fin.balance >= 0 ? 'pos' : 'neg') + '">' + moneyShort(fin.balance) + '</div>' +
-      '<div class="stat-hint">iniciou com ' + moneyShort(fin.initial_balance) + '</div></div>' +
+      '<div class="stat-value ' + (fin.balance >= 0 ? 'pos' : 'neg') + '">' + money(fin.balance) + '</div>' +
+      '<div class="stat-hint">iniciou com ' + money(fin.initial_balance) + '</div></div>' +
     '<div class="stat"><div class="stat-label">Entradas</div>' +
-      '<div class="stat-value pos">' + moneyShort(fin.income) + '</div></div>' +
+      '<div class="stat-value pos">' + money(fin.income) + '</div></div>' +
     '<div class="stat"><div class="stat-label">Saídas</div>' +
-      '<div class="stat-value neg">' + moneyShort(fin.expense) + '</div></div>' +
+      '<div class="stat-value neg">' + money(fin.expense) + '</div></div>' +
   '</div>' +
 
   (cats.length ? '<div class="card">' +
