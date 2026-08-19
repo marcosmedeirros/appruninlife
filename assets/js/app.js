@@ -96,6 +96,18 @@ function fmtMonth(ym) {
   return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 function monthOf(iso) { return String(iso).slice(0, 7); }
+function currentMonth() { return today().slice(0, 7); }
+
+/* Um lancamento guarda uma data, mas so pedimos o mes: no mes corrente vale hoje,
+   nos outros vale o dia 1. */
+function dateForMonth(ym) { return ym === currentMonth() ? today() : ym + '-01'; }
+
+function monthLabel(ym) {
+  var d = parseISO(ym + '-01');
+  var nome = d.toLocaleDateString('pt-BR', { month: 'long' });
+  nome = nome.charAt(0).toUpperCase() + nome.slice(1);
+  return d.getFullYear() === parseISO(today()).getFullYear() ? nome : nome + ' de ' + d.getFullYear();
+}
 function shiftMonth(ym, n) {
   var d = parseISO(ym + '-01');
   d.setMonth(d.getMonth() + n);
@@ -194,6 +206,15 @@ function openModal(cfg) {
     ev.preventDefault();
     if (modalSubmit) modalSubmit(ov);
   });
+
+  var monthSel = ov.querySelector('#f-month');
+  if (monthSel) {
+    monthSel.addEventListener('change', function () {
+      [].slice.call(ov.querySelectorAll('[data-act="pick-month"]')).forEach(function (b) {
+        b.classList.toggle('on', b.dataset.val === monthSel.value);
+      });
+    });
+  }
 
   var first = ov.querySelector('[data-autofocus]');
   if (first) setTimeout(function () { first.focus(); }, 60);
@@ -635,10 +656,10 @@ function txRow(t) {
     '<div style="flex:0 0 32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:15px;' +
       'background:' + (isIn ? 'var(--accent-soft)' : 'var(--surface-3)') + '">' + (isIn ? '↑' : '↓') + '</div>' +
     '<div class="item-body">' +
-      '<div class="item-title">' + esc(t.description || (isIn ? 'Entrada' : 'Gasto')) + '</div>' +
+      '<div class="item-title">' + esc(t.description || t.cat_name || (isIn ? 'Entrada' : 'Gasto')) + '</div>' +
       '<div class="item-meta">' +
         '<span class="chip">' + esc(fmtShortDate(String(t.transaction_date).slice(0, 10))) + '</span>' +
-        (t.cat_name ? '<span class="chip">' + esc(t.cat_name) + '</span>' : '') +
+        (t.cat_name && t.description ? '<span class="chip">' + esc(t.cat_name) + '</span>' : '') +
       '</div>' +
     '</div>' +
     '<div class="amount ' + (isIn ? 'in' : 'out') + '">' + (isIn ? '+' : '−') + ' ' + money(t.amount) + '</div>' +
@@ -1133,6 +1154,12 @@ function taskModal(taskId) {
   });
 }
 
+function monthOptions(n) {
+  var out = [];
+  for (var i = 0; i < n; i++) out.push(shiftMonth(currentMonth(), -i));
+  return out;
+}
+
 function txModal(type) {
   var isIn = type === 'income';
   var cats = (S.finance.categories || []).filter(function (c) { return c.type === type; });
@@ -1143,14 +1170,26 @@ function txModal(type) {
     body:
       '<div class="field"><label class="label">Valor</label>' +
         '<input class="input input-money" id="f-amount" data-autofocus inputmode="decimal" placeholder="0,00"></div>' +
-      '<div class="field"><label class="label">Descrição</label>' +
-        '<input class="input" id="f-desc" placeholder="' + (isIn ? 'Ex: salário' : 'Ex: mercado') + '"></div>' +
+      '<div class="field"><label class="label">Descrição <span style="text-transform:none;letter-spacing:0;' +
+          'font-weight:500;color:var(--text-3)">— opcional</span></label>' +
+        '<input class="input" id="f-desc" placeholder="' +
+          (cats.length ? 'Em branco, usa a categoria' : (isIn ? 'Ex: salário' : 'Ex: mercado')) + '"></div>' +
       (cats.length ? '<div class="field"><label class="label">Categoria</label>' +
         optGroup('cat', [{ value: '', label: 'Nenhuma' }].concat(cats.map(function (c) {
           return { value: String(c.id), label: esc(c.name) };
         })), '') + '</div>' : '') +
-      '<div class="field"><label class="label">Data</label>' +
-        '<input type="date" class="input" id="f-date" value="' + today() + '"></div>',
+      '<div class="field"><label class="label">Mês</label>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+          '<select class="input" id="f-month" style="flex:1;min-width:130px">' +
+            monthOptions(12).map(function (ym) {
+              return '<option value="' + ym + '"' + (ym === currentMonth() ? ' selected' : '') + '>' +
+                esc(monthLabel(ym)) + '</option>';
+            }).join('') +
+          '</select>' +
+          '<button type="button" class="opt" data-act="pick-month" data-val="' + shiftMonth(currentMonth(), -1) + '">' +
+            esc(monthLabel(shiftMonth(currentMonth(), -1))) + '</button>' +
+          '<button type="button" class="opt on" data-act="pick-month" data-val="' + currentMonth() + '">Este mês</button>' +
+        '</div></div>',
     onSubmit: function (ov) {
       var raw = $('#f-amount', ov).value.trim().replace(/\./g, '').replace(',', '.');
       var amount = parseFloat(raw);
@@ -1158,7 +1197,7 @@ function txModal(type) {
 
       var catId = optValue('cat', ov);
       var desc = $('#f-desc', ov).value.trim();
-      var date = $('#f-date', ov).value || today();
+      var date = dateForMonth($('#f-month', ov).value || currentMonth());
       closeModal();
       push('fin_save', {
         type: type,
@@ -1468,6 +1507,16 @@ var ACTIONS = {
     reload();
   },
   'fin-settings': finSettingsModal,
+
+  // Atalhos ao lado do seletor de mes no modal de lancamento.
+  'pick-month': function (el) {
+    var sel = $('#f-month');
+    if (!sel) return;
+    sel.value = el.dataset.val;
+    [].slice.call(el.parentElement.querySelectorAll('[data-act="pick-month"]')).forEach(function (b) {
+      b.classList.toggle('on', b === el);
+    });
+  },
   'new-cat': catModal,
 
   'new-run': runModal,
