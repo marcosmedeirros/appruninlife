@@ -523,6 +523,12 @@ select.input { appearance: none; background-image: none; }
   .quick { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .quick button { padding: 12px 4px; font-size: 11px; }
 
+  /* Na linha de lancamento o valor disputava espaco com o titulo e sobravam
+     ~76px para o texto, que quebrava em duas linhas. No celular o valor desce
+     para a propria linha, alinhado a direita como no desktop. */
+  .item-tx { flex-wrap: wrap; row-gap: 2px; }
+  .item-tx .amount { order: 3; flex: 1 0 100%; text-align: right; }
+
   .item { padding: 13px 2px; }
   .check { flex-basis: 26px; width: 26px; height: 26px; }
 

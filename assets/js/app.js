@@ -652,7 +652,7 @@ function viewTarefas() {
 
 function txRow(t) {
   var isIn = t.type === 'income';
-  return '<div class="item">' +
+  return '<div class="item item-tx">' +
     '<div style="flex:0 0 32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:15px;' +
       'background:' + (isIn ? 'var(--accent-soft)' : 'var(--surface-3)') + '">' + (isIn ? '↑' : '↓') + '</div>' +
     '<div class="item-body">' +
@@ -663,6 +663,7 @@ function txRow(t) {
       '</div>' +
     '</div>' +
     '<div class="amount ' + (isIn ? 'in' : 'out') + '">' + (isIn ? '+' : '−') + ' ' + money(t.amount) + '</div>' +
+    '<button class="icon-btn" data-act="edit-tx" data-id="' + t.id + '" title="Editar">✎</button>' +
     '<button class="icon-btn danger" data-act="del-tx" data-id="' + t.id + '" title="Excluir">✕</button>' +
   '</div>';
 }
@@ -1154,41 +1155,58 @@ function taskModal(taskId) {
   });
 }
 
-function monthOptions(n) {
+/* Os ultimos n meses. "include" garante que o mes de um lancamento antigo em
+   edicao apareca na lista, mesmo fora da janela. */
+function monthOptions(n, include) {
   var out = [];
   for (var i = 0; i < n; i++) out.push(shiftMonth(currentMonth(), -i));
+  if (include && out.indexOf(include) === -1) {
+    out.push(include);
+    out.sort().reverse();
+  }
   return out;
 }
 
-function txModal(type) {
+function txModal(type, txId) {
+  var tx = txId ? (S.finance.transactions || []).filter(function (x) {
+    return Number(x.id) === Number(txId);
+  })[0] : null;
+  if (tx) type = tx.type;
+
   var isIn = type === 'income';
   var cats = (S.finance.categories || []).filter(function (c) { return c.type === type; });
+  var txDate = tx ? String(tx.transaction_date).slice(0, 10) : null;
+  var selMonth = tx ? txDate.slice(0, 7) : currentMonth();
+  var amountVal = tx ? Number(tx.amount).toFixed(2).replace('.', ',') : '';
 
   openModal({
-    title: isIn ? 'Nova entrada' : 'Novo gasto',
-    submitLabel: 'Lançar',
+    title: tx ? (isIn ? 'Editar entrada' : 'Editar gasto') : (isIn ? 'Nova entrada' : 'Novo gasto'),
+    submitLabel: tx ? 'Salvar' : 'Lançar',
     body:
       '<div class="field"><label class="label">Valor</label>' +
-        '<input class="input input-money" id="f-amount" data-autofocus inputmode="decimal" placeholder="0,00"></div>' +
+        '<input class="input input-money" id="f-amount" data-autofocus inputmode="decimal" placeholder="0,00" ' +
+          'value="' + esc(amountVal) + '"></div>' +
       '<div class="field"><label class="label">Descrição <span style="text-transform:none;letter-spacing:0;' +
           'font-weight:500;color:var(--text-3)">— opcional</span></label>' +
-        '<input class="input" id="f-desc" placeholder="' +
+        '<input class="input" id="f-desc" value="' + esc(tx && tx.description ? tx.description : '') + '" placeholder="' +
           (cats.length ? 'Em branco, usa a categoria' : (isIn ? 'Ex: salário' : 'Ex: mercado')) + '"></div>' +
       (cats.length ? '<div class="field"><label class="label">Categoria</label>' +
         optGroup('cat', [{ value: '', label: 'Nenhuma' }].concat(cats.map(function (c) {
           return { value: String(c.id), label: esc(c.name) };
-        })), '') + '</div>' : '') +
+        })), tx && tx.category_id ? String(tx.category_id) : '') + '</div>' : '') +
       '<div class="field"><label class="label">Mês</label>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
           '<select class="input" id="f-month" style="flex:1;min-width:130px">' +
-            monthOptions(12).map(function (ym) {
-              return '<option value="' + ym + '"' + (ym === currentMonth() ? ' selected' : '') + '>' +
+            monthOptions(12, selMonth).map(function (ym) {
+              return '<option value="' + ym + '"' + (ym === selMonth ? ' selected' : '') + '>' +
                 esc(monthLabel(ym)) + '</option>';
             }).join('') +
           '</select>' +
-          '<button type="button" class="opt" data-act="pick-month" data-val="' + shiftMonth(currentMonth(), -1) + '">' +
+          '<button type="button" class="opt' + (selMonth === shiftMonth(currentMonth(), -1) ? ' on' : '') +
+            '" data-act="pick-month" data-val="' + shiftMonth(currentMonth(), -1) + '">' +
             esc(monthLabel(shiftMonth(currentMonth(), -1))) + '</button>' +
-          '<button type="button" class="opt on" data-act="pick-month" data-val="' + currentMonth() + '">Este mês</button>' +
+          '<button type="button" class="opt' + (selMonth === currentMonth() ? ' on' : '') +
+            '" data-act="pick-month" data-val="' + currentMonth() + '">Este mês</button>' +
         '</div></div>',
     onSubmit: function (ov) {
       var raw = $('#f-amount', ov).value.trim().replace(/\./g, '').replace(',', '.');
@@ -1197,15 +1215,20 @@ function txModal(type) {
 
       var catId = optValue('cat', ov);
       var desc = $('#f-desc', ov).value.trim();
-      var date = dateForMonth($('#f-month', ov).value || currentMonth());
+      var newMonth = $('#f-month', ov).value || currentMonth();
+      // Editando sem trocar de mes, o dia original e preservado — so pedimos o mes,
+      // mas nao ha razao para reescrever a data que ja estava certa.
+      var date = (tx && newMonth === txDate.slice(0, 7)) ? txDate : dateForMonth(newMonth);
       closeModal();
       push('fin_save', {
+        id: tx ? tx.id : 0,
         type: type,
         amount: amount,
         description: desc,
         category_id: catId ? Number(catId) : null,
         date: date
-      }, isIn ? 'Entrada lançada' : 'Gasto lançado').then(function () { reload(); });
+      }, tx ? 'Lançamento atualizado' : (isIn ? 'Entrada lançada' : 'Gasto lançado'))
+        .then(function () { reload(); });
     }
   });
 }
@@ -1494,6 +1517,7 @@ var ACTIONS = {
 
   'new-expense': function () { txModal('expense'); },
   'new-income': function () { txModal('income'); },
+  'edit-tx': function (el) { txModal(null, el.dataset.id); },
   'del-tx': function (el) {
     confirmDialog('Excluir este lançamento?').then(function (ok) {
       if (!ok) return;
